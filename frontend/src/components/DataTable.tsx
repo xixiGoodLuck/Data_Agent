@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
-function display(value: unknown): ReactNode {
+import { useI18n } from "../i18n";
+
+function display(value: unknown, locale: string): ReactNode {
   if (value === null || value === undefined) return <span className="text-zinc-400">null</span>;
-  if (typeof value === "number") return value.toLocaleString(undefined, { maximumFractionDigits: 3 });
+  if (typeof value === "number") return value.toLocaleString(locale, { maximumFractionDigits: 3 });
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
@@ -10,14 +12,15 @@ function display(value: unknown): ReactNode {
 export function DataTable({
   columns,
   rows,
-  emptyMessage = "No rows returned.",
+  emptyMessage,
 }: {
   columns: string[];
   rows: Record<string, unknown>[];
   emptyMessage?: string;
 }) {
+  const { locale, t } = useI18n();
   if (!rows.length || !columns.length) {
-    return <div className="py-12 text-center text-sm text-zinc-500">{emptyMessage}</div>;
+    return <div className="py-12 text-center text-sm text-zinc-500">{emptyMessage ?? t("datasets.noRows")}</div>;
   }
   return (
     <div className="max-h-[440px] overflow-auto border border-zinc-200" style={{ borderRadius: 6 }}>
@@ -36,7 +39,7 @@ export function DataTable({
             <tr key={index} className="hover:bg-zinc-50">
               {columns.map((column) => (
                 <td key={column} className="max-w-[320px] truncate whitespace-nowrap px-3 py-2 text-zinc-700" title={String(row[column] ?? "null")}>
-                  {display(row[column])}
+                  {display(row[column], locale)}
                 </td>
               ))}
             </tr>

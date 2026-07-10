@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, LoaderCircle, ShieldAlert, XCircle } from "lucide-react";
 
+import { useI18n } from "../i18n";
 import type { TraceEvent } from "../types";
 
 function EventIcon({ event }: { event: TraceEvent }) {
@@ -11,7 +12,8 @@ function EventIcon({ event }: { event: TraceEvent }) {
 }
 
 export function AgentTrace({ events, live = false }: { events: TraceEvent[]; live?: boolean }) {
-  if (!events.length) return <div className="py-8 text-center text-sm text-zinc-500">Trace is empty.</div>;
+  const { label, t } = useI18n();
+  if (!events.length) return <div className="py-8 text-center text-sm text-zinc-500">{t("trace.empty")}</div>;
   return (
     <ol className="space-y-0">
       {events.map((event, index) => (
@@ -20,15 +22,15 @@ export function AgentTrace({ events, live = false }: { events: TraceEvent[]; liv
           <span className="relative z-10 mt-0.5 bg-white"><EventIcon event={event} /></span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2">
-              <span className="text-sm font-medium text-ink">{event.node_name.replace(/_node$/, "").replaceAll("_", " ")}</span>
-              <span className="text-xs text-zinc-400">{event.event_type.replaceAll("_", " ")}</span>
+              <span className="text-sm font-medium text-ink">{label("node", event.node_name)}</span>
+              <span className="text-xs text-zinc-400">{label("event", event.event_type)}</span>
               <span className="ml-auto text-xs tabular-nums text-zinc-400">{event.latency_ms.toFixed(1)} ms</span>
             </div>
             {event.output_summary ? <p className="mt-1 truncate text-xs text-zinc-500" title={event.output_summary}>{event.output_summary}</p> : null}
           </div>
         </li>
       ))}
-      {live ? <li className="mt-3 flex items-center gap-2 text-xs font-medium text-blue-700"><LoaderCircle size={14} className="animate-spin" /> Running graph</li> : null}
+      {live ? <li className="mt-3 flex items-center gap-2 text-xs font-medium text-blue-700"><LoaderCircle size={14} className="animate-spin" /> {t("trace.running")}</li> : null}
     </ol>
   );
 }

@@ -16,8 +16,9 @@
 - 敏感查询风险分类、持久 ApprovalRequest、同 thread/namespace 恢复和幂等事件/消息。
 - REST + POST-SSE、会话、日志、统计、审批、Eval 和 public settings API。
 - React 18 strict TypeScript 控制台及全部八个页面；Recharts 七种输出模式和 table fallback。
-- 43 条真实 graph Eval case、66 个后端测试、12 个前端测试。
-- 生产 backend image、frontend Node/Nginx multi-stage image、Compose、health checks、CI 和中文文档。
+- 持久化中英文切换、浏览器语言默认值、状态/日期/数字本地化，以及四个内置数据集的双语名称、说明和示例问题。
+- 43 条真实 graph Eval case、66 个后端测试、13 个前端测试。
+- 生产 backend image、frontend Node/Nginx multi-stage image、Compose、health checks、CI 和中英文 README。
 
 ## 最终命令结果
 
@@ -30,7 +31,7 @@
 | `python -m pip install -e ".[dev]"` | PASS，editable package 安装成功 |
 | `python -m ruff check .` | PASS，`All checks passed!` |
 | `python -m ruff format --check .` | PASS，70 files formatted |
-| `python -m pytest -q` | PASS，66 passed in 26.49s；最终复验 66 passed in 19.82s |
+| `python -m pytest -q` | PASS，双语更新后最终复验 66 passed in 30.75s |
 
 Pytest 仍显示一条第三方 warning：LangGraph checkpoint 在 import 时提示未来会调整 `allowed_objects` 默认值。当前 `JsonPlusSerializer` 版本的构造函数尚未暴露该参数，功能与测试不受影响。
 
@@ -42,10 +43,10 @@ Pytest 仍显示一条第三方 warning：LangGraph checkpoint 在 import 时提
 | --- | --- |
 | `npm.cmd ci` | PASS，287 packages，0 vulnerabilities |
 | `npm.cmd run typecheck` | PASS，strict `tsc --noEmit` |
-| `npm.cmd run test -- --run` | PASS，5 files / 12 tests |
-| `npm.cmd run build` | PASS，2,228 modules，production bundle generated |
+| `npm.cmd run test -- --run` | PASS，6 files / 13 tests（含语言持久化与内置数据集本地化） |
+| `npm.cmd run build` | PASS，2,229 modules，production bundle generated |
 
-Vite build 提示主 JS chunk 约 688 kB（gzip 约 192 kB），属于性能 advisory，不影响构建。Roadmap 已记录 route-level code splitting。
+Vite build 提示主 JS chunk 约 709 kB（gzip 约 199 kB），属于性能 advisory，不影响构建。Roadmap 已记录 route-level code splitting。
 
 ### Docker 与静态配置
 
@@ -60,15 +61,17 @@ Vite build 提示主 JS chunk 约 688 kB（gzip 约 192 kB），属于性能 adv
 
 ### 浏览器验证
 
-- `http://127.0.0.1:8000/health`：HTTP 200 / status ok。
-- `http://127.0.0.1:5173`：HTTP 200。
+- 初次全流程 QA 使用 `8000/5173`；双语更新复验时这两个端口已被另一个本地项目占用，因此使用 `VITE_API_TARGET=http://127.0.0.1:8001` 在 `8001/5175` 隔离运行。
+- `http://127.0.0.1:8001/api/health`：HTTP 200 / status ok；`http://127.0.0.1:5175`：HTTP 200。
 - Desktop 1280×720：Dashboard 导航、指标和 panel layout 正常。
+- 中文 Dashboard、数据集名称、状态、日期、数据问答标题、四个中文推荐问题和 Schema 面板均正确；切换 EN 后导航、状态、日期和内置数据集内容同步恢复英文。
+- 语言选择写入 localStorage，`html lang` 在 `zh-CN` / `en` 间同步切换；当前项目页面无 console error。
 - Commerce live query：SSE node events 在 result 前到达；5-row bar chart 有实际 SVG marks；SQL、table、lineage、insight、trace 正常。
 - Sensitive employee query：UI 显示 high-risk approval；Reject 通过原 LangGraph checkpoint 恢复并显示 rejected。
 - Mobile 390×844：导航 drawer 正常，无 document horizontal overflow，无检测到的 text overflow。
 - `/datasets`、`/conversations`、`/logs`、`/approvals`、`/evals`、`/settings` 路由均加载，无 internal error 或 horizontal overflow。
 
-以上服务在浏览器 QA 时实际运行。最终 clean `npm ci` 需要先停止 Vite；完成最终测试后，平台因 escalation usage limit 拒绝 detached restart，因此当前没有把 8000/5173 server 留在后台运行。源码、测试和 production build 均为最终版本；本地启动命令见 README。
+以上服务均在浏览器 QA 时实际运行。双语更新后的 `8001/5175` 验收服务已留在后台，便于继续检查；本地默认启动仍为 `8000/5173`，可通过 `frontend/.env` 的 `VITE_API_TARGET` 调整开发代理目标。
 
 ## 中间失败与修复
 
@@ -78,9 +81,10 @@ Vite build 提示主 JS chunk 约 688 kB（gzip 约 192 kB），属于性能 adv
 - 本机 Python 报告 user site 但未加入 `sys.path`，导致 `packaging`、NumPy/dateutil、Pytest 不可见；最终安装到 active interpreter path，版本约束恢复为兼容范围。
 - 初次 backend suite：62 passed / 4 failed。修复 approval retry contract、Commerce 最小表选择、anonymous SQLite function denylist 和 upload-limit fixture 后为 66/66。
 - 初次 frontend suite：11 passed / 1 failed。修正 Testing Library 文本匹配后为 12/12。
+- 双语更新新增语言切换测试后，最终 frontend suite 为 6 files / 13 tests 全部通过。
 - 浏览器 QA 前的首个 detached launch 因 Windows 环境中同时存在 `Path`/`PATH` 而失败；清理子进程环境中的重复键后启动成功。
 - 最终 `npm ci` 首次被仍运行的 Vite/esbuild/Rollup binary lock 拒绝；仅终止本 workspace 的两个 Node child 后，clean install 成功。
-- clean install 后尝试重新 detached 启动 localhost 服务时，平台 escalation usage limit 拒绝该动作；没有通过其他方式绕过，最终端口未留在监听状态。
+- 双语更新浏览器复验发现默认端口已被另一个本地项目占用；Vite 开发代理改为支持 `VITE_API_TARGET`，随后在 8001/5175 完成隔离验收，未终止或修改其他项目进程。
 - Docker command 不存在，因此 Docker build/runtime 不能在本机验证；静态验证通过，CI 会在 Ubuntu Docker runner 上执行 config 和 build。
 
 ## 实际依赖版本

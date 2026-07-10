@@ -2,9 +2,11 @@ import { FileUp, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { uploadDataset } from "../api/client";
+import { useI18n } from "../i18n";
 import type { DatasetDetail } from "../types";
 
 export function CsvUpload({ onUploaded }: { onUploaded: (dataset: DatasetDetail) => void }) {
+  const { t } = useI18n();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
@@ -18,7 +20,7 @@ export function CsvUpload({ onUploaded }: { onUploaded: (dataset: DatasetDetail)
       setProgress(100);
       onUploaded(dataset);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Upload failed.");
+      setError(caught instanceof Error ? caught.message : t("datasets.uploadError"));
     } finally {
       window.setTimeout(() => setProgress(null), 600);
     }
@@ -58,8 +60,8 @@ export function CsvUpload({ onUploaded }: { onUploaded: (dataset: DatasetDetail)
         style={{ borderRadius: 8 }}
       >
         <UploadCloud className="mb-3 text-teal-600" size={28} />
-        <span className="text-sm font-semibold text-ink">Drop CSV or choose file</span>
-        <span className="mt-1 text-xs text-zinc-500">UTF-8 · 10 MB · 100,000 rows</span>
+        <span className="text-sm font-semibold text-ink">{t("datasets.dropCsv")}</span>
+        <span className="mt-1 text-xs text-zinc-500">{t("datasets.uploadLimits")}</span>
       </button>
       {progress !== null ? (
         <div className="mt-3 flex items-center gap-3 text-sm text-zinc-600">

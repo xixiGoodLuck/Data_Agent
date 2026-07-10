@@ -1,6 +1,8 @@
 import { Send, Square } from "lucide-react";
 import { useState } from "react";
 
+import { useI18n } from "../i18n";
+
 export function QueryInput({
   onSubmit,
   onCancel,
@@ -14,6 +16,7 @@ export function QueryInput({
   disabled?: boolean;
   initialValue?: string;
 }) {
+  const { t } = useI18n();
   const [value, setValue] = useState(initialValue);
 
   function submit() {
@@ -31,7 +34,7 @@ export function QueryInput({
           rows={1}
           value={value}
           disabled={disabled}
-          placeholder="Ask a business question…"
+          placeholder={t("query.placeholder")}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -41,11 +44,11 @@ export function QueryInput({
           }}
         />
         {streaming ? (
-          <button className="icon-button border-red-200 text-red-700" title="Cancel" aria-label="Cancel query" onClick={onCancel}>
+          <button className="icon-button border-red-200 text-red-700" title={t("common.cancel")} aria-label={t("query.cancel")} onClick={onCancel}>
             <Square size={17} fill="currentColor" />
           </button>
         ) : (
-          <button className="command-button h-11 w-11 px-0" title="Send" aria-label="Send question" disabled={disabled || !value.trim()} onClick={submit}>
+          <button className="command-button h-11 w-11 px-0" title={t("common.send")} aria-label={t("query.send")} disabled={disabled || !value.trim()} onClick={submit}>
             <Send size={18} />
           </button>
         )}

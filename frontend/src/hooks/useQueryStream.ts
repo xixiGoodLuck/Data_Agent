@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { parseQueryResponse } from "../api/client";
 import { consumeSseResponse } from "../api/sse";
+import { useI18n } from "../i18n";
 import type { QueryRequest, QueryResponse, TraceEvent } from "../types";
 
 export function dedupeTrace(events: TraceEvent[]): TraceEvent[] {
@@ -15,6 +16,7 @@ export function dedupeTrace(events: TraceEvent[]): TraceEvent[] {
 }
 
 export function useQueryStream() {
+  const { t } = useI18n();
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [trace, setTrace] = useState<TraceEvent[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming" | "done" | "cancelled">("idle");
@@ -68,7 +70,7 @@ export function useQueryStream() {
             }
             if (message.event === "error") {
               const payloadError = message.data as { message?: string };
-              setError(payloadError?.message ?? "The query stream failed.");
+              setError(payloadError?.message ?? t("query.streamError"));
             }
             if (message.event === "done") setStatus("done");
           },
@@ -79,14 +81,14 @@ export function useQueryStream() {
         if (caught instanceof DOMException && caught.name === "AbortError") {
           setStatus("cancelled");
         } else {
-          setError(caught instanceof Error ? caught.message : "The query stream failed.");
+          setError(caught instanceof Error ? caught.message : t("query.streamError"));
           setStatus("done");
         }
       } finally {
         if (controller.current === abortController) controller.current = null;
       }
     },
-    [cancel],
+    [cancel, t],
   );
 
   useEffect(() => cancel, [cancel]);

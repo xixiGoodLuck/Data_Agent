@@ -1,5 +1,7 @@
 # InsightOps Agent
 
+[中文](README.md) | [English](README.en.md)
+
 > InsightOps Agent 是一个面向企业业务数据的 AI 数据分析 Agent，支持自然语言问数、多表 Schema 理解、LangGraph 工作流、SQL 安全校验、敏感查询审批、实时 Agent Trace、自动图表、查询日志和 Eval 评测。
 
 InsightOps Agent 解决的是“业务问题如何安全、可解释地落到真实数据查询”这一整条链路。用户选择内置或上传的数据集，用自然语言提问，系统会选择相关表、生成并校验 SQLite SQL、判断敏感风险、执行只读查询，再返回图表、表格、洞察与数据血缘。
@@ -21,7 +23,8 @@ InsightOps Agent 解决的是“业务问题如何安全、可解释地落到真
 - POST `/api/query/stream` 实时发送节点、审批、结果、错误和完成事件。
 - Recharts 自动选择 bar、line、area、pie、scatter、number 或 table。
 - Dashboard、Datasets、Conversations、Query Logs、Approvals、Eval Center、Settings 均使用真实 API。
-- 66 个后端测试、12 个前端测试和 43 条 Eval case 覆盖核心安全与工作流。
+- 控制台提供持久化的中文/英文切换，导航、控件、状态、日期、数字和内置数据集示例问题均会同步本地化。
+- 66 个后端测试、13 个前端测试和 43 条 Eval case 覆盖核心安全与工作流。
 
 ## 架构
 
@@ -215,6 +218,10 @@ npm run dev
 
 打开 `http://localhost:5173`。Vite 会把 `/api` 和 `/health` 代理到 `http://localhost:8000`，浏览器请求默认使用相对 URL。
 
+如果后端使用其他端口，可在 `frontend/.env` 中设置 `VITE_API_TARGET`；示例见 `frontend/.env.example`。
+
+应用页头的 `中文 / EN` 分段控件用于切换语言。选择结果保存在 localStorage；首次访问会默认使用浏览器语言。
+
 ## Docker Compose
 
 默认 Mock provider，不需要 secrets：
@@ -338,7 +345,7 @@ curl -X POST http://localhost:8000/api/evals/run
 
 - 构建基于 FastAPI、React 和真实 LangGraph StateGraph 的企业数据分析 Agent，支持多表 Text-to-SQL、checkpoint 会话记忆和 POST-SSE 实时执行轨迹。
 - 使用 sqlglot AST 白名单、只读 SQLite、敏感列风险分类和 LangGraph interrupt/Command resume 实现确定性 SQL 安全与人机审批。
-- 设计 metadata/checkpoint/dataset 三层 SQLite 隔离、CSV 安全摄取、数据血缘与 43-case 行为评测，并通过 78 个自动化测试和 CI 验证。
+- 设计 metadata/checkpoint/dataset 三层 SQLite 隔离、CSV 安全摄取、数据血缘与 43-case 行为评测，并通过 79 个自动化测试和 CI 验证。
 
 ## 面试讲解建议
 

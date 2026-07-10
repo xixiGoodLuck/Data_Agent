@@ -18,6 +18,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { useI18n } from "../i18n";
 import type { ChartConfig } from "../types";
 import { DataTable } from "./DataTable";
 
@@ -31,11 +32,11 @@ export function isValidChartConfig(config: ChartConfig | null, columns: string[]
   return config.y_columns.length > 0 && config.y_columns.every((column) => columns.includes(column));
 }
 
-function formatValue(value: unknown, format: ChartConfig["value_format"]): string {
+function formatValue(value: unknown, format: ChartConfig["value_format"], locale: string): string {
   if (typeof value !== "number") return String(value ?? "");
-  if (format === "currency") return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
-  if (format === "percent") return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
-  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (format === "currency") return new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+  if (format === "percent") return `${value.toLocaleString(locale, { maximumFractionDigits: 2 })}%`;
+  return value.toLocaleString(locale, { maximumFractionDigits: 2 });
 }
 
 export function DynamicChart({
@@ -47,6 +48,7 @@ export function DynamicChart({
   columns: string[];
   rows: Record<string, unknown>[];
 }) {
+  const { locale } = useI18n();
   if (!rows.length || !isValidChartConfig(config, columns) || config?.type === "table") {
     return <DataTable columns={columns} rows={rows} />;
   }
@@ -56,7 +58,7 @@ export function DynamicChart({
     return (
       <div className="flex min-h-56 flex-col items-center justify-center border border-zinc-200 bg-zinc-50" style={{ borderRadius: 6 }}>
         <span className="text-sm font-medium text-zinc-500">{config.series_name ?? config.title}</span>
-        <strong className="mt-3 text-4xl font-bold text-ink">{formatValue(rows[0]?.[key], config.value_format)}</strong>
+        <strong className="mt-3 text-4xl font-bold text-ink">{formatValue(rows[0]?.[key], config.value_format, locale)}</strong>
       </div>
     );
   }
@@ -65,7 +67,7 @@ export function DynamicChart({
       <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" vertical={false} />
       <XAxis dataKey={config.x_column ?? undefined} tick={{ fontSize: 11, fill: "#71717a" }} tickLine={false} axisLine={{ stroke: "#d4d4d8" }} minTickGap={20} />
       <YAxis tick={{ fontSize: 11, fill: "#71717a" }} tickLine={false} axisLine={false} width={64} />
-      <Tooltip formatter={(value) => formatValue(value, config.value_format)} contentStyle={{ borderRadius: 6, borderColor: "#d4d4d8", fontSize: 12 }} />
+      <Tooltip formatter={(value) => formatValue(value, config.value_format, locale)} contentStyle={{ borderRadius: 6, borderColor: "#d4d4d8", fontSize: 12 }} />
       {config.y_columns.length > 1 ? <Legend /> : null}
     </>
   );
@@ -89,7 +91,7 @@ export function DynamicChart({
           </AreaChart>
         ) : config.type === "pie" ? (
           <PieChart>
-            <Tooltip formatter={(value) => formatValue(value, config.value_format)} />
+            <Tooltip formatter={(value) => formatValue(value, config.value_format, locale)} />
             <Legend />
             <Pie data={rows} dataKey={config.y_columns[0]} nameKey={config.x_column ?? undefined} innerRadius="42%" outerRadius="72%" paddingAngle={2}>
               {rows.map((_, index) => <Cell key={index} fill={colors[index % colors.length]} />)}
