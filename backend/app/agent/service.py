@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Iterator
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -11,6 +12,7 @@ from uuid import uuid4
 from langgraph.types import Command
 from sqlalchemy import select
 
+from app.agent.llm import LLMClientResolver, get_deepseek_client
 from app.agent.state import DataAnalysisState
 from app.core.config import Settings
 from app.core.db import MetadataDatabase
@@ -40,10 +42,12 @@ class QueryService:
         settings: Settings,
         metadata: MetadataDatabase,
         graph: Any,
+        llm_resolver: LLMClientResolver,
     ) -> None:
         self.settings = settings
         self.metadata = metadata
         self.graph = graph
+        self.llm_resolver = llm_resolver
 
     def prepare_query(
         self,
@@ -53,8 +57,10 @@ class QueryService:
         conversation_id: str | None = None,
         request_id: str | None = None,
         run_mode: Literal["interactive", "eval", "test"] = "interactive",
+        llm_provider: str | None = None,
     ) -> PreparedRun:
         request_id = request_id or str(uuid4())
+        resolved_provider = llm_provider or self.settings.llm_provider
         with self.metadata.session() as session:
             existing = session.scalar(select(QueryLog).where(QueryLog.request_id == request_id))
             if existing:
@@ -114,7 +120,7 @@ class QueryService:
                 run_mode=run_mode,
                 question=question,
                 status="processing",
-                llm_provider=self.settings.llm_provider,
+                llm_provider=resolved_provider,
             )
             session.add(query_log)
             session.flush()
@@ -152,7 +158,7 @@ class QueryService:
                 "requires_approval": False,
                 "repair_attempts": 0,
                 "used_fallback": False,
-                "llm_provider": self.settings.llm_provider,
+                "llm_provider": resolved_provider,
                 "query_log_id": query_log.id,
                 "run_id": run.id,
                 "status": "processing",
@@ -169,77 +175,95 @@ class QueryService:
             "recursion_limit": 50,
         }
 
-    def run_query(self, **kwargs: Any) -> dict[str, Any]:
-        prepared = self.prepare_query(**kwargs)
-        if prepared.cached_response is not None:
-            return prepared.cached_response
-        try:
-            result = self.graph.invoke(prepared.state, prepared.config)
-        except AppError as exc:
-            self._mark_failed(prepared.state, exc.error_type, exc.message)
-            raise
-        except Exception:
-            self._mark_failed(prepared.state)
-            raise
-        final = result.get("final_response") if isinstance(result, dict) else None
-        if final:
-            return final
-        return self.pending_response_for_config(prepared.config, prepared.state)
+    def _temporary_llm(self, request_id: str, deepseek_api_key: str | None):
+        if not deepseek_api_key:
+            return nullcontext()
+        client = get_deepseek_client(self.settings, deepseek_api_key)
+        return self.llm_resolver.temporary(request_id, client)
 
-    def stream_query(self, **kwargs: Any) -> Iterator[dict[str, Any]]:
-        prepared = self.prepare_query(**kwargs)
-        if prepared.cached_response is not None:
-            yield {"event": "result", "data": prepared.cached_response}
-            yield {"event": "done", "data": {}}
-            return
-        final_response: dict[str, Any] | None = None
-        try:
-            for chunk in self.graph.stream(
-                prepared.state,
-                prepared.config,
-                stream_mode=["custom", "updates"],
-            ):
-                if not isinstance(chunk, tuple) or len(chunk) != 2:
-                    continue
-                mode, data = chunk
-                if mode == "custom" and isinstance(data, dict) and data.get("kind") == "trace":
-                    event = data["event"]
-                    event_name = event.get("event_type", "node")
-                    if event_name not in {"run_started", "approval_required"}:
-                        event_name = "node"
-                    yield {"event": event_name, "id": event.get("id"), "data": event}
-                elif mode == "updates" and isinstance(data, dict):
-                    for update in data.values():
-                        if isinstance(update, dict) and update.get("final_response"):
-                            final_response = update["final_response"]
-            if final_response is None:
-                final_response = self.pending_response_for_config(prepared.config, prepared.state)
-            yield {"event": "result", "data": final_response}
-            yield {"event": "done", "data": {}}
-        except GeneratorExit:
-            self._mark_failed(
-                prepared.state,
-                "internal_error",
-                "The client disconnected before the stream completed.",
-            )
-            return
-        except AppError as exc:
-            self._mark_failed(prepared.state, exc.error_type, exc.message)
-            yield {
-                "event": "error",
-                "data": {"type": exc.error_type, "message": exc.message},
-            }
-            yield {"event": "done", "data": {}}
-        except Exception:
-            self._mark_failed(prepared.state)
-            yield {
-                "event": "error",
-                "data": {
-                    "type": "internal_error",
-                    "message": "The analysis stream ended unexpectedly.",
-                },
-            }
-            yield {"event": "done", "data": {}}
+    def run_query(self, *, deepseek_api_key: str | None = None, **kwargs: Any) -> dict[str, Any]:
+        request_id = kwargs.get("request_id") or str(uuid4())
+        kwargs["request_id"] = request_id
+        provider = "deepseek" if deepseek_api_key else self.settings.llm_provider
+        with self._temporary_llm(request_id, deepseek_api_key):
+            prepared = self.prepare_query(**kwargs, llm_provider=provider)
+            if prepared.cached_response is not None:
+                return prepared.cached_response
+            try:
+                result = self.graph.invoke(prepared.state, prepared.config)
+            except AppError as exc:
+                self._mark_failed(prepared.state, exc.error_type, exc.message)
+                raise
+            except Exception:
+                self._mark_failed(prepared.state)
+                raise
+            final = result.get("final_response") if isinstance(result, dict) else None
+            if final:
+                return final
+            return self.pending_response_for_config(prepared.config, prepared.state)
+
+    def stream_query(
+        self, *, deepseek_api_key: str | None = None, **kwargs: Any
+    ) -> Iterator[dict[str, Any]]:
+        request_id = kwargs.get("request_id") or str(uuid4())
+        kwargs["request_id"] = request_id
+        provider = "deepseek" if deepseek_api_key else self.settings.llm_provider
+        with self._temporary_llm(request_id, deepseek_api_key):
+            prepared = self.prepare_query(**kwargs, llm_provider=provider)
+            if prepared.cached_response is not None:
+                yield {"event": "result", "data": prepared.cached_response}
+                yield {"event": "done", "data": {}}
+                return
+            final_response: dict[str, Any] | None = None
+            try:
+                for chunk in self.graph.stream(
+                    prepared.state,
+                    prepared.config,
+                    stream_mode=["custom", "updates"],
+                ):
+                    if not isinstance(chunk, tuple) or len(chunk) != 2:
+                        continue
+                    mode, data = chunk
+                    if mode == "custom" and isinstance(data, dict) and data.get("kind") == "trace":
+                        event = data["event"]
+                        event_name = event.get("event_type", "node")
+                        if event_name not in {"run_started", "approval_required"}:
+                            event_name = "node"
+                        yield {"event": event_name, "id": event.get("id"), "data": event}
+                    elif mode == "updates" and isinstance(data, dict):
+                        for update in data.values():
+                            if isinstance(update, dict) and update.get("final_response"):
+                                final_response = update["final_response"]
+                if final_response is None:
+                    final_response = self.pending_response_for_config(
+                        prepared.config, prepared.state
+                    )
+                yield {"event": "result", "data": final_response}
+                yield {"event": "done", "data": {}}
+            except GeneratorExit:
+                self._mark_failed(
+                    prepared.state,
+                    "internal_error",
+                    "The client disconnected before the stream completed.",
+                )
+                return
+            except AppError as exc:
+                self._mark_failed(prepared.state, exc.error_type, exc.message)
+                yield {
+                    "event": "error",
+                    "data": {"type": exc.error_type, "message": exc.message},
+                }
+                yield {"event": "done", "data": {}}
+            except Exception:
+                self._mark_failed(prepared.state)
+                yield {
+                    "event": "error",
+                    "data": {
+                        "type": "internal_error",
+                        "message": "The analysis stream ended unexpectedly.",
+                    },
+                }
+                yield {"event": "done", "data": {}}
 
     def pending_response_for_config(
         self, config: dict[str, Any], initial_state: DataAnalysisState | None = None
@@ -324,7 +348,12 @@ class QueryService:
         ]
 
     def resume_approval(
-        self, approval_id: str, *, approved: bool, note: str | None = None
+        self,
+        approval_id: str,
+        *,
+        approved: bool,
+        note: str | None = None,
+        deepseek_api_key: str | None = None,
     ) -> dict[str, Any]:
         with self.metadata.session() as session:
             approval = session.get(ApprovalRequest, approval_id)
@@ -345,6 +374,13 @@ class QueryService:
                 )
             if query_log.result_json:
                 return json.loads(query_log.result_json)
+            uses_deepseek = query_log.llm_provider == "deepseek"
+            if approved and uses_deepseek and not deepseek_api_key:
+                raise AppError(
+                    "llm_auth_error",
+                    "Re-enter the temporary DeepSeek API key to approve this query.",
+                    status_code=401,
+                )
             approval.status = "approved" if approved else "rejected"
             approval.decision_note = note
             approval.decided_at = datetime.now(UTC)
@@ -352,7 +388,9 @@ class QueryService:
             thread_id = approval.thread_id
             request_id = query_log.request_id
         config = self._config(thread_id, request_id)
-        result = self.graph.invoke(Command(resume={"approved": approved, "note": note}), config)
+        temporary_key = deepseek_api_key if uses_deepseek else None
+        with self._temporary_llm(request_id, temporary_key):
+            result = self.graph.invoke(Command(resume={"approved": approved, "note": note}), config)
         final = result.get("final_response") if isinstance(result, dict) else None
         if final:
             return final

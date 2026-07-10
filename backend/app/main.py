@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from app.agent.checkpoint import CheckpointManager
 from app.agent.graph import build_analysis_graph
-from app.agent.llm import get_llm_client
+from app.agent.llm import LLMClientResolver, get_llm_client
 from app.agent.nodes import AnalysisNodes
 from app.agent.service import QueryService
 from app.api import approvals, conversations, datasets, evals, health, logs, query, settings, stats
@@ -35,16 +35,19 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
             seed_builtin_datasets(session, settings_value)
         checkpoint = CheckpointManager(settings_value.checkpoint_db_path)
         llm = get_llm_client(settings_value)
-        nodes = AnalysisNodes(settings=settings_value, metadata=metadata, llm=llm)
+        llm_resolver = LLMClientResolver(llm)
+        nodes = AnalysisNodes(settings=settings_value, metadata=metadata, llm=llm_resolver)
         graph = build_analysis_graph(nodes, checkpoint.saver)
         query_service = QueryService(
             settings=settings_value,
             metadata=metadata,
             graph=graph,
+            llm_resolver=llm_resolver,
         )
         app.state.metadata = metadata
         app.state.checkpoint = checkpoint
         app.state.graph = graph
+        app.state.llm_resolver = llm_resolver
         app.state.query_service = query_service
         try:
             yield
@@ -63,7 +66,12 @@ def create_app(settings_override: Settings | None = None) -> FastAPI:
         allow_origins=settings_value.allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "X-Request-ID",
+            "X-DeepSeek-API-Key",
+        ],
     )
 
     @app.exception_handler(AppError)

@@ -12,6 +12,7 @@ import type {
   StatsOverview,
   TraceEvent,
 } from "../types";
+import { deepseekRequestHeaders } from "../temporaryCredentials";
 
 export class ApiError extends Error {
   constructor(
@@ -85,9 +86,10 @@ export const api = {
     request<{ status: string }>(`/api/conversations/${id}`, { method: "DELETE" }),
   approvals: (status?: string) =>
     request<ApprovalRequest[]>(`/api/approvals${status ? `?status=${encodeURIComponent(status)}` : ""}`),
-  decideApproval: (id: string, approved: boolean, note?: string) =>
+  decideApproval: (id: string, approved: boolean, note?: string, deepseekApiKey = "") =>
     request<QueryResponse>(`/api/approvals/${id}/${approved ? "approve" : "reject"}`, {
       method: "POST",
+      headers: deepseekRequestHeaders(deepseekApiKey),
       body: JSON.stringify({ note: note || null }),
     }),
   logs: (params: URLSearchParams) => request<PaginatedLogs>(`/api/logs?${params.toString()}`),

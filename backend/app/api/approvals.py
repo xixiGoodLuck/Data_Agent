@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.agent.service import QueryService
 from app.api.dependencies import get_metadata, get_query_service
+from app.api.temporary_credentials import get_temporary_deepseek_key
 from app.core.db import MetadataDatabase
 from app.core.errors import AppError
 from app.models import ApprovalRequest, QueryLog
@@ -70,8 +71,14 @@ def approve(
     approval_id: str,
     payload: ApprovalDecision,
     service: QueryService = Depends(get_query_service),
+    deepseek_api_key: str | None = Depends(get_temporary_deepseek_key),
 ) -> dict:
-    return service.resume_approval(approval_id, approved=True, note=payload.note)
+    return service.resume_approval(
+        approval_id,
+        approved=True,
+        note=payload.note,
+        deepseek_api_key=deepseek_api_key,
+    )
 
 
 @router.post("/{approval_id}/reject", response_model=QueryResponse)
@@ -79,5 +86,11 @@ def reject(
     approval_id: str,
     payload: ApprovalDecision,
     service: QueryService = Depends(get_query_service),
+    deepseek_api_key: str | None = Depends(get_temporary_deepseek_key),
 ) -> dict:
-    return service.resume_approval(approval_id, approved=False, note=payload.note)
+    return service.resume_approval(
+        approval_id,
+        approved=False,
+        note=payload.note,
+        deepseek_api_key=deepseek_api_key,
+    )

@@ -10,7 +10,7 @@ from langgraph.types import interrupt
 from sqlalchemy import select
 
 from app.agent.events import EventRecorder
-from app.agent.llm import BaseLLMClient
+from app.agent.llm import BaseLLMClient, LLMClientResolver
 from app.agent.routing import prompt_guard_reason
 from app.agent.state import DataAnalysisState
 from app.charts.planner import plan_chart
@@ -39,12 +39,15 @@ class AnalysisNodes:
         *,
         settings: Settings,
         metadata: MetadataDatabase,
-        llm: BaseLLMClient,
+        llm: LLMClientResolver,
     ) -> None:
         self.settings = settings
         self.metadata = metadata
         self.llm = llm
         self.events = EventRecorder(metadata)
+
+    def _llm_client(self, state: DataAnalysisState) -> BaseLLMClient:
+        return self.llm.for_request(state["request_id"])
 
     def _start(
         self,
@@ -227,10 +230,11 @@ class AnalysisNodes:
     def rewrite_question_node(self, state: DataAnalysisState) -> dict[str, Any]:
         node = "rewrite_question_node"
         started_at, started = self._start(state, node)
-        result = self.llm.rewrite_question(state["question"], state.get("conversation_history", []))
+        llm = self._llm_client(state)
+        result = llm.rewrite_question(state["question"], state.get("conversation_history", []))
         return {
             "rewritten_question": result.rewritten_question,
-            "used_fallback": state.get("used_fallback", False) or self.llm.last_used_fallback,
+            "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
             "events": self._complete(
                 state,
                 node,
@@ -243,6 +247,7 @@ class AnalysisNodes:
     def select_tables_node(self, state: DataAnalysisState) -> dict[str, Any]:
         node = "select_tables_node"
         started_at, started = self._start(state, node)
+        llm = self._llm_client(state)
         with self.metadata.session() as session:
             dataset = session.get(Dataset, state["dataset_id"])
             stored_schema = json.loads(dataset.schema_json) if dataset else {}
@@ -256,7 +261,7 @@ class AnalysisNodes:
             }
             for table in state.get("available_tables", [])
         }
-        result = self.llm.select_tables(
+        result = llm.select_tables(
             state["dataset_id"],
             state.get("rewritten_question") or state["question"],
             catalog,
@@ -270,7 +275,7 @@ class AnalysisNodes:
                 "selected_tables": [],
                 "status": "needs_clarification",
                 "clarification_question": clarification,
-                "used_fallback": state.get("used_fallback", False) or self.llm.last_used_fallback,
+                "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
                 "events": self._complete(
                     state,
                     node,
@@ -282,7 +287,7 @@ class AnalysisNodes:
             }
         return {
             "selected_tables": selected,
-            "used_fallback": state.get("used_fallback", False) or self.llm.last_used_fallback,
+            "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
             "events": self._complete(
                 state,
                 node,
@@ -329,7 +334,8 @@ class AnalysisNodes:
     def generate_sql_node(self, state: DataAnalysisState) -> dict[str, Any]:
         node = "generate_sql_node"
         started_at, started = self._start(state, node)
-        result = self.llm.generate_sql(
+        llm = self._llm_client(state)
+        result = llm.generate_sql(
             state["dataset_id"],
             state.get("rewritten_question") or state["question"],
             state["selected_tables"],
@@ -340,7 +346,7 @@ class AnalysisNodes:
             "generated_sql": result.sql,
             "sql_explanation": result.explanation,
             "selected_columns": result.selected_columns,
-            "used_fallback": state.get("used_fallback", False) or self.llm.last_used_fallback,
+            "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
             "events": self._complete(
                 state,
                 node,
@@ -552,7 +558,8 @@ class AnalysisNodes:
         node = "repair_sql_node"
         started_at, started = self._start(state, node)
         error = state.get("execution_error") or {}
-        result = self.llm.repair_sql(
+        llm = self._llm_client(state)
+        result = llm.repair_sql(
             state["dataset_id"],
             state.get("rewritten_question") or state["question"],
             state["normalized_sql"],
@@ -567,7 +574,7 @@ class AnalysisNodes:
             "execution_outcome": None,
             "execution_error": None,
             "status": "processing",
-            "used_fallback": state.get("used_fallback", False) or self.llm.last_used_fallback,
+            "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
             "events": self._complete(
                 state,
                 node,
@@ -597,7 +604,8 @@ class AnalysisNodes:
     def write_insight_node(self, state: DataAnalysisState) -> dict[str, Any]:
         node = "write_insight_node"
         started_at, started = self._start(state, node)
-        result = self.llm.write_insight(
+        llm = self._llm_client(state)
+        result = llm.write_insight(
             state["question"],
             state["normalized_sql"],
             state.get("columns", []),
@@ -605,7 +613,7 @@ class AnalysisNodes:
         )
         return {
             "insight": result.insight,
-            "used_fallback": state.get("used_fallback", False) or self.llm.last_used_fallback,
+            "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
             "events": self._complete(
                 state,
                 node,

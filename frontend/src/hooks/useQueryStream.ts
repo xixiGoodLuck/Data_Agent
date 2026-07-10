@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { parseQueryResponse } from "../api/client";
 import { consumeSseResponse } from "../api/sse";
 import { useI18n } from "../i18n";
+import { deepseekRequestHeaders, useTemporaryCredentials } from "../temporaryCredentials";
 import type { QueryRequest, QueryResponse, TraceEvent } from "../types";
 
 export function dedupeTrace(events: TraceEvent[]): TraceEvent[] {
@@ -17,6 +18,7 @@ export function dedupeTrace(events: TraceEvent[]): TraceEvent[] {
 
 export function useQueryStream() {
   const { t } = useI18n();
+  const { deepseekApiKey } = useTemporaryCredentials();
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [trace, setTrace] = useState<TraceEvent[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming" | "done" | "cancelled">("idle");
@@ -49,7 +51,10 @@ export function useQueryStream() {
       try {
         const response = await fetch("/api/query/stream", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...deepseekRequestHeaders(deepseekApiKey),
+          },
           body: JSON.stringify(payload),
           signal: abortController.signal,
         });
@@ -88,7 +93,7 @@ export function useQueryStream() {
         if (controller.current === abortController) controller.current = null;
       }
     },
-    [cancel, t],
+    [cancel, deepseekApiKey, t],
   );
 
   useEffect(() => cancel, [cancel]);

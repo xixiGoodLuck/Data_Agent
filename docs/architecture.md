@@ -4,7 +4,7 @@
 
 InsightOps Agent 分为浏览器、API/服务、Agent 编排、安全执行和存储五层。
 
-- React 只处理交互、SSE 增量状态和可视化，不生成 SQL，也不持有 API Key。
+- React 只处理交互、SSE 增量状态和可视化，不生成 SQL；可在根组件内存中短暂持有用户主动输入的 DeepSeek Key，但不写入任何浏览器存储。
 - FastAPI 路由负责 HTTP contract、输入验证和依赖获取；QueryService 负责运行生命周期。
 - LangChain adapter 负责 question rewrite、table selection、SQL generation/repair 和 insight structured output。
 - LangGraph 负责显式节点、条件边、checkpoint、interrupt 和 resume；节点只返回 partial state。
@@ -21,6 +21,8 @@ InsightOps Agent 分为浏览器、API/服务、Agent 编排、安全执行和�
 6. 风险查询创建唯一 ApprovalRequest，然后 `interrupt()`；HTTP 返回 pending response。
 7. approve/reject 更新同一 ApprovalRequest，并用 `Command(resume=...)` 恢复相同 namespace。
 8. persist/finalize 幂等更新 QueryLog、AgentRun、events 和 assistant message。
+
+临时 DeepSeek 请求使用独立 Header 传递 Key。QueryService 按 request ID 把临时客户端注册到 `LLMClientResolver`，节点只通过 request ID 解析客户端；Key 不进入 `DataAnalysisState` 或 checkpoint。运行结束后 context manager 无条件移除客户端。审批批准会重新要求当前页面内存中的 Key。
 
 ## Progressive schema disclosure
 

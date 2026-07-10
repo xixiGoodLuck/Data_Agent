@@ -12,10 +12,12 @@ import { ResultPanel } from "../components/ResultPanel";
 import { useConversation } from "../hooks/useConversation";
 import { useQueryStream } from "../hooks/useQueryStream";
 import { useI18n } from "../i18n";
+import { useTemporaryCredentials } from "../temporaryCredentials";
 import type { DatasetDetail, DatasetSummary } from "../types";
 
 export function QueryPage() {
   const { datasetText, t } = useI18n();
+  const { deepseekApiKey } = useTemporaryCredentials();
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [datasetId, setDatasetId] = useState("commerce");
   const [dataset, setDataset] = useState<DatasetDetail | null>(null);
@@ -67,7 +69,7 @@ export function QueryPage() {
     if (!id) return;
     setApprovalBusy(true);
     try {
-      const result = await api.decideApproval(id, approved, note);
+      const result = await api.decideApproval(id, approved, note, deepseekApiKey);
       stream.setResult(result);
       stream.setTrace((current) => {
         const seen = new Set<string>();

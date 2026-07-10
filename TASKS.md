@@ -90,7 +90,7 @@
 - [x] Build Query Logs with filters, core fields, SQL, and trace/lineage detail.
 - [x] Build Approvals with pending/history risk details, SQL, reasons, notes, approve, and reject.
 - [x] Build Eval Center with run action, loading/progress state, metrics, failures, expected/actual, latency, and category filtering.
-- [x] Build Settings with safe provider/model/limits and environment setup guidance; never store browser API keys.
+- [x] Build Settings with safe provider/model/limits, environment guidance, and a memory-only temporary DeepSeek Key that clears on page exit and is never persisted.
 - [x] Implement POST fetch-SSE parsing for partial UTF-8 chunks, abort/unmount/cancel, malformed data, final/approval states, and trace deduplication.
 - [x] Implement Recharts bar/line/area/pie/scatter, scalar number, responsive tooltips/formatting, and robust table fallback.
 - [x] Implement polished loading, empty, blocked, pending approval, success, and error states without hardcoded result data.

@@ -24,7 +24,8 @@ This is more than a script that translates text into SQL. The project includes a
 - Recharts selects bar, line, area, pie, scatter, number, or table views automatically.
 - Dashboard, Datasets, Conversations, Query Logs, Approvals, Eval Center, and Settings all use real APIs.
 - The console includes a persisted Chinese/English switch with localized navigation, controls, statuses, dates, numbers, and built-in dataset prompts.
-- 66 backend tests, 13 frontend tests, and 43 evaluation cases cover the core security and workflow behavior.
+- Settings provides a one-time DeepSeek API key: it exists only in page memory, the server releases the temporary client after each request, and refresh or page exit clears the key.
+- 69 backend tests, 17 frontend tests, and 43 evaluation cases cover the core security and workflow behavior.
 
 ## Architecture
 
@@ -314,7 +315,17 @@ Copy `backend/.env.example` and adjust it as needed.
 | `MAX_RESULT_ROWS` | `100` | Validation and execution row limit |
 | `CORS_ORIGINS` | local 5175 origins | Comma-separated allowed origins |
 
-The frontend has no API-key form and never stores a key in localStorage.
+## One-time DeepSeek API Key
+
+The Settings page accepts a DeepSeek API key for the current page only. When present, Ask Data requests temporarily use `deepseek-v4-flash` at `https://api.deepseek.com`; otherwise they continue using the backend's configured provider.
+
+- The key exists only in React root-component memory and is never written to localStorage, sessionStorage, cookies, or IndexedDB.
+- Each query sends it in the `X-DeepSeek-API-Key` header. It never enters the request body, LangGraph state, checkpoints, metadata, logs, or API responses.
+- The backend registers a request-ID-scoped client and removes it in `finally` after success, failure, interruption, or disconnect.
+- A DeepSeek query interrupted for human approval requires the still-in-memory key again when approved; rejection needs no key.
+- Refreshing, closing, or leaving the page clears the key. Remote deployments must use HTTPS to protect credentials in transit.
+
+The frontend holds only this explicitly entered DeepSeek key temporarily. `OPENAI_API_KEY` from environment configuration remains backend-only and is never returned by the API.
 
 ## Security Boundaries
 
@@ -323,6 +334,7 @@ The frontend has no API-key form and never stores a key in localStorage.
 - Sensitive metadata currently uses column-level rules. Real deployments should integrate a data catalog, purpose restrictions, and user authorization.
 - Approval grants one query execution and should not be treated as lasting access permission.
 - OpenAI-compatible mode sends the limited schema context and question to the configured provider. Sensitive samples are redacted, but deployers must still assess their data-processing agreement.
+- Temporary DeepSeek mode also sends the limited schema context and question to DeepSeek. The key is not persisted, but production deployments still require HTTPS and an assessment of third-party data-processing terms.
 
 ## Known Limitations
 
@@ -345,7 +357,7 @@ The frontend has no API-key form and never stores a key in localStorage.
 
 - Built an enterprise data analysis agent with FastAPI, React, and a real LangGraph StateGraph, supporting multi-table text-to-SQL, checkpointed conversation memory, and POST-SSE live execution traces.
 - Implemented deterministic SQL security and human approval with a sqlglot AST allowlist, read-only SQLite, sensitive-column risk classification, and LangGraph interrupt/Command resume.
-- Designed three-way SQLite isolation for metadata, checkpoints, and datasets, secure CSV ingestion, data lineage, and a 43-case behavioral evaluation suite, validated by 79 automated tests and CI.
+- Designed three-way SQLite isolation for metadata, checkpoints, and datasets, secure CSV ingestion, data lineage, and a 43-case behavioral evaluation suite, validated by 86 automated tests and CI.
 
 ## Interview Walkthrough
 

@@ -24,7 +24,8 @@ InsightOps Agent 解决的是“业务问题如何安全、可解释地落到真
 - Recharts 自动选择 bar、line、area、pie、scatter、number 或 table。
 - Dashboard、Datasets、Conversations、Query Logs、Approvals、Eval Center、Settings 均使用真实 API。
 - 控制台提供持久化的中文/英文切换，导航、控件、状态、日期、数字和内置数据集示例问题均会同步本地化。
-- 66 个后端测试、13 个前端测试和 43 条 Eval case 覆盖核心安全与工作流。
+- Settings 提供一次性 DeepSeek API Key：仅保存在当前页面内存中，查询结束后服务端立即释放临时客户端，刷新或关闭页面后密钥消失。
+- 69 个后端测试、17 个前端测试和 43 条 Eval case 覆盖核心安全与工作流。
 
 ## 架构
 
@@ -314,7 +315,17 @@ curl -X POST http://localhost:8002/api/evals/run
 | `MAX_RESULT_ROWS` | `100` | 验证和执行的行上限 |
 | `CORS_ORIGINS` | local 5175 origins | 逗号分隔允许来源 |
 
-前端不提供 API Key 表单，也不把 Key 写入 localStorage。
+## 一次性 DeepSeek API Key
+
+Settings 页面可输入当前页面专用的 DeepSeek API Key。设置后，Ask Data 请求会临时使用 `deepseek-v4-flash` 和 `https://api.deepseek.com`；未设置时仍使用后端配置的默认 provider。
+
+- Key 只存在于 React 根组件内存，不写入 localStorage、sessionStorage、Cookie 或 IndexedDB。
+- 每次查询通过 `X-DeepSeek-API-Key` 请求头发送；不进入请求 body、LangGraph state、checkpoint、metadata、日志或 API 响应。
+- 后端按 request ID 注册临时客户端，并在成功、失败、中断或断开连接后的 `finally` 阶段移除。
+- DeepSeek 查询进入人工审批后，批准时必须再次提供仍在当前页面内存中的 Key；拒绝不需要 Key。
+- 刷新、关闭或离开页面会清空 Key。远程部署必须使用 HTTPS，避免传输中的凭据泄露。
+
+前端只短暂持有这一个用户主动输入的 DeepSeek Key；环境变量中的 `OPENAI_API_KEY` 仍只存在于后端进程，不会由 API 返回。
 
 ## 安全限制
 
@@ -323,6 +334,7 @@ curl -X POST http://localhost:8002/api/evals/run
 - 当前敏感元数据是列级规则；真实业务应接入数据目录、用途限制和用户身份授权。
 - 审批表示一次查询授权，不应被视为长期数据访问许可。
 - OpenAI-compatible 模式会把受限 schema context 和问题发送给配置的 provider；敏感 sample 已脱敏，但部署者仍需评估数据处理协议。
+- 临时 DeepSeek 模式同样会把受限 schema context 和问题发送给 DeepSeek；Key 虽不持久化，生产部署仍必须使用 HTTPS 并评估第三方数据处理条款。
 
 ## 已知限制
 
@@ -345,7 +357,7 @@ curl -X POST http://localhost:8002/api/evals/run
 
 - 构建基于 FastAPI、React 和真实 LangGraph StateGraph 的企业数据分析 Agent，支持多表 Text-to-SQL、checkpoint 会话记忆和 POST-SSE 实时执行轨迹。
 - 使用 sqlglot AST 白名单、只读 SQLite、敏感列风险分类和 LangGraph interrupt/Command resume 实现确定性 SQL 安全与人机审批。
-- 设计 metadata/checkpoint/dataset 三层 SQLite 隔离、CSV 安全摄取、数据血缘与 43-case 行为评测，并通过 79 个自动化测试和 CI 验证。
+- 设计 metadata/checkpoint/dataset 三层 SQLite 隔离、CSV 安全摄取、数据血缘与 43-case 行为评测，并通过 86 个自动化测试和 CI 验证。
 
 ## 面试讲解建议
 

@@ -4,6 +4,8 @@ import json
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from contextlib import contextmanager
+from threading import RLock
 from typing import Any, TypeVar
 
 from langchain_openai import ChatOpenAI
@@ -599,22 +601,33 @@ StructuredT = TypeVar("StructuredT", bound=BaseModel)
 class OpenAICompatibleLLMClient(BaseLLMClient):
     provider_name = "openai_compatible"
 
-    def __init__(self, settings: Settings) -> None:
-        if not settings.openai_api_key:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
+        provider_name: str = "openai_compatible",
+    ) -> None:
+        resolved_key = api_key if api_key is not None else settings.openai_api_key
+        if not resolved_key:
             raise AppError(
                 "llm_auth_error",
                 "OPENAI_API_KEY is required for the real provider.",
                 status_code=503,
             )
+        self.provider_name = provider_name
         kwargs: dict[str, Any] = {
-            "api_key": settings.openai_api_key,
-            "model": settings.openai_model,
+            "api_key": resolved_key,
+            "model": model or settings.openai_model,
             "temperature": 0,
             "timeout": settings.llm_timeout_seconds,
             "max_retries": settings.llm_max_retries,
         }
-        if settings.openai_base_url:
-            kwargs["base_url"] = settings.openai_base_url
+        resolved_base_url = base_url if base_url is not None else settings.openai_base_url
+        if resolved_base_url:
+            kwargs["base_url"] = resolved_base_url
         self.model = ChatOpenAI(**kwargs)
         self.fallback = MockLLMClient()
         self.last_used_fallback = False
@@ -749,3 +762,52 @@ def get_llm_client(settings: Settings) -> BaseLLMClient:
     if settings.llm_provider == "mock":
         return MockLLMClient()
     return OpenAICompatibleLLMClient(settings)
+
+
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEEPSEEK_MODEL = "deepseek-v4-flash"
+
+
+def get_deepseek_client(settings: Settings, api_key: str) -> BaseLLMClient:
+    return OpenAICompatibleLLMClient(
+        settings,
+        api_key=api_key,
+        base_url=DEEPSEEK_BASE_URL,
+        model=DEEPSEEK_MODEL,
+        provider_name="deepseek",
+    )
+
+
+class LLMClientResolver:
+    """Resolve an ephemeral model client without putting credentials in graph state."""
+
+    def __init__(self, default_client: BaseLLMClient) -> None:
+        self.default_client = default_client
+        self._temporary_clients: dict[str, BaseLLMClient] = {}
+        self._lock = RLock()
+
+    def for_request(self, request_id: str) -> BaseLLMClient:
+        with self._lock:
+            return self._temporary_clients.get(request_id, self.default_client)
+
+    @contextmanager
+    def temporary(self, request_id: str, client: BaseLLMClient):
+        with self._lock:
+            if request_id in self._temporary_clients:
+                raise AppError(
+                    "internal_error",
+                    "A temporary model client is already active for this request.",
+                    status_code=409,
+                )
+            self._temporary_clients[request_id] = client
+        try:
+            yield
+        finally:
+            with self._lock:
+                if self._temporary_clients.get(request_id) is client:
+                    self._temporary_clients.pop(request_id, None)
+
+    @property
+    def temporary_count(self) -> int:
+        with self._lock:
+            return len(self._temporary_clients)

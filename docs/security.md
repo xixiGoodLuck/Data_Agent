@@ -51,6 +51,9 @@ Approval 是应用层 human-in-the-loop，不是用户认证。当前实现适�
 
 - `.env`、runtime、database、upload、node_modules 和 build output 均 gitignored。
 - `/api/settings/public` 只返回 provider 名、非敏感 model 名和限制。
+- 一次性 DeepSeek Key 只通过 `X-DeepSeek-API-Key` Header 进入单次请求内存；不写 body、graph state、checkpoint、metadata、AgentEvent、QueryLog 或响应。
+- 前端不使用 localStorage、sessionStorage、Cookie 或 IndexedDB 保存 Key，并在 `pagehide`/刷新/关闭时清空内存状态。
+- 临时客户端按 request ID 隔离，并在 graph 成功、失败、中断或客户端断开后的 `finally` 中移除。
 - AgentEvent summary 截断到 500 字符，节点不写 rows 或 schema sensitive sample。
 - 全局异常 handler 记录 server-side stack，但客户端只收到 `internal_error`。
 
@@ -60,3 +63,4 @@ Approval 是应用层 human-in-the-loop，不是用户认证。当前实现适�
 - 复杂只读查询可能消耗资源；已有 AST node cap、LIMIT 和 progress timeout，但生产仍需资源配额。
 - 结构化 LLM fallback 可能降低语义准确率；任何 fallback SQL 仍经过完整 validator/risk。
 - 上传数据本身可能包含敏感值；当前自动敏感识别只覆盖内置 metadata，生产应接入分类器或人工登记。
+- 远程 HTTP 部署无法保护临时 Key 的传输；任何非 localhost 环境都必须终止 HTTPS，并评估 DeepSeek 的数据处理与保留条款。
