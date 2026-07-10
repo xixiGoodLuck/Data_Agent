@@ -195,7 +195,7 @@ Windows PowerShell:
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
 ```
 
 macOS/Linux:
@@ -203,10 +203,10 @@ macOS/Linux:
 ```bash
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
 ```
 
-Health: `http://localhost:8000/health`. API docs: `http://localhost:8000/docs`.
+Health: `http://localhost:8002/health`. API docs: `http://localhost:8002/docs`.
 
 ## Run the Frontend Locally
 
@@ -216,7 +216,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`. Vite proxies `/api` and `/health` to `http://localhost:8000`; browser requests use relative URLs by default.
+Open `http://localhost:5175`. Vite proxies `/api` and `/health` to `http://localhost:8002`; browser requests use relative URLs by default.
 
 If the backend uses another port, set `VITE_API_TARGET` in `frontend/.env`; see `frontend/.env.example`.
 
@@ -232,8 +232,8 @@ docker compose build
 docker compose up -d
 ```
 
-- API: `http://localhost:8000`
-- Web: `http://localhost:5173`
+- API: `http://localhost:8002`
+- Web: `http://localhost:5175`
 
 Stop services with:
 
@@ -265,7 +265,7 @@ CI runs the same backend and frontend checks on pushes and pull requests, follow
 Create a regular query:
 
 ```bash
-curl -X POST http://localhost:8000/api/query \
+curl -X POST http://localhost:8002/api/query \
   -H "Content-Type: application/json" \
   -d '{"dataset_id":"commerce","question":"Which five products generated the most revenue?"}'
 ```
@@ -273,7 +273,7 @@ curl -X POST http://localhost:8000/api/query \
 Create a streaming query:
 
 ```bash
-curl -N -X POST http://localhost:8000/api/query/stream \
+curl -N -X POST http://localhost:8002/api/query/stream \
   -H "Content-Type: application/json" \
   -d '{"dataset_id":"sales","question":"Show monthly revenue trend."}'
 ```
@@ -281,7 +281,7 @@ curl -N -X POST http://localhost:8000/api/query/stream \
 Run an evaluation:
 
 ```bash
-curl -X POST http://localhost:8000/api/evals/run
+curl -X POST http://localhost:8002/api/evals/run
 ```
 
 Primary endpoints:
@@ -312,7 +312,7 @@ Copy `backend/.env.example` and adjust it as needed.
 | `RUNTIME_DIR` | repo `runtime/` | Root for metadata, checkpoints, and datasets |
 | `QUERY_TIMEOUT_SECONDS` | `2` | Target SQLite execution budget |
 | `MAX_RESULT_ROWS` | `100` | Validation and execution row limit |
-| `CORS_ORIGINS` | local 5173 origins | Comma-separated allowed origins |
+| `CORS_ORIGINS` | local 5175 origins | Comma-separated allowed origins |
 
 The frontend has no API-key form and never stores a key in localStorage.
 

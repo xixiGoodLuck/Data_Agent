@@ -6,10 +6,10 @@ services:
     environment:
       LLM_PROVIDER: mock
       RUNTIME_DIR: /app/runtime
-      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      CORS_ORIGINS: http://localhost:5175,http://127.0.0.1:5175
       LOG_LEVEL: INFO
     ports:
-      - "8000:8000"
+      - "8002:8002"
     volumes:
       - insightops_runtime:/app/runtime
     healthcheck:
@@ -17,7 +17,7 @@ services:
         - CMD
         - python
         - -c
-        - "import json,urllib.request; data=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)); raise SystemExit(0 if data.get('status') == 'ok' else 1)"
+        - "import json,urllib.request; data=json.load(urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=3)); raise SystemExit(0 if data.get('status') == 'ok' else 1)"
       interval: 10s
       timeout: 5s
       retries: 6
@@ -32,7 +32,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "5173:80"
+      - "5175:80"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
       interval: 10s

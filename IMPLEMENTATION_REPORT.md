@@ -31,7 +31,7 @@
 | `python -m pip install -e ".[dev]"` | PASS，editable package 安装成功 |
 | `python -m ruff check .` | PASS，`All checks passed!` |
 | `python -m ruff format --check .` | PASS，70 files formatted |
-| `python -m pytest -q` | PASS，双语更新后最终复验 66 passed in 30.75s |
+| `python -m pytest -q` | PASS，端口更新后最终复验 66 passed in 33.21s |
 
 Pytest 仍显示一条第三方 warning：LangGraph checkpoint 在 import 时提示未来会调整 `allowed_objects` 默认值。当前 `JsonPlusSerializer` 版本的构造函数尚未暴露该参数，功能与测试不受影响。
 
@@ -57,12 +57,12 @@ Vite build 提示主 JS chunk 约 709 kB（gzip 约 199 kB），属于性能 adv
 | `docker compose build` | 未运行：Docker runtime 不可用 |
 | `docker compose up -d` / endpoint smoke / `down` | 未运行：Docker runtime 不可用 |
 
-静态验证确认：backend/frontend build context、8000/5173 ports、named runtime volume、backend health dependency、两侧 healthcheck、Nginx SPA fallback、`/api/` 与 `/health` proxy 均存在且结构一致。
+静态验证确认：backend/frontend build context、8002/5175 ports、named runtime volume、backend health dependency、两侧 healthcheck、Nginx SPA fallback、`/api/` 与 `/health` proxy 均存在且结构一致。
 
 ### 浏览器验证
 
-- 初次全流程 QA 使用 `8000/5173`；双语更新复验时这两个端口已被另一个本地项目占用，因此使用 `VITE_API_TARGET=http://127.0.0.1:8001` 在 `8001/5175` 隔离运行。
-- `http://127.0.0.1:8001/api/health`：HTTP 200 / status ok；`http://127.0.0.1:5175`：HTTP 200。
+- 端口配置更新后使用默认 `8002/5175` 完成隔离运行，不占用本机其他服务端口。
+- `http://127.0.0.1:8002/api/health`：HTTP 200 / status ok；`http://127.0.0.1:5175`：HTTP 200。
 - Desktop 1280×720：Dashboard 导航、指标和 panel layout 正常。
 - 中文 Dashboard、数据集名称、状态、日期、数据问答标题、四个中文推荐问题和 Schema 面板均正确；切换 EN 后导航、状态、日期和内置数据集内容同步恢复英文。
 - 语言选择写入 localStorage，`html lang` 在 `zh-CN` / `en` 间同步切换；当前项目页面无 console error。
@@ -71,7 +71,7 @@ Vite build 提示主 JS chunk 约 709 kB（gzip 约 199 kB），属于性能 adv
 - Mobile 390×844：导航 drawer 正常，无 document horizontal overflow，无检测到的 text overflow。
 - `/datasets`、`/conversations`、`/logs`、`/approvals`、`/evals`、`/settings` 路由均加载，无 internal error 或 horizontal overflow。
 
-以上服务均在浏览器 QA 时实际运行。双语更新后的 `8001/5175` 验收服务已留在后台，便于继续检查；本地默认启动仍为 `8000/5173`，可通过 `frontend/.env` 的 `VITE_API_TARGET` 调整开发代理目标。
+以上服务均在浏览器 QA 时实际运行。本地默认端口为后端 `8002`、前端 `5175`，仍可通过 `frontend/.env` 的 `VITE_API_TARGET` 调整开发代理目标。
 
 ## 中间失败与修复
 
@@ -84,7 +84,7 @@ Vite build 提示主 JS chunk 约 709 kB（gzip 约 199 kB），属于性能 adv
 - 双语更新新增语言切换测试后，最终 frontend suite 为 6 files / 13 tests 全部通过。
 - 浏览器 QA 前的首个 detached launch 因 Windows 环境中同时存在 `Path`/`PATH` 而失败；清理子进程环境中的重复键后启动成功。
 - 最终 `npm ci` 首次被仍运行的 Vite/esbuild/Rollup binary lock 拒绝；仅终止本 workspace 的两个 Node child 后，clean install 成功。
-- 双语更新浏览器复验发现默认端口已被另一个本地项目占用；Vite 开发代理改为支持 `VITE_API_TARGET`，随后在 8001/5175 完成隔离验收，未终止或修改其他项目进程。
+- 默认端口调整为 8002/5175，避开本机其他服务端口；Vite 开发代理继续支持 `VITE_API_TARGET` 覆盖。
 - Docker command 不存在，因此 Docker build/runtime 不能在本机验证；静态验证通过，CI 会在 Ubuntu Docker runner 上执行 config 和 build。
 
 ## 实际依赖版本

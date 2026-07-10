@@ -195,7 +195,7 @@ Windows PowerShell：
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
 ```
 
 macOS/Linux：
@@ -203,10 +203,10 @@ macOS/Linux：
 ```bash
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
 ```
 
-检查：`http://localhost:8000/health`，API 文档：`http://localhost:8000/docs`。
+检查：`http://localhost:8002/health`，API 文档：`http://localhost:8002/docs`。
 
 ## 本地启动前端
 
@@ -216,7 +216,7 @@ npm ci
 npm run dev
 ```
 
-打开 `http://localhost:5173`。Vite 会把 `/api` 和 `/health` 代理到 `http://localhost:8000`，浏览器请求默认使用相对 URL。
+打开 `http://localhost:5175`。Vite 会把 `/api` 和 `/health` 代理到 `http://localhost:8002`，浏览器请求默认使用相对 URL。
 
 如果后端使用其他端口，可在 `frontend/.env` 中设置 `VITE_API_TARGET`；示例见 `frontend/.env.example`。
 
@@ -232,8 +232,8 @@ docker compose build
 docker compose up -d
 ```
 
-- API：`http://localhost:8000`
-- Web：`http://localhost:5173`
+- API：`http://localhost:8002`
+- Web：`http://localhost:5175`
 
 停止服务：
 
@@ -265,7 +265,7 @@ CI 在 push 和 pull request 上运行相同后端、前端检查，并执行 Co
 创建普通查询：
 
 ```bash
-curl -X POST http://localhost:8000/api/query \
+curl -X POST http://localhost:8002/api/query \
   -H "Content-Type: application/json" \
   -d '{"dataset_id":"commerce","question":"Which five products generated the most revenue?"}'
 ```
@@ -273,7 +273,7 @@ curl -X POST http://localhost:8000/api/query \
 创建流式查询：
 
 ```bash
-curl -N -X POST http://localhost:8000/api/query/stream \
+curl -N -X POST http://localhost:8002/api/query/stream \
   -H "Content-Type: application/json" \
   -d '{"dataset_id":"sales","question":"Show monthly revenue trend."}'
 ```
@@ -281,7 +281,7 @@ curl -N -X POST http://localhost:8000/api/query/stream \
 运行 Eval：
 
 ```bash
-curl -X POST http://localhost:8000/api/evals/run
+curl -X POST http://localhost:8002/api/evals/run
 ```
 
 主要端点：
@@ -312,7 +312,7 @@ curl -X POST http://localhost:8000/api/evals/run
 | `RUNTIME_DIR` | repo `runtime/` | metadata/checkpoint/dataset 根目录 |
 | `QUERY_TIMEOUT_SECONDS` | `2` | SQLite 执行时间目标 |
 | `MAX_RESULT_ROWS` | `100` | 验证和执行的行上限 |
-| `CORS_ORIGINS` | local 5173 origins | 逗号分隔允许来源 |
+| `CORS_ORIGINS` | local 5175 origins | 逗号分隔允许来源 |
 
 前端不提供 API Key 表单，也不把 Key 写入 localStorage。
 

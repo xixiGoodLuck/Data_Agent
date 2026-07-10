@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     max_upload_rows: int = Field(default=100_000, ge=1)
     max_upload_columns: int = Field(default=100, ge=1)
     max_history_messages: int = Field(default=12, ge=1, le=50)
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "http://localhost:5175,http://127.0.0.1:5175"
 
     @computed_field
     @property

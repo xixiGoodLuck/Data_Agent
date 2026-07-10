@@ -120,7 +120,7 @@
 
 - [x] Add production backend image and frontend Node-build/Nginx-runtime image.
 - [x] Configure Nginx SPA fallback plus `/api/` and `/health` backend proxies.
-- [x] Configure Compose ports 8000/5173, mock mode, persistent runtime volume, health checks, dependency health, and production-only mounts.
+- [x] Configure Compose ports 8002/5175, mock mode, persistent runtime volume, health checks, dependency health, and production-only mounts.
 - [x] Add Vite `/api` and `/health` development proxies.
 - [x] Add GitHub Actions backend, frontend, and Docker validation jobs using mock mode and no secrets.
 - [x] Add MIT License.
