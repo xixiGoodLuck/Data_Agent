@@ -198,8 +198,12 @@ def run_oracles(
             connection.close()
 
 
-def prepare_real_world_data(source_dir: Path, output_dir: Path) -> dict[str, Any]:
-    manifest = load_real_world_manifest()
+def prepare_real_world_data(
+    source_dir: Path,
+    output_dir: Path,
+    manifest_path: Path = REAL_WORLD_MANIFEST_PATH,
+) -> dict[str, Any]:
+    manifest = load_real_world_manifest(manifest_path)
     output_dir.mkdir(parents=True, exist_ok=True)
     prepared_paths = {
         item["id"]: output_dir / item["prepared_filename"] for item in manifest["datasets"]
@@ -277,8 +281,17 @@ def main() -> None:
         type=Path,
         default=Path("C:/tmp/insightops-real-eval"),
     )
+    parser.add_argument(
+        "--manifest-path",
+        type=Path,
+        default=REAL_WORLD_MANIFEST_PATH,
+    )
     args = parser.parse_args()
-    snapshot = prepare_real_world_data(args.source_dir, args.output_dir)
+    snapshot = prepare_real_world_data(
+        args.source_dir,
+        args.output_dir,
+        args.manifest_path,
+    )
     print(json.dumps(snapshot, ensure_ascii=False, indent=2))
 
 

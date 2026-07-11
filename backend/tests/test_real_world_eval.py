@@ -8,6 +8,7 @@ import pytest
 
 from app.evals.real_world import (
     CHINA_COLUMNS,
+    REAL_WORLD_MANIFEST_PATH,
     load_real_world_manifest,
     prepare_noaa_csv,
     prepare_world_bank_csv,
@@ -23,6 +24,21 @@ def test_real_world_manifest_has_four_datasets_and_twenty_five_cases() -> None:
     assert len(manifest["cases"]) == 25
     assert sum(case["expected_status"] == "blocked" for case in manifest["cases"]) == 4
     assert {case["language"] for case in manifest["cases"]} == {"en", "zh-CN"}
+
+
+def test_chinese_real_world_manifest_has_only_chinese_cases() -> None:
+    manifest = load_real_world_manifest(
+        REAL_WORLD_MANIFEST_PATH.with_name("real_world_manifest.zh-CN.json")
+    )
+
+    assert len(manifest["datasets"]) == 4
+    assert len(manifest["cases"]) == 25
+    assert sum(case["expected_status"] == "blocked" for case in manifest["cases"]) == 4
+    assert {case["language"] for case in manifest["cases"]} == {"zh-CN"}
+    assert all(
+        any("\u4e00" <= character <= "\u9fff" for character in case["question"])
+        for case in manifest["cases"]
+    )
 
 
 def test_prepare_noaa_csv_selects_and_renames_safe_columns(tmp_path: Path) -> None:

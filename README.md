@@ -25,7 +25,7 @@ InsightOps Agent 解决的是“业务问题如何安全、可解释地落到真
 - Dashboard、Datasets、Conversations、Query Logs、Approvals、Eval Center、Settings 均使用真实 API。
 - 控制台提供持久化的中文/英文切换，导航、控件、状态、日期、数字和内置数据集示例问题均会同步本地化。
 - Settings 提供一次性 DeepSeek API Key：仅保存在当前页面内存中，查询结束后服务端立即释放临时客户端，刷新或关闭页面后密钥消失。
-- 91 个后端测试、19 个前端测试、43 条内置 Eval case 和 25 条开放数据 case 覆盖核心安全与工作流。
+- 92 个后端测试、19 个前端测试、43 条内置 Eval case，以及 25 条中英混合与 25 条纯中文开放数据 case 覆盖核心安全与工作流。
 
 ## 架构
 
@@ -178,7 +178,7 @@ Eval 通过真实 QueryService 和 graph，以 `run_mode=eval` 执行，不比�
 
 每个 case 的 expected/actual、失败原因、SQL、表、chart 和 latency 都会持久化。Dashboard 默认只统计 `interactive`，不会被 Eval 或 test 污染。
 
-`POST /api/evals/run/stream` 提供逐 case SSE 进度与取消。Settings 中的一次性 DeepSeek Key 会传入全部 Eval case 和 follow-up setup；刷新、关闭或取消会停止后续调用并释放临时客户端。中外真实开放数据的 25-case 规范、独立 oracle、快照流程和最终指标见 [真实数据评测](docs/real-data-evaluation.md)，逐条结果见 [内置回归报告](docs/deepseek-builtin-evaluation-results.md) 与 [开放数据报告](docs/real-data-evaluation-results.md)。
+`POST /api/evals/run/stream` 提供逐 case SSE 进度与取消。Settings 中的一次性 DeepSeek Key 会传入全部 Eval case 和 follow-up setup；刷新、关闭或取消会停止后续调用并释放临时客户端。中外真实开放数据的规范、独立 oracle、快照流程和最终指标见 [真实数据评测](docs/real-data-evaluation.md)，逐条结果见 [内置回归报告](docs/deepseek-builtin-evaluation-results.md)、[中英混合开放数据报告](docs/real-data-evaluation-results.md) 与 [纯中文开放数据报告](docs/real-data-evaluation-results.zh-CN.md)。
 
 ## 技术栈
 

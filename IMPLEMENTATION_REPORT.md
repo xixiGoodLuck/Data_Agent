@@ -18,9 +18,9 @@
 - React 18 strict TypeScript 控制台及全部八个页面；Recharts 七种输出模式和 table fallback。
 - 持久化中英文切换、浏览器语言默认值、状态/日期/数字本地化，以及四个内置数据集的双语名称、说明和示例问题。
 - Settings 页面提供一次性 DeepSeek API Key：仅保存在当前 React 内存中，刷新或关闭页面即清除；后端按请求创建并销毁临时模型客户端，不写入日志、数据库、graph state 或 checkpoint。
-- 43 条真实 graph Eval case、25 条中外开放数据 case、91 个后端测试、19 个前端测试。
+- 43 条真实 graph Eval case、25 条中英混合及 25 条纯中文开放数据 case、92 个后端测试、19 个前端测试。
 - DeepSeek V4 Flash 非思考模式、2,048-token 上限、provider-compatible function calling、请求级密钥转发和逐 case SSE Eval。
-- USGS、NOAA、World Bank 与国家统计局独立 SQLite oracle、来源/哈希清单，以及两份逐条脱敏结果报告。
+- USGS、NOAA、World Bank 与国家统计局独立 SQLite oracle、来源/哈希清单，以及中英混合与纯中文逐条脱敏结果报告。
 - 生产 backend image、frontend Node/Nginx multi-stage image、Compose、health checks、CI 和中英文 README。
 
 ## 最终命令结果
@@ -34,7 +34,7 @@
 | `python -m pip install -e ".[dev]"` | PASS，editable package 安装成功 |
 | `python -m ruff check .` | PASS，`All checks passed!` |
 | `python -m ruff format --check .` | PASS，78 files already formatted |
-| `python -m pytest -q` | PASS，91 passed in 34.99s |
+| `python -m pytest -q` | PASS，92 passed in 32.22s |
 
 Pytest 仍显示一条第三方 warning：LangGraph checkpoint 在 import 时提示未来会调整 `allowed_objects` 默认值。当前 `JsonPlusSerializer` 版本的构造函数尚未暴露该参数，功能与测试不受影响。
 
@@ -76,6 +76,9 @@ Vite build 提示主 JS chunk 717.54 kB（gzip 201.18 kB），属于性能 advis
 - 真实内置 Eval 为 35/43；结果/选表/SQL 安全准确率均 100%，危险查询拦截率 100%，图表准确率 81.48%，fallback 0%。
 - 25 条开放数据为 16/25 全指标通过；结果准确率 80.95%，SQL 安全拦截率 100%，DeepSeek provider 100%，fallback 0%，图表准确率 66.67% 未达 80% 目标。
 - 国家统计局专项 6 条分析中 5 条结果与图表正确；中英混合出生率用例因数据无显式年份列而要求澄清，危险 DELETE 被安全层拦截。
+- 纯中文复测使用刷新后的 USGS 10,492 行快照；预检返回 533，与 oracle 一致，25 条用例均为 DeepSeek 且 fallback 0%。
+- 纯中文复测为 14/25 全指标通过，结果准确率 66.67%，图表准确率 71.43%，SQL 安全拦截率 100%；国家统计局 6 条分析均完成中文列解析，其中 5 条结果与 oracle 一致。
+- 复测结束后页面 Key 状态恢复“未设置”，四套真实 CSV 数据集按用户要求保留在本地运行时，数据集注册表共 8 项。
 - Mobile 390×844：导航 drawer 正常，无 document horizontal overflow，无检测到的 text overflow。
 - `/datasets`、`/conversations`、`/logs`、`/approvals`、`/evals`、`/settings` 路由均加载，无 internal error 或 horizontal overflow。
 
