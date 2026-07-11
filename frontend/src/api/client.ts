@@ -96,7 +96,17 @@ export const api = {
   log: (id: string) => request<QueryLog>(`/api/logs/${id}`),
   events: (id: string) => request<TraceEvent[]>(`/api/logs/${id}/events`),
   stats: () => request<StatsOverview>("/api/stats/overview"),
-  runEval: () => request<EvalRun>("/api/evals/run", { method: "POST" }),
+  runEval: (deepseekApiKey = "") =>
+    request<EvalRun>("/api/evals/run", {
+      method: "POST",
+      headers: deepseekRequestHeaders(deepseekApiKey),
+    }),
+  evalStream: (deepseekApiKey: string, signal?: AbortSignal) =>
+    fetch("/api/evals/run/stream", {
+      method: "POST",
+      headers: deepseekRequestHeaders(deepseekApiKey),
+      signal,
+    }),
   evals: () => request<EvalRun[]>("/api/evals"),
   latestEval: () => request<EvalRun>("/api/evals/latest"),
   settings: () => request<PublicSettings>("/api/settings/public"),

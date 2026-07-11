@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -9,6 +10,7 @@ from sqlalchemy import select
 
 from app.agent.service import QueryService
 from app.core.db import MetadataDatabase
+from app.core.errors import AppError
 from app.evals.metrics import assertion_passed, average, p95, rate
 from app.models import Conversation, EvalCaseResult, EvalRun
 from app.schemas.eval import EvalCaseDefinition
@@ -26,26 +28,157 @@ class EvalRunner:
         self.metadata = metadata
         self.query_service = query_service
 
-    def run(self) -> EvalRun:
+    def run(self, *, deepseek_api_key: str | None = None) -> EvalRun:
+        completed_run: EvalRun | None = None
+        for event in self.stream(deepseek_api_key=deepseek_api_key):
+            if event["event"] == "result":
+                completed_run = event["data"]
+        if completed_run is None:
+            raise AppError("internal_error", "The evaluation did not produce a result.")
+        return completed_run
+
+    def stream(self, *, deepseek_api_key: str | None = None) -> Iterator[dict[str, Any]]:
         cases = load_eval_cases()
         outcomes: list[dict[str, Any]] = []
-        for case in cases:
-            conversation_id = self._prepare_follow_up(case)
-            response = self.query_service.run_query(
-                dataset_id=case.dataset_id,
-                question=case.question,
-                conversation_id=conversation_id,
-                request_id=f"eval-{case.id}-{uuid4()}",
-                run_mode="eval",
-            )
-            outcome = self._evaluate(case, response)
-            outcomes.append(outcome)
-            if conversation_id:
-                with self.metadata.session() as session:
-                    conversation = session.get(Conversation, conversation_id)
-                    if conversation:
-                        session.delete(conversation)
+        total = len(cases)
+        for index, case in enumerate(cases, start=1):
+            yield {
+                "event": "progress",
+                "data": self._progress_data(index, total, case, "case_started"),
+            }
+            conversation_id = self._create_follow_up(case)
+            try:
+                if case.setup_question:
+                    yield from self._query_progress(
+                        dataset_id=case.dataset_id,
+                        question=case.setup_question,
+                        conversation_id=conversation_id,
+                        request_id=f"eval-setup-{case.id}-{uuid4()}",
+                        deepseek_api_key=deepseek_api_key,
+                        index=index,
+                        total=total,
+                        case=case,
+                        phase="setup",
+                    )
+                response = yield from self._query_progress(
+                    dataset_id=case.dataset_id,
+                    question=case.question,
+                    conversation_id=conversation_id,
+                    request_id=f"eval-{case.id}-{uuid4()}",
+                    deepseek_api_key=deepseek_api_key,
+                    index=index,
+                    total=total,
+                    case=case,
+                    phase="case",
+                )
+                outcome = self._evaluate(case, response)
+                outcomes.append(outcome)
+                yield {
+                    "event": "case_result",
+                    "data": {
+                        "current": index,
+                        "completed": index,
+                        "total": total,
+                        "case_id": case.id,
+                        "category": case.category,
+                        "phase": "case_completed",
+                        "node_name": None,
+                        "passed": outcome["passed"],
+                        "status": response.get("status", "failed"),
+                        "failure_reasons": outcome["failure_reasons"],
+                        "latency_ms": float(response.get("execution_time_ms", 0.0)),
+                    },
+                }
+            finally:
+                self._delete_follow_up(conversation_id)
 
+        yield {"event": "result", "data": self._persist(outcomes)}
+
+    @staticmethod
+    def _progress_data(
+        index: int,
+        total: int,
+        case: EvalCaseDefinition,
+        phase: str,
+        node_name: str | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "current": index,
+            "completed": index - 1,
+            "total": total,
+            "case_id": case.id,
+            "category": case.category,
+            "phase": phase,
+            "node_name": node_name,
+        }
+
+    def _query_progress(
+        self,
+        *,
+        dataset_id: str,
+        question: str,
+        conversation_id: str | None,
+        request_id: str,
+        deepseek_api_key: str | None,
+        index: int,
+        total: int,
+        case: EvalCaseDefinition,
+        phase: str,
+    ) -> Iterator[dict[str, Any]]:
+        response: dict[str, Any] | None = None
+        query_stream = self.query_service.stream_query(
+            dataset_id=dataset_id,
+            question=question,
+            conversation_id=conversation_id,
+            request_id=request_id,
+            run_mode="eval",
+            deepseek_api_key=deepseek_api_key,
+        )
+        try:
+            for item in query_stream:
+                event_name = item.get("event")
+                data = item.get("data")
+                if event_name == "result" and isinstance(data, dict):
+                    response = data
+                elif event_name == "error" and isinstance(data, dict):
+                    error_type = str(data.get("type") or "internal_error")
+                    message = str(data.get("message") or "The evaluation query failed.")
+                    raise AppError(
+                        error_type,
+                        message,
+                        status_code=self._error_status_code(error_type),
+                    )
+                elif event_name in {"run_started", "node", "approval_required"}:
+                    node_name = data.get("node_name") if isinstance(data, dict) else None
+                    yield {
+                        "event": "progress",
+                        "data": self._progress_data(
+                            index,
+                            total,
+                            case,
+                            f"{phase}_node",
+                            str(node_name) if node_name else None,
+                        ),
+                    }
+        finally:
+            query_stream.close()
+        if response is None:
+            raise AppError("internal_error", "The evaluation query returned no result.")
+        return response
+
+    @staticmethod
+    def _error_status_code(error_type: str) -> int:
+        return {
+            "llm_auth_error": 401,
+            "llm_balance_error": 402,
+            "llm_rate_limit": 429,
+            "llm_timeout": 504,
+            "llm_network_error": 503,
+            "llm_request_error": 502,
+            "llm_provider_error": 503,
+        }.get(error_type, 500)
+
+    def _persist(self, outcomes: list[dict[str, Any]]) -> EvalRun:
         latencies = [
             float(outcome["response"].get("execution_time_ms", 0.0)) for outcome in outcomes
         ]
@@ -138,7 +271,7 @@ class EvalRunner:
         with self.metadata.session() as session:
             return session.scalar(select(EvalRun).where(EvalRun.id == eval_run_id))
 
-    def _prepare_follow_up(self, case: EvalCaseDefinition) -> str | None:
+    def _create_follow_up(self, case: EvalCaseDefinition) -> str | None:
         if not case.setup_question:
             return None
         with self.metadata.session() as session:
@@ -148,15 +281,15 @@ class EvalRunner:
             )
             session.add(conversation)
             session.flush()
-            conversation_id = conversation.id
-        self.query_service.run_query(
-            dataset_id=case.dataset_id,
-            question=case.setup_question,
-            conversation_id=conversation_id,
-            request_id=f"eval-setup-{case.id}-{uuid4()}",
-            run_mode="eval",
-        )
-        return conversation_id
+            return conversation.id
+
+    def _delete_follow_up(self, conversation_id: str | None) -> None:
+        if not conversation_id:
+            return
+        with self.metadata.session() as session:
+            conversation = session.get(Conversation, conversation_id)
+            if conversation:
+                session.delete(conversation)
 
     @staticmethod
     def _evaluate(case: EvalCaseDefinition, response: dict[str, Any]) -> dict[str, Any]:
@@ -187,6 +320,7 @@ class EvalRunner:
             "approval": approval_ok,
             "result": assertion_ok,
             "repair": repair_ok,
+            "provider_fallback": not bool(response.get("used_fallback")),
         }
         failures = [name for name, passed in checks.items() if not passed]
         return {

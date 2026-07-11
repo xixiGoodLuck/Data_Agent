@@ -25,7 +25,7 @@ This is more than a script that translates text into SQL. The project includes a
 - Dashboard, Datasets, Conversations, Query Logs, Approvals, Eval Center, and Settings all use real APIs.
 - The console includes a persisted Chinese/English switch with localized navigation, controls, statuses, dates, numbers, and built-in dataset prompts.
 - Settings provides a one-time DeepSeek API key: it exists only in page memory, the server releases the temporary client after each request, and refresh or page exit clears the key.
-- 69 backend tests, 17 frontend tests, and 43 evaluation cases cover the core security and workflow behavior.
+- 91 backend tests, 19 frontend tests, 43 built-in Eval cases, and 25 open-data cases cover the core security and workflow behavior.
 
 ## Architecture
 
@@ -161,6 +161,7 @@ Other relational examples cover revenue by city, refund rate by category, averag
 - Decode only UTF-8/UTF-8-SIG; reject empty files, missing headers, files without data, and ragged rows.
 - Generate upload and database paths from UUIDs. Client filenames never become filesystem paths.
 - Replace empty headers with `column_N`, suffix duplicate headers with `_2`, `_3`, and retain the original mapping.
+- Keep safe SQL identifiers for non-ASCII headers while exposing JSON-escaped source-name aliases to the model, so Chinese questions can resolve Chinese CSV schemas.
 - Conservatively infer INTEGER, REAL, TEXT, and date-like metadata.
 - Write the pandas DataFrame into a single `data` table within a SQLite transaction and clean up partial files on failure.
 - Uploaded datasets use exactly the same graph, safety, approval, chart, and logging flow as built-in datasets.
@@ -176,6 +177,8 @@ Evaluations run through the real QueryService and graph with `run_mode=eval`; th
 - Repair success, fallback, average latency, and p95 latency.
 
 Each case persists expected and actual values, failure reasons, SQL, tables, chart plan, and latency. The Dashboard counts only `interactive` runs by default, so evaluations and tests do not pollute operational metrics.
+
+`POST /api/evals/run/stream` provides per-case SSE progress and cancellation. The page-only DeepSeek key from Settings reaches every Eval case and follow-up setup; refresh, close, or cancel stops subsequent calls and releases the temporary client. See [Real-data evaluation](docs/real-data-evaluation.md) for the 25-case international and China open-data specification, independent oracles, snapshot workflow, and final metrics. Per-case results are in the [built-in regression report](docs/deepseek-builtin-evaluation-results.md) and [open-data report](docs/real-data-evaluation-results.md).
 
 ## Technology Stack
 
@@ -295,7 +298,7 @@ Primary endpoints:
 | Query | `POST /api/query`, `POST /api/query/stream` |
 | Approvals | `GET /api/approvals`, `POST .../approve`, `POST .../reject` |
 | Observability | `GET /api/logs...`, `GET /api/stats/overview` |
-| Eval | `POST /api/evals/run`, `GET /api/evals...` |
+| Eval | `POST /api/evals/run`, `POST /api/evals/run/stream`, `GET /api/evals...` |
 | Settings | `GET /api/settings/public` |
 
 ## Environment Variables
@@ -317,7 +320,7 @@ Copy `backend/.env.example` and adjust it as needed.
 
 ## One-time DeepSeek API Key
 
-The Settings page accepts a DeepSeek API key for the current page only. When present, Ask Data requests temporarily use `deepseek-v4-flash` at `https://api.deepseek.com`; otherwise they continue using the backend's configured provider.
+The Settings page accepts a DeepSeek API key for the current page only. When present, Ask Data and Eval requests temporarily use non-thinking `deepseek-v4-flash`, a 2,048-token output cap, and `https://api.deepseek.com`; otherwise they continue using the backend's configured provider.
 
 - The key exists only in React root-component memory and is never written to localStorage, sessionStorage, cookies, or IndexedDB.
 - Each query sends it in the `X-DeepSeek-API-Key` header. It never enters the request body, LangGraph state, checkpoints, metadata, logs, or API responses.
@@ -357,7 +360,7 @@ The frontend holds only this explicitly entered DeepSeek key temporarily. `OPENA
 
 - Built an enterprise data analysis agent with FastAPI, React, and a real LangGraph StateGraph, supporting multi-table text-to-SQL, checkpointed conversation memory, and POST-SSE live execution traces.
 - Implemented deterministic SQL security and human approval with a sqlglot AST allowlist, read-only SQLite, sensitive-column risk classification, and LangGraph interrupt/Command resume.
-- Designed three-way SQLite isolation for metadata, checkpoints, and datasets, secure CSV ingestion, data lineage, and a 43-case behavioral evaluation suite, validated by 86 automated tests and CI.
+- Designed three-way SQLite isolation for metadata, checkpoints, and datasets, secure CSV ingestion, data lineage, and a 43-case behavioral evaluation suite, validated by 110 automated tests and CI.
 
 ## Interview Walkthrough
 

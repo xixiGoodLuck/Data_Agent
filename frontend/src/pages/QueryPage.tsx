@@ -100,7 +100,7 @@ export function QueryPage() {
     <div className="space-y-6">
       {pageError ? <div className="border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" style={{ borderRadius: 6 }}>{pageError}</div> : null}
       <section className="panel overflow-hidden">
-        <div className="grid min-h-[620px] lg:grid-cols-[240px_minmax(0,1fr)_300px]">
+        <div className="grid min-h-[620px] min-w-0 grid-cols-[minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)_300px]">
           <ConversationSidebar
             conversations={conversations.conversations}
             activeId={conversations.active?.id ?? null}
@@ -127,15 +127,15 @@ export function QueryPage() {
                   <div className="mt-5 flex max-w-xl flex-wrap justify-center gap-2">{localizedDataset?.questions.slice(0, 4).map((question) => <button key={question} className="secondary-button text-left font-medium" onClick={() => ask(question)}>{question}</button>)}</div>
                 </div>
               ) : null}
-              {messages.map((message) => <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[82%] px-3 py-2 text-sm leading-6 ${message.role === "user" ? "bg-ink text-white" : "border border-zinc-200 bg-zinc-50 text-zinc-700"}`} style={{ borderRadius: 8 }}>{message.content}</div></div>)}
-              {pendingQuestion ? <div className="flex justify-end"><div className="max-w-[82%] bg-ink px-3 py-2 text-sm leading-6 text-white" style={{ borderRadius: 8 }}>{pendingQuestion}</div></div> : null}
+              {messages.map((message) => <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[82%] break-words px-3 py-2 text-sm leading-6 ${message.role === "user" ? "bg-ink text-white" : "border border-zinc-200 bg-zinc-50 text-zinc-700"}`} style={{ borderRadius: 8 }}>{message.content}</div></div>)}
+              {pendingQuestion ? <div className="flex justify-end"><div className="max-w-[82%] break-words bg-ink px-3 py-2 text-sm leading-6 text-white" style={{ borderRadius: 8 }}>{pendingQuestion}</div></div> : null}
               {stream.status === "streaming" ? <div className="flex items-center gap-2 text-sm text-zinc-500"><Sparkles size={16} className="text-teal-600" /> {t("query.agentWorking")}</div> : null}
             </div>
             <QueryInput onSubmit={ask} onCancel={stream.cancel} streaming={stream.status === "streaming"} disabled={!datasetId} />
           </div>
-          <aside className="bg-zinc-50 p-4 lg:p-5">
+          <aside className="min-w-0 bg-zinc-50 p-4 lg:p-5">
             <DatasetSelector datasets={datasets} value={datasetId} disabled={stream.status === "streaming" || Boolean(conversations.active)} onChange={(value) => { setDatasetId(value); stream.clear(); }} />
-            {dataset ? <div className="mt-5 space-y-4"><div className="grid grid-cols-2 gap-2"><div className="bg-white p-3"><div className="text-xs text-zinc-500">{t("query.tables")}</div><div className="mt-1 text-lg font-bold text-ink">{dataset.table_count}</div></div><div className="bg-white p-3"><div className="text-xs text-zinc-500">{t("query.columns")}</div><div className="mt-1 text-lg font-bold text-ink">{schemaColumns}</div></div></div><div><div className="label mb-2 flex items-center gap-2"><Database size={14} /> {t("common.schema")}</div><div className="space-y-3">{Object.entries(dataset.schema).map(([table, schema]) => <div key={table}><div className="text-sm font-semibold text-ink">{table}</div><div className="mt-1 flex flex-wrap gap-1">{schema.columns.slice(0, 12).map((column) => <span key={column.name} className={`rounded border px-1.5 py-0.5 text-[11px] ${column.sensitive ? "border-amber-200 bg-amber-50 text-amber-800" : "border-zinc-200 bg-white text-zinc-600"}`}>{column.name}</span>)}</div></div>)}</div></div><p className="text-xs leading-5 text-zinc-500">{localizedDataset?.description}</p></div> : null}
+            {dataset ? <div className="mt-5 min-w-0 space-y-4"><div className="grid grid-cols-2 gap-2"><div className="bg-white p-3"><div className="text-xs text-zinc-500">{t("query.tables")}</div><div className="mt-1 text-lg font-bold text-ink">{dataset.table_count}</div></div><div className="bg-white p-3"><div className="text-xs text-zinc-500">{t("query.columns")}</div><div className="mt-1 text-lg font-bold text-ink">{schemaColumns}</div></div></div><div><div className="label mb-2 flex items-center gap-2"><Database size={14} /> {t("common.schema")}</div><div className="space-y-3">{Object.entries(dataset.schema).map(([table, schema]) => <div key={table} className="min-w-0"><div className="break-all text-sm font-semibold text-ink">{table}</div><div className="mt-1 flex min-w-0 flex-wrap gap-1">{schema.columns.slice(0, 12).map((column) => <span key={column.name} className={`max-w-full break-all rounded border px-1.5 py-0.5 text-[11px] ${column.sensitive ? "border-amber-200 bg-amber-50 text-amber-800" : "border-zinc-200 bg-white text-zinc-600"}`}>{column.name}</span>)}</div></div>)}</div></div><p className="break-words text-xs leading-5 text-zinc-500">{localizedDataset?.description}</p></div> : null}
           </aside>
         </div>
       </section>

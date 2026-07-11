@@ -25,7 +25,7 @@ InsightOps Agent 解决的是“业务问题如何安全、可解释地落到真
 - Dashboard、Datasets、Conversations、Query Logs、Approvals、Eval Center、Settings 均使用真实 API。
 - 控制台提供持久化的中文/英文切换，导航、控件、状态、日期、数字和内置数据集示例问题均会同步本地化。
 - Settings 提供一次性 DeepSeek API Key：仅保存在当前页面内存中，查询结束后服务端立即释放临时客户端，刷新或关闭页面后密钥消失。
-- 69 个后端测试、17 个前端测试和 43 条 Eval case 覆盖核心安全与工作流。
+- 91 个后端测试、19 个前端测试、43 条内置 Eval case 和 25 条开放数据 case 覆盖核心安全与工作流。
 
 ## 架构
 
@@ -161,6 +161,7 @@ LIMIT 5
 - 仅解码 UTF-8/UTF-8-SIG；拒绝空文件、缺失 header、无数据、ragged row。
 - 用 UUID 生成上传和数据库路径，绝不把客户端 filename 当路径。
 - 空列名变为 `column_N`，重复列依次增加 `_2`、`_3`，保留原始映射。
+- 非 ASCII 表头继续使用安全 SQL 列名，但原始名称会以 JSON 转义别名提供给模型，因此中文问题可以理解中文 CSV schema。
 - 保守推断 INTEGER、REAL、TEXT 和 date-like metadata。
 - pandas DataFrame 在 SQLite transaction 内写入唯一的 `data` 表；失败删除部分文件。
 - 上传数据集经过与内置数据集完全相同的 graph、安全、审批、图表和日志流程。
@@ -176,6 +177,8 @@ Eval 通过真实 QueryService 和 graph，以 `run_mode=eval` 执行，不比�
 - Repair success、fallback、平均延迟和 p95 延迟。
 
 每个 case 的 expected/actual、失败原因、SQL、表、chart 和 latency 都会持久化。Dashboard 默认只统计 `interactive`，不会被 Eval 或 test 污染。
+
+`POST /api/evals/run/stream` 提供逐 case SSE 进度与取消。Settings 中的一次性 DeepSeek Key 会传入全部 Eval case 和 follow-up setup；刷新、关闭或取消会停止后续调用并释放临时客户端。中外真实开放数据的 25-case 规范、独立 oracle、快照流程和最终指标见 [真实数据评测](docs/real-data-evaluation.md)，逐条结果见 [内置回归报告](docs/deepseek-builtin-evaluation-results.md) 与 [开放数据报告](docs/real-data-evaluation-results.md)。
 
 ## 技术栈
 
@@ -295,7 +298,7 @@ curl -X POST http://localhost:8002/api/evals/run
 | Query | `POST /api/query`, `POST /api/query/stream` |
 | Approvals | `GET /api/approvals`, `POST .../approve`, `POST .../reject` |
 | Observability | `GET /api/logs...`, `GET /api/stats/overview` |
-| Eval | `POST /api/evals/run`, `GET /api/evals...` |
+| Eval | `POST /api/evals/run`, `POST /api/evals/run/stream`, `GET /api/evals...` |
 | Settings | `GET /api/settings/public` |
 
 ## 环境变量
@@ -317,7 +320,7 @@ curl -X POST http://localhost:8002/api/evals/run
 
 ## 一次性 DeepSeek API Key
 
-Settings 页面可输入当前页面专用的 DeepSeek API Key。设置后，Ask Data 请求会临时使用 `deepseek-v4-flash` 和 `https://api.deepseek.com`；未设置时仍使用后端配置的默认 provider。
+Settings 页面可输入当前页面专用的 DeepSeek API Key。设置后，Ask Data 与 Eval 请求会临时使用 `deepseek-v4-flash` 非思考模式、2,048-token 输出上限和 `https://api.deepseek.com`；未设置时仍使用后端配置的默认 provider。
 
 - Key 只存在于 React 根组件内存，不写入 localStorage、sessionStorage、Cookie 或 IndexedDB。
 - 每次查询通过 `X-DeepSeek-API-Key` 请求头发送；不进入请求 body、LangGraph state、checkpoint、metadata、日志或 API 响应。
@@ -357,7 +360,7 @@ Settings 页面可输入当前页面专用的 DeepSeek API Key。设置后，Ask
 
 - 构建基于 FastAPI、React 和真实 LangGraph StateGraph 的企业数据分析 Agent，支持多表 Text-to-SQL、checkpoint 会话记忆和 POST-SSE 实时执行轨迹。
 - 使用 sqlglot AST 白名单、只读 SQLite、敏感列风险分类和 LangGraph interrupt/Command resume 实现确定性 SQL 安全与人机审批。
-- 设计 metadata/checkpoint/dataset 三层 SQLite 隔离、CSV 安全摄取、数据血缘与 43-case 行为评测，并通过 86 个自动化测试和 CI 验证。
+- 设计 metadata/checkpoint/dataset 三层 SQLite 隔离、CSV 安全摄取、数据血缘与 43-case 行为评测，并通过 110 个自动化测试和 CI 验证。
 
 ## 面试讲解建议
 

@@ -24,9 +24,13 @@ InsightOps Agent 分为浏览器、API/服务、Agent 编排、安全执行和�
 
 临时 DeepSeek 请求使用独立 Header 传递 Key。QueryService 按 request ID 把临时客户端注册到 `LLMClientResolver`，节点只通过 request ID 解析客户端；Key 不进入 `DataAnalysisState` 或 checkpoint。运行结束后 context manager 无条件移除客户端。审批批准会重新要求当前页面内存中的 Key。
 
+Eval 的同步接口和 SSE 接口共用 `EvalRunner.stream()`。Runner 逐 case 消费 QueryService 的节点流，SSE 发出 `progress`、`case_result`、`result` 和 `done`；外层生成器关闭时会显式关闭当前 query generator，因此不会继续创建新的 DeepSeek 请求。真实 provider 的认证、余额、限流、请求格式和服务端错误直接终止评测，不会静默切换 Mock。
+
 ## Progressive schema disclosure
 
 `load_dataset_node` 只加载 dataset 名称、路径和可用表名。`select_tables_node` 从 metadata 读取轻量列/外键信息并选择最小表集合。只有 `read_schema_node` 才从选中 dataset 文件读取完整 column/type/key/foreign-key 和最多三条安全 sample。敏感 sample 值会替换为 `[REDACTED]`。
+
+上传 CSV 的 SQL identifier 始终是 ASCII 安全名。`read_schema_node` 会将持久化的原始表头映射附加为 `source_name`，`compact_schema_context` 用 JSON 字符串编码后提供给模型；SQL validator 的 allowed columns 仍只接受安全 identifier。这样中文表头保留语义，又不能改变 SQL 白名单或提示结构。
 
 ## Checkpoint 设计
 

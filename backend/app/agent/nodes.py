@@ -18,7 +18,12 @@ from app.core.config import Settings
 from app.core.db import MetadataDatabase
 from app.core.errors import AppError
 from app.data.registry import resolve_dataset_path
-from app.data.schema_reader import compact_schema_context, inspect_database, schema_hash
+from app.data.schema_reader import (
+    apply_column_aliases,
+    compact_schema_context,
+    inspect_database,
+    schema_hash,
+)
 from app.models import (
     AgentRun,
     ApprovalRequest,
@@ -251,10 +256,24 @@ class AnalysisNodes:
         with self.metadata.session() as session:
             dataset = session.get(Dataset, state["dataset_id"])
             stored_schema = json.loads(dataset.schema_json) if dataset else {}
+            column_mapping = json.loads(dataset.column_mapping_json) if dataset else []
+        source_names = {
+            item["sanitized"]: str(item["original"])[:256]
+            for item in column_mapping
+            if isinstance(item, dict) and item.get("sanitized") and item.get("original")
+        }
         catalog = {
             table: {
                 "columns": [
-                    {"name": column["name"], "type": column.get("type", "TEXT")}
+                    {
+                        "name": column["name"],
+                        "type": column.get("type", "TEXT"),
+                        **(
+                            {"source_name": source_names[column["name"]]}
+                            if column["name"] in source_names
+                            else {}
+                        ),
+                    }
                     for column in stored_schema.get(table, {}).get("columns", [])
                 ],
                 "foreign_keys": stored_schema.get(table, {}).get("foreign_keys", []),
@@ -305,6 +324,7 @@ class AnalysisNodes:
         with self.metadata.session() as session:
             dataset = session.get(Dataset, state["dataset_id"])
             stored = json.loads(dataset.schema_json) if dataset else {}
+            column_mapping = json.loads(dataset.column_mapping_json) if dataset else []
         sensitive = {
             f"{table}.{column['name']}"
             for table, details in stored.items()
@@ -317,6 +337,7 @@ class AnalysisNodes:
             sensitive_columns=sensitive,
             sample_limit=3,
         )
+        apply_column_aliases(schema, column_mapping)
         digest = schema_hash(schema)
         return {
             "dataset_schema": schema,

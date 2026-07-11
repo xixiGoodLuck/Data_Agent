@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from threading import RLock
 from typing import Any, TypeVar
@@ -609,6 +609,7 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         base_url: str | None = None,
         model: str | None = None,
         provider_name: str = "openai_compatible",
+        extra_body: Mapping[str, Any] | None = None,
     ) -> None:
         resolved_key = api_key if api_key is not None else settings.openai_api_key
         if not resolved_key:
@@ -628,19 +629,49 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         resolved_base_url = base_url if base_url is not None else settings.openai_base_url
         if resolved_base_url:
             kwargs["base_url"] = resolved_base_url
+        if extra_body:
+            kwargs["extra_body"] = dict(extra_body)
         self.model = ChatOpenAI(**kwargs)
         self.fallback = MockLLMClient()
         self.last_used_fallback = False
 
     @staticmethod
-    def _raise_provider_error(error: Exception) -> None:
+    def _provider_status_code(error: Exception) -> int | None:
+        status_code = getattr(error, "status_code", None)
+        if isinstance(status_code, int):
+            return status_code
+        response = getattr(error, "response", None)
+        response_status = getattr(response, "status_code", None)
+        return response_status if isinstance(response_status, int) else None
+
+    @classmethod
+    def _raise_provider_error(cls, error: Exception) -> None:
         name = type(error).__name__.lower()
         message = str(error).lower()
-        if "authentication" in name or "permission" in name or "401" in message:
+        status_code = cls._provider_status_code(error)
+        if (
+            status_code in {401, 403}
+            or "authentication" in name
+            or "permission" in name
+            or "401" in message
+            or "403" in message
+        ):
             raise AppError(
                 "llm_auth_error",
                 "The configured model provider rejected authentication.",
-                status_code=503,
+                status_code=401,
+            ) from error
+        if status_code == 402 or "insufficient balance" in message:
+            raise AppError(
+                "llm_balance_error",
+                "The model provider account has insufficient balance.",
+                status_code=402,
+            ) from error
+        if status_code == 429 or "ratelimit" in name or "rate limit" in message:
+            raise AppError(
+                "llm_rate_limit",
+                "The model provider rate limit was reached.",
+                status_code=429,
             ) from error
         if "timeout" in name or "timed out" in message:
             raise AppError(
@@ -649,6 +680,18 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         if "connection" in name or "network" in name:
             raise AppError(
                 "llm_network_error", "The model provider is unavailable.", status_code=503
+            ) from error
+        if status_code in {400, 422}:
+            raise AppError(
+                "llm_request_error",
+                "The model provider rejected the request format.",
+                status_code=502,
+            ) from error
+        if status_code is not None and status_code >= 500:
+            raise AppError(
+                "llm_provider_error",
+                "The model provider returned a service error.",
+                status_code=503,
             ) from error
 
     def _invoke_structured(
@@ -660,7 +703,7 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
     ) -> StructuredT:
         self.last_used_fallback = False
         try:
-            chain = prompt | self.model.with_structured_output(schema)
+            chain = prompt | self.model.with_structured_output(schema, method="function_calling")
             result = chain.invoke(inputs)
             return result if isinstance(result, schema) else schema.model_validate(result)
         except Exception as first_error:
@@ -766,6 +809,7 @@ def get_llm_client(settings: Settings) -> BaseLLMClient:
 
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
+DEEPSEEK_MAX_TOKENS = 2048
 
 
 def get_deepseek_client(settings: Settings, api_key: str) -> BaseLLMClient:
@@ -775,6 +819,10 @@ def get_deepseek_client(settings: Settings, api_key: str) -> BaseLLMClient:
         base_url=DEEPSEEK_BASE_URL,
         model=DEEPSEEK_MODEL,
         provider_name="deepseek",
+        extra_body={
+            "thinking": {"type": "disabled"},
+            "max_tokens": DEEPSEEK_MAX_TOKENS,
+        },
     )
 
 

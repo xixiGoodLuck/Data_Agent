@@ -77,6 +77,7 @@ def schema_hash(schema: dict[str, Any]) -> str:
                     "type": column["type"],
                     "primary_key": column["primary_key"],
                     "sensitive": column.get("sensitive", False),
+                    "source_name": column.get("source_name"),
                 }
                 for column in details["columns"]
             ],
@@ -88,14 +89,36 @@ def schema_hash(schema: dict[str, Any]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def apply_column_aliases(schema: dict[str, Any], mapping: list[dict[str, str]]) -> dict[str, Any]:
+    """Attach escaped-at-render source names without changing SQL identifiers."""
+
+    aliases = {
+        item.get("sanitized"): item.get("original", "")[:256]
+        for item in mapping
+        if item.get("sanitized") and item.get("original") != item.get("sanitized")
+    }
+    for details in schema.values():
+        for column in details.get("columns", []):
+            source_name = aliases.get(column.get("name"))
+            if source_name:
+                column["source_name"] = source_name
+    return schema
+
+
 def compact_schema_context(schema: dict[str, Any]) -> str:
     chunks: list[str] = []
     for table, details in schema.items():
-        column_text = ", ".join(
-            f"{column['name']} {column['type']}"
-            + (" [sensitive]" if column.get("sensitive") else "")
-            for column in details["columns"]
-        )
+        rendered_columns: list[str] = []
+        for column in details["columns"]:
+            rendered = f"{column['name']} {column['type']}"
+            if column.get("source_name"):
+                rendered += (
+                    " [source_name=" + json.dumps(column["source_name"], ensure_ascii=False) + "]"
+                )
+            if column.get("sensitive"):
+                rendered += " [sensitive]"
+            rendered_columns.append(rendered)
+        column_text = ", ".join(rendered_columns)
         chunks.append(f"TABLE {table}: {column_text}")
         for fk in details["foreign_keys"]:
             chunks.append(f"FK {table}.{fk['from_column']} -> {fk['to_table']}.{fk['to_column']}")

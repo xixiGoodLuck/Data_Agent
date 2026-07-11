@@ -1,6 +1,6 @@
 # InsightOps Agent 实施报告
 
-日期：2026-07-10（Asia/Shanghai）
+日期：2026-07-11（Asia/Shanghai）
 
 ## 交付结果
 
@@ -18,7 +18,9 @@
 - React 18 strict TypeScript 控制台及全部八个页面；Recharts 七种输出模式和 table fallback。
 - 持久化中英文切换、浏览器语言默认值、状态/日期/数字本地化，以及四个内置数据集的双语名称、说明和示例问题。
 - Settings 页面提供一次性 DeepSeek API Key：仅保存在当前 React 内存中，刷新或关闭页面即清除；后端按请求创建并销毁临时模型客户端，不写入日志、数据库、graph state 或 checkpoint。
-- 43 条真实 graph Eval case、69 个后端测试、17 个前端测试。
+- 43 条真实 graph Eval case、25 条中外开放数据 case、91 个后端测试、19 个前端测试。
+- DeepSeek V4 Flash 非思考模式、2,048-token 上限、provider-compatible function calling、请求级密钥转发和逐 case SSE Eval。
+- USGS、NOAA、World Bank 与国家统计局独立 SQLite oracle、来源/哈希清单，以及两份逐条脱敏结果报告。
 - 生产 backend image、frontend Node/Nginx multi-stage image、Compose、health checks、CI 和中英文 README。
 
 ## 最终命令结果
@@ -31,8 +33,8 @@
 | --- | --- |
 | `python -m pip install -e ".[dev]"` | PASS，editable package 安装成功 |
 | `python -m ruff check .` | PASS，`All checks passed!` |
-| `python -m ruff format --check .` | PASS，72 files formatted |
-| `python -m pytest -q` | PASS，69 passed in 25.22s |
+| `python -m ruff format --check .` | PASS，78 files already formatted |
+| `python -m pytest -q` | PASS，91 passed in 34.99s |
 
 Pytest 仍显示一条第三方 warning：LangGraph checkpoint 在 import 时提示未来会调整 `allowed_objects` 默认值。当前 `JsonPlusSerializer` 版本的构造函数尚未暴露该参数，功能与测试不受影响。
 
@@ -44,10 +46,10 @@ Pytest 仍显示一条第三方 warning：LangGraph checkpoint 在 import 时提
 | --- | --- |
 | `npm.cmd ci` | PASS，287 packages，0 vulnerabilities |
 | `npm.cmd run typecheck` | PASS，strict `tsc --noEmit` |
-| `npm.cmd run test -- --run` | PASS，8 files / 17 tests（含临时密钥生命周期、Settings 控件和双语功能） |
+| `npm.cmd run test -- --run` | PASS，9 files / 19 tests（含临时密钥生命周期、Eval SSE/取消、Settings 控件和双语功能） |
 | `npm.cmd run build` | PASS，2,230 modules，production bundle generated |
 
-Vite build 提示主 JS chunk 约 715 kB（gzip 约 201 kB），属于性能 advisory，不影响构建。Roadmap 已记录 route-level code splitting。
+Vite build 提示主 JS chunk 717.54 kB（gzip 201.18 kB），属于性能 advisory，不影响构建。Roadmap 已记录 route-level code splitting。
 
 ### Docker 与静态配置
 
@@ -70,7 +72,10 @@ Vite build 提示主 JS chunk 约 715 kB（gzip 约 201 kB），属于性能 adv
 - Commerce live query：SSE node events 在 result 前到达；5-row bar chart 有实际 SVG marks；SQL、table、lineage、insight、trace 正常。
 - Sensitive employee query：UI 显示 high-risk approval；Reject 通过原 LangGraph checkpoint 恢复并显示 rejected。
 - Settings 临时 DeepSeek Key：默认掩码，显示/隐藏与清除按钮正常；SPA 路由切换后仍保留，刷新页面后立即清空；桌面和移动布局均无溢出。
-- 临时密钥通过专用请求头传给后端，格式错误会在执行查询前返回安全的 HTTP 400；真实 DeepSeek 调用未执行，因未使用用户真实密钥，相关契约由隔离 stub 测试验证。
+- 临时密钥通过专用请求头传给后端；真实 DeepSeek 预检返回 535，与 USGS oracle 一致，provider 为 DeepSeek 且 fallback=false。
+- 真实内置 Eval 为 35/43；结果/选表/SQL 安全准确率均 100%，危险查询拦截率 100%，图表准确率 81.48%，fallback 0%。
+- 25 条开放数据为 16/25 全指标通过；结果准确率 80.95%，SQL 安全拦截率 100%，DeepSeek provider 100%，fallback 0%，图表准确率 66.67% 未达 80% 目标。
+- 国家统计局专项 6 条分析中 5 条结果与图表正确；中英混合出生率用例因数据无显式年份列而要求澄清，危险 DELETE 被安全层拦截。
 - Mobile 390×844：导航 drawer 正常，无 document horizontal overflow，无检测到的 text overflow。
 - `/datasets`、`/conversations`、`/logs`、`/approvals`、`/evals`、`/settings` 路由均加载，无 internal error 或 horizontal overflow。
 
@@ -86,8 +91,11 @@ Vite build 提示主 JS chunk 约 715 kB（gzip 约 201 kB），属于性能 adv
 - 初次 frontend suite：11 passed / 1 failed。修正 Testing Library 文本匹配后为 12/12。
 - 双语更新新增语言切换测试后，最终 frontend suite 为 6 files / 13 tests 全部通过。
 - 临时密钥前端定向测试首次因 Testing Library cleanup 隔离不足失败；增加显式 cleanup 后，4 个新增前端测试全部通过。
-- 临时 DeepSeek 后端新增 3 个隔离测试，覆盖请求级清理、审批续传重新提供密钥、持久化与响应无密钥泄露，最终 backend suite 为 69/69。
-- 临时密钥更新后的最终 frontend suite 为 8 files / 17 tests 全部通过。
+- 临时 DeepSeek 后端新增隔离测试，覆盖请求级清理、审批续传重新提供密钥、持久化与响应无密钥泄露；该阶段 backend suite 为 69/69。
+- 临时密钥阶段 frontend suite 为 8 files / 17 tests；加入 Eval 流式进度/取消后最终为 9 files / 19 tests。
+- DeepSeek 预检首次被网络 sandbox 阻断；后端以获准网络权限重启后确认不是认证或余额问题。
+- LangChain 默认 `json_schema` 导致 DeepSeek 400；显式改为受支持的 function calling 并新增回归测试后预检通过。
+- 中文别名最初仅进入 SQL schema context，选表 catalog 仍显示 `column_*`；补齐 JSON 转义别名后，国家统计局前三条由 clarification 变为 success。
 - 浏览器 QA 前的首个 detached launch 因 Windows 环境中同时存在 `Path`/`PATH` 而失败；清理子进程环境中的重复键后启动成功。
 - 最终 `npm ci` 首次被仍运行的 Vite/esbuild/Rollup binary lock 拒绝；仅终止本 workspace 的两个 Node child 后，clean install 成功。
 - 默认端口调整为 8002/5175，避开本机其他服务端口；Vite 开发代理继续支持 `VITE_API_TARGET` 覆盖。
@@ -138,7 +146,9 @@ tailwindcss==3.4.19
 - Ruff、TypeScript 和测试未发现 unused import、未定义符号或 contract drift。
 - TODO/FIXME/placeholder/copied branding scan 无匹配。
 - 密钥扫描仅发现明确标注的测试占位值，没有真实 API Key；所有 committed `OPENAI_API_KEY` 示例值为空；`.env`、runtime、database、upload 均 ignored。
-- 临时 DeepSeek Key 没有 localStorage、sessionStorage、cookie 或 IndexedDB 写入路径，也不进入 graph state、checkpoint、metadata 数据库或日志。
+- 临时 DeepSeek Key 没有 localStorage、sessionStorage、cookie 或 IndexedDB 写入路径，也不进入 graph state、checkpoint、metadata 数据库或日志；刷新后状态为“未设置”，通用真实 Key 模式扫描为 0 命中。
+- 四个外部上传数据集、关联查询日志、审批记录与 `C:\tmp` 原始文件/快照均已清理；来源、哈希、规范和脱敏报告保留在 Git。
+- 逐条结果见 `docs/deepseek-builtin-evaluation-results.md` 与 `docs/real-data-evaluation-results.md`。
 - `runtime/`、`node_modules/`、`dist/`、cache、egg-info、tsbuildinfo 均不在交付文件列表。
 - 前端 `/api` paths 与 FastAPI routers 逐页通过 live browser/API smoke。
 - README 命令与最终执行命令一致；没有虚构 screenshot 或 Docker pass。
@@ -146,7 +156,7 @@ tailwindcss==3.4.19
 ## 已知限制
 
 - Docker runtime verification unavailable in this environment。
-- 未使用真实 DeepSeek API Key 发起外部模型请求；DeepSeek 请求与清理行为由网络隔离的 stub 测试覆盖。
+- 外部数据图表选择准确率为 66.67%，未达到计划的 80% 目标；报告保留全部失败，不以 Mock 替代。
 - LangGraph dependency emits one pending-deprecation warning described above。
 - Frontend main chunk has a non-blocking size warning。
 - Mock planner is deterministic and intentionally bounded；真实 provider 质量取决于 configured model。

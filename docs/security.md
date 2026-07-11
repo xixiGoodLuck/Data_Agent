@@ -54,6 +54,9 @@ Approval 是应用层 human-in-the-loop，不是用户认证。当前实现适�
 - 一次性 DeepSeek Key 只通过 `X-DeepSeek-API-Key` Header 进入单次请求内存；不写 body、graph state、checkpoint、metadata、AgentEvent、QueryLog 或响应。
 - 前端不使用 localStorage、sessionStorage、Cookie 或 IndexedDB 保存 Key，并在 `pagehide`/刷新/关闭时清空内存状态。
 - 临时客户端按 request ID 隔离，并在 graph 成功、失败、中断或客户端断开后的 `finally` 中移除。
+- Eval SSE 在页面取消、卸载或连接关闭时显式关闭当前 query generator；DeepSeek Key 不会转移到后台任务，也不会在页面退出后启动后续 case。
+- DeepSeek V4 Flash 显式关闭 thinking 并限制输出 2,048 tokens；401/403、402、429、超时、请求格式和 5xx 错误均安全映射并停止批量评测。
+- CSV 原始表头作为不可信数据处理。模型只接收长度受限、JSON 转义的 `source_name`；SQL 仍只允许服务端生成的 ASCII identifier。
 - AgentEvent summary 截断到 500 字符，节点不写 rows 或 schema sensitive sample。
 - 全局异常 handler 记录 server-side stack，但客户端只收到 `internal_error`。
 
