@@ -121,6 +121,7 @@ Prompt 负责提供上下文，不负责授权。真正的安全边界位于模�
 - [43 条内置 DeepSeek 结果](docs/deepseek-builtin-evaluation-results.md)
 - [25 条中英开放数据结果](docs/real-data-evaluation-results.md)
 - [25 条纯中文开放数据结果](docs/real-data-evaluation-results.zh-CN.md)
+- [2026-07-12 中英文各 20 条真实 DeepSeek 运行汇总](docs/deepseek-bilingual-40-results.md)（[完整 JSON](docs/deepseek-bilingual-40-results.json)：39 条成功、1 条审批后停留在 processing、fallback 0）
 
 ## 五分钟启动
 
@@ -249,6 +250,7 @@ npm run build
 | [docs/security.md](docs/security.md) | SQL Safety Gate、审批、威胁模型与生产限制 |
 | [docs/demo-script.md](docs/demo-script.md) | 正常查询、多表 JOIN、攻击拦截、审批恢复和 CSV 演示 |
 | [docs/real-data-evaluation.md](docs/real-data-evaluation.md) | 官方数据来源、转换、oracle 与评测方法 |
+| [docs/deepseek-bilingual-40-results.md](docs/deepseek-bilingual-40-results.md) | 2026-07-12 中英文各 20 条真实 DeepSeek 运行结果 |
 | [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) | 已实现功能、验证命令、依赖与已知限制 |
 
 ## 已知限制与路线图

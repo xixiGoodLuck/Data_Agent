@@ -121,6 +121,7 @@ The real-data suite covers the USGS past-30-day earthquake feed, NOAA JFK daily 
 - [43 built-in DeepSeek results](docs/deepseek-builtin-evaluation-results.md)
 - [25 mixed-language open-data results](docs/real-data-evaluation-results.md)
 - [25 Chinese-only open-data results](docs/real-data-evaluation-results.zh-CN.md)
+- [2026-07-12 real DeepSeek run: 20 Chinese and 20 English cases](docs/deepseek-bilingual-40-results.md) ([full JSON](docs/deepseek-bilingual-40-results.json): 39 succeeded, one remained processing after approval, fallback 0)
 
 ## Run in five minutes
 
@@ -249,6 +250,7 @@ Coverage includes initialization, relational schemas, CSV limits, path traversal
 | [docs/security.md](docs/security.md) | SQL safety, approvals, threat model, and production limits |
 | [docs/demo-script.md](docs/demo-script.md) | Normal queries, multi-table JOINs, blocked attacks, approval resume, and CSV demo |
 | [docs/real-data-evaluation.md](docs/real-data-evaluation.md) | Official sources, transformations, oracles, and evaluation method |
+| [docs/deepseek-bilingual-40-results.md](docs/deepseek-bilingual-40-results.md) | 2026-07-12 real DeepSeek run with 20 Chinese and 20 English cases |
 | [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) | Implemented behavior, verification commands, dependencies, and known limits |
 
 ## Known limits and roadmap
