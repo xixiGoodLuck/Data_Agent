@@ -28,7 +28,7 @@ InsightOps Agent 覆盖从自然语言问题到可信分析结果的完整链路
 | 可观测性 | POST-SSE 节点事件、完整 Trace、Query Logs、Lineage、Dashboard |
 | 数据能力 | 四个内置业务数据集、Commerce 五表关系模型、受限 CSV 上传 |
 | 双语体验 | 中文/英文界面、状态、日期、数字、数据集说明与示例问题 |
-| 验证规模 | 92 项后端测试、19 项前端测试、43 条内置 Eval、50 条开放数据评测 |
+| 验证规模 | 102 项后端测试、19 项前端测试、43 条内置 Eval、50 条开放数据评测 |
 
 ## 为什么它不只是 Text-to-SQL
 
@@ -107,13 +107,14 @@ Prompt 负责提供上下文，不负责授权。真正的安全边界位于模�
 
 ## 真实 DeepSeek 与开放数据评测
 
-以下是 `2026-07-11` 的可复现快照。开放数据标准答案全部由独立 SQLite oracle SQL 计算，DeepSeek 不参与生成答案。
+以下是截至 `2026-07-13` 的可复现快照。开放数据标准答案全部由独立 SQLite oracle SQL 计算，DeepSeek 不参与生成答案。
 
 | 评测 | 全指标通过 | 结果准确率 | 图表准确率 | SQL 安全拦截 | Provider / fallback |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 43 条内置 DeepSeek Eval | 35 / 43 | 100% | 81.48% | 100% | DeepSeek / 0% |
 | 25 条中英开放数据 | 16 / 25 | 80.95% | 66.67% | 100% | 100% / 0% |
 | 25 条纯中文开放数据 | 14 / 25 | 66.67% | 71.43% | 100% | 100% / 0% |
+| 优化后中英文各 20 条 | 40 / 40 | 100% | 100% | 不适用 | DeepSeek / 0% |
 
 真实数据覆盖 USGS 近 30 天地震、NOAA JFK 2025 日气象、World Bank 2015 至 2024 国家指标，以及《中国统计年鉴 2025》中的 31 个大陆省级地区。报告保留每条问题、SQL、oracle 行、实际行、图表、fallback、耗时和失败原因，没有用 Mock 结果覆盖未达标项。
 
@@ -122,6 +123,7 @@ Prompt 负责提供上下文，不负责授权。真正的安全边界位于模�
 - [25 条中英开放数据结果](docs/real-data-evaluation-results.md)
 - [25 条纯中文开放数据结果](docs/real-data-evaluation-results.zh-CN.md)
 - [2026-07-12 中英文各 20 条真实 DeepSeek 运行汇总](docs/deepseek-bilingual-40-results.md)（[完整 JSON](docs/deepseek-bilingual-40-results.json)：39 条成功、1 条审批后停留在 processing、fallback 0）
+- [2026-07-13 优化复测与逐项提升](docs/deepseek-bilingual-40-optimization-report.md)（[完整 JSON](docs/deepseek-bilingual-40-optimized-results.json)，[oracle 评分](docs/deepseek-bilingual-40-optimized-score.json)：结果与图表均为 40/40，fallback 0）
 
 ## 五分钟启动
 
@@ -251,11 +253,12 @@ npm run build
 | [docs/demo-script.md](docs/demo-script.md) | 正常查询、多表 JOIN、攻击拦截、审批恢复和 CSV 演示 |
 | [docs/real-data-evaluation.md](docs/real-data-evaluation.md) | 官方数据来源、转换、oracle 与评测方法 |
 | [docs/deepseek-bilingual-40-results.md](docs/deepseek-bilingual-40-results.md) | 2026-07-12 中英文各 20 条真实 DeepSeek 运行结果 |
+| [docs/deepseek-bilingual-40-optimization-report.md](docs/deepseek-bilingual-40-optimization-report.md) | 2026-07-13 优化前后准确率、逐项差值与完整证据 |
 | [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) | 已实现功能、验证命令、依赖与已知限制 |
 
 ## 已知限制与路线图
 
-当前限制：Mock planner 是确定性规则系统；单进程 SQLite checkpoint 不面向高并发生产；SSE 尚未实现跨网络断线的事件重放；真实模型的结果和图表选择仍有明确未达标项。
+当前限制：Mock planner 是确定性规则系统；单进程 SQLite checkpoint 不面向高并发生产；SSE 尚未实现跨网络断线的事件重放；真实模型具有非确定性，本次 40/40 仅代表固定快照与预定义问题的最新试次。
 
 下一步优先级：PostgreSQL metadata/checkpoint、多租户身份与用途授权、可配置语义层、SSE event replay、后台 Eval job、历史模型对比和前端 route-level code splitting。
 

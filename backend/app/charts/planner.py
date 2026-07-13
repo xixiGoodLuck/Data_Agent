@@ -21,6 +21,24 @@ def _is_numeric(values: list[Any]) -> bool:
     )
 
 
+def _asks_for_ranking(question: str) -> bool:
+    english_terms = ("top", "highest", "lowest", "strongest", "weakest", "most", "least")
+    if any(term in question for term in english_terms):
+        return True
+
+    chinese_rank_values = ("最高", "最低", "最强", "最弱", "最多", "最少")
+    chinese_selectors = ("哪一天", "哪些", "找出", "列出", "显示")
+    return (
+        "前10" in question
+        or "排名" in question
+        or any(f"{value}的" in question for value in chinese_rank_values)
+        or (
+            any(value in question for value in chinese_rank_values)
+            and any(selector in question for selector in chinese_selectors)
+        )
+    )
+
+
 def plan_chart(question: str, columns: list[str], rows: list[dict[str, Any]]) -> ChartConfig:
     if not columns or not rows:
         return ChartConfig(type="table", title="Query result")
@@ -35,7 +53,7 @@ def plan_chart(question: str, columns: list[str], rows: list[dict[str, Any]]) ->
     if any(term in lowered for term in percent_terms):
         value_format = "percent"
 
-    if len(rows) == 1 and len(numeric) == 1:
+    if len(rows) == 1 and numeric and not categories:
         return ChartConfig(
             type="number",
             y_columns=numeric,
@@ -52,6 +70,10 @@ def plan_chart(question: str, columns: list[str], rows: list[dict[str, Any]]) ->
         ),
         None,
     )
+    if len(categories) >= 2 or len(numeric) >= 3:
+        return ChartConfig(type="table", title="Query result", value_format=value_format)
+    if temporal and _asks_for_ranking(lowered):
+        return ChartConfig(type="table", title="Query result", value_format=value_format)
     if temporal and numeric:
         chart_type: Literal["line", "area"] = (
             "area"

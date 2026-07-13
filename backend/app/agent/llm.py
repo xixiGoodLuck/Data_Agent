@@ -755,7 +755,11 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         return self._invoke_structured(
             SQL_GENERATION_PROMPT,
             SqlGeneration,
-            {"question": question, "schema_context": schema_context},
+            {
+                "dataset_id": dataset_id,
+                "question": question,
+                "schema_context": schema_context,
+            },
             lambda: self.fallback.generate_sql(
                 dataset_id, question, selected_tables, schema, schema_context
             ),
@@ -773,6 +777,7 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
             SQL_REPAIR_PROMPT,
             SqlRepair,
             {
+                "dataset_id": dataset_id,
                 "question": question,
                 "schema_context": schema_context,
                 "sql": sql,

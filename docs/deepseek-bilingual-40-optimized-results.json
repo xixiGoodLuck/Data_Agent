@@ -1,0 +1,3972 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-07-13T06:04:28.865138+00:00",
+  "window_start": "2026-07-13T05:41:00.764163",
+  "transport_note": "Temporary localhost curl TLS gateway; no credential persisted.",
+  "selection_note": "Latest attempt per unique language/dataset/question is scored; superseded attempts remain identified per case.",
+  "metrics": {
+    "total": 40,
+    "success": 40,
+    "pending_approval": 0,
+    "failed": 0,
+    "deepseek": 40,
+    "fallback": 0,
+    "chinese_success": 20,
+    "english_success": 20
+  },
+  "cases": [
+    {
+      "id": "zh-CN-usgs-01",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "过去30天震级不低于4.5的地震有多少次？",
+      "rewritten_question": "过去30天震级不低于4.5的地震有多少次？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT COUNT(*) AS earthquake_count\nFROM data\nWHERE mag >= 4.5",
+      "validated_sql": "SELECT COUNT(*) AS earthquake_count FROM data WHERE mag >= 4.5 LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "number",
+      "execution_time_ms": 7039.53955078125,
+      "columns": [
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "earthquake_count": 533
+        }
+      ],
+      "chart": {
+        "type": "number",
+        "x_column": null,
+        "y_columns": [
+          "earthquake_count"
+        ],
+        "series_name": "Earthquake Count",
+        "title": "Earthquake Count",
+        "value_format": "number"
+      },
+      "insight": "过去30天内，震级不低于4.5的地震共发生533次。这一数字仅反映原始数据中的记录数量，未考虑数据源覆盖范围、检测灵敏度或重复事件等潜在偏差，因此不能直接推断为全球实际地震频率或趋势变化。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.mag"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "603b0be6-0b0e-428c-9d7a-f3ffb83ed46d",
+      "request_id": "4d0cc3e7-37c7-4139-ad27-add63f8bb626",
+      "created_at": "2026-07-13T06:01:01.916496",
+      "completed_at": "2026-07-13T06:01:08.939225",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "b149596e-e4bb-4308-8eb2-cf2c7f0391d0"
+      ]
+    },
+    {
+      "id": "zh-CN-usgs-02",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "显示震级最高的10次地震，并列出时间、地点、震级和深度。",
+      "rewritten_question": "显示震级最高的10次地震，并列出时间、地点、震级和深度。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT time, place, mag, depth FROM data ORDER BY mag DESC LIMIT 10",
+      "validated_sql": "SELECT time, place, mag, depth FROM data ORDER BY mag DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "table",
+      "execution_time_ms": 8722.77978515625,
+      "columns": [
+        "time",
+        "place",
+        "mag",
+        "depth"
+      ],
+      "rows": [
+        {
+          "time": "2026-06-24T22:05:11.743Z",
+          "place": "20 km ESE of Yumare, Venezuela",
+          "mag": 7.5,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-06-24T22:04:34.363Z",
+          "place": "21 km ENE of San Felipe, Venezuela",
+          "mag": 7.2,
+          "depth": 27.588
+        },
+        {
+          "time": "2026-06-24T22:30:12.989Z",
+          "place": "33 km ENE of Noda, Japan",
+          "mag": 6.9,
+          "depth": 34.0
+        },
+        {
+          "time": "2026-06-16T03:27:44.379Z",
+          "place": "42 km SE of Palu, Indonesia",
+          "mag": 6.7,
+          "depth": 11.0
+        },
+        {
+          "time": "2026-06-19T06:52:31.597Z",
+          "place": "133 km ESE of Petropavlovsk-Kamchatsky, Russia",
+          "mag": 6.6,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-06-17T18:56:58.028Z",
+          "place": "central Mid-Atlantic Ridge",
+          "mag": 6.6,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-06-26T11:34:41.498Z",
+          "place": "34 km WSW of Sarangani, Philippines",
+          "mag": 6.5,
+          "depth": 42.0
+        },
+        {
+          "time": "2026-06-16T09:06:55.517Z",
+          "place": "262 km SSE of Dunhuang, China",
+          "mag": 6.3,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-07-03T02:31:28.846Z",
+          "place": "58 km W of Tobelo, Indonesia",
+          "mag": 6.2,
+          "depth": 120.932
+        },
+        {
+          "time": "2026-06-15T09:18:36.126Z",
+          "place": "68 km ESE of Pondaguitan, Philippines",
+          "mag": 6.2,
+          "depth": 84.0
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "震级最高的10次地震中，最大震级为7.5级（2026年6月24日，委内瑞拉Yumare东南20公里，深度10公里），其次为7.2级（同日委内瑞拉San Felipe东北21公里，深度27.6公里）。其余8次地震震级分布在6.2至6.9之间，地点涵盖日本、印尼、俄罗斯、大西洋中脊、菲律宾和中国等地。值得注意的是，前两名高震级地震均发生在同一天（2026年6月24日）且地理位置相近（委内瑞拉北部），可能指示同一构造活动序列，但基于现有数据无法确认其因果关联。深度方面，多数地震为浅源（10-42公里），仅印尼Tobelo以西58公里处地震深度达120.9公里，属于中源地震。需谨慎解释：该结果仅反映数据集中震级最高的10次记录，不代表全球同期所有地震的完整排序，且震级测量存在仪器误差。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.time",
+          "data.place",
+          "data.mag",
+          "data.depth"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "607d422a-2db3-47c1-8bf6-f591827cbf49",
+      "request_id": "d3c2d9ba-8f8f-48c5-8f61-54e8244c979e",
+      "created_at": "2026-07-13T05:41:46.574566",
+      "completed_at": "2026-07-13T05:41:55.278893",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-usgs-03",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "按 UTC 日期展示每日地震次数趋势。",
+      "rewritten_question": "按 UTC 日期展示每日地震次数趋势。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT DATE(time) AS utc_date, COUNT(*) AS earthquake_count\nFROM data\nGROUP BY DATE(time)\nORDER BY utc_date",
+      "validated_sql": "SELECT DATE(time) AS utc_date, COUNT(*) AS earthquake_count FROM data GROUP BY DATE(time) ORDER BY utc_date LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 31,
+      "chart_type": "line",
+      "execution_time_ms": 9571.653076171875,
+      "columns": [
+        "utc_date",
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "utc_date": "2026-06-11",
+          "earthquake_count": 259
+        },
+        {
+          "utc_date": "2026-06-12",
+          "earthquake_count": 341
+        },
+        {
+          "utc_date": "2026-06-13",
+          "earthquake_count": 350
+        },
+        {
+          "utc_date": "2026-06-14",
+          "earthquake_count": 410
+        },
+        {
+          "utc_date": "2026-06-15",
+          "earthquake_count": 458
+        },
+        {
+          "utc_date": "2026-06-16",
+          "earthquake_count": 451
+        },
+        {
+          "utc_date": "2026-06-17",
+          "earthquake_count": 437
+        },
+        {
+          "utc_date": "2026-06-18",
+          "earthquake_count": 376
+        },
+        {
+          "utc_date": "2026-06-19",
+          "earthquake_count": 311
+        },
+        {
+          "utc_date": "2026-06-20",
+          "earthquake_count": 326
+        },
+        {
+          "utc_date": "2026-06-21",
+          "earthquake_count": 358
+        },
+        {
+          "utc_date": "2026-06-22",
+          "earthquake_count": 365
+        },
+        {
+          "utc_date": "2026-06-23",
+          "earthquake_count": 459
+        },
+        {
+          "utc_date": "2026-06-24",
+          "earthquake_count": 469
+        },
+        {
+          "utc_date": "2026-06-25",
+          "earthquake_count": 356
+        },
+        {
+          "utc_date": "2026-06-26",
+          "earthquake_count": 300
+        },
+        {
+          "utc_date": "2026-06-27",
+          "earthquake_count": 326
+        },
+        {
+          "utc_date": "2026-06-28",
+          "earthquake_count": 373
+        },
+        {
+          "utc_date": "2026-06-29",
+          "earthquake_count": 289
+        },
+        {
+          "utc_date": "2026-06-30",
+          "earthquake_count": 337
+        },
+        {
+          "utc_date": "2026-07-01",
+          "earthquake_count": 335
+        },
+        {
+          "utc_date": "2026-07-02",
+          "earthquake_count": 341
+        },
+        {
+          "utc_date": "2026-07-03",
+          "earthquake_count": 336
+        },
+        {
+          "utc_date": "2026-07-04",
+          "earthquake_count": 409
+        },
+        {
+          "utc_date": "2026-07-05",
+          "earthquake_count": 336
+        },
+        {
+          "utc_date": "2026-07-06",
+          "earthquake_count": 251
+        },
+        {
+          "utc_date": "2026-07-07",
+          "earthquake_count": 284
+        },
+        {
+          "utc_date": "2026-07-08",
+          "earthquake_count": 275
+        },
+        {
+          "utc_date": "2026-07-09",
+          "earthquake_count": 254
+        },
+        {
+          "utc_date": "2026-07-10",
+          "earthquake_count": 252
+        },
+        {
+          "utc_date": "2026-07-11",
+          "earthquake_count": 68
+        }
+      ],
+      "chart": {
+        "type": "line",
+        "x_column": "utc_date",
+        "y_columns": [
+          "earthquake_count"
+        ],
+        "series_name": null,
+        "title": "Trend over time",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** 从2026年6月11日至6月30日，每日地震次数在259至469次之间波动，整体呈现先升后降再回升的趋势。6月14日至18日（410–458次）和6月23–24日（459–469次）是两个明显的高峰期，而6月11日（259次）和6月29日（289次）为最低点。\n\n**Cautious Interpretation:** 数据可能反映了地震活动的自然时间波动，但两个峰值（6月中旬和6月23–24日）可能暗示了某些区域的地震序列或余震活动。然而，由于数据仅覆盖20天且未区分震级、地理位置或数据采集条件，无法确认这些波动是否具有统计显著性，也不能排除数据记录完整性或传感器灵敏度变化的影响。\n\n**Causal Limitations:** 本分析仅基于UTC日期聚合的地震计数，无法推断地震次数变化的原因。未控制震级阈值、区域分布、仪器检测能力或人为数据报告延迟等因素，因此不能将趋势归因于任何地质或环境因素。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.time",
+          "utc_date"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "a7d02937-68f7-4af8-8321-6528267de64a",
+      "request_id": "e15865c7-827c-4e26-a35a-f2037c884100",
+      "created_at": "2026-07-13T05:41:55.924650",
+      "completed_at": "2026-07-13T05:42:05.482194",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-usgs-04",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "按震级类型比较平均深度和地震数量，并排除震级缺失的记录。",
+      "rewritten_question": "按震级类型比较平均深度和地震数量，并排除震级缺失的记录。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT magtype AS mag_type, AVG(depth) AS avg_depth, COUNT(*) AS earthquake_count\nFROM data\nWHERE mag IS NOT NULL\nGROUP BY magtype\nORDER BY earthquake_count DESC",
+      "validated_sql": "SELECT magtype AS mag_type, AVG(depth) AS avg_depth, COUNT(*) AS earthquake_count FROM data WHERE NOT mag IS NULL GROUP BY magtype ORDER BY earthquake_count DESC LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 9304.538330078125,
+      "columns": [
+        "mag_type",
+        "avg_depth",
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "mag_type": "ml",
+          "avg_depth": 18.212830523595073,
+          "earthquake_count": 6739
+        },
+        {
+          "mag_type": "md",
+          "avg_depth": 8.052300400582462,
+          "earthquake_count": 2743
+        },
+        {
+          "mag_type": "mb",
+          "avg_depth": 82.17204750869061,
+          "earthquake_count": 863
+        },
+        {
+          "mag_type": "mww",
+          "avg_depth": 60.61617777777778,
+          "earthquake_count": 90
+        },
+        {
+          "mag_type": "mwr",
+          "avg_depth": 30.518578947368418,
+          "earthquake_count": 19
+        },
+        {
+          "mag_type": "mun",
+          "avg_depth": -0.021666666666666667,
+          "earthquake_count": 12
+        },
+        {
+          "mag_type": "mb_lg",
+          "avg_depth": 7.12275,
+          "earthquake_count": 8
+        },
+        {
+          "mag_type": "mw",
+          "avg_depth": 9.324285752432715,
+          "earthquake_count": 7
+        },
+        {
+          "mag_type": "mh",
+          "avg_depth": -1.8099999999999998,
+          "earthquake_count": 6
+        },
+        {
+          "mag_type": "mwb",
+          "avg_depth": 21.5,
+          "earthquake_count": 2
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "mag_type",
+        "y_columns": [
+          "avg_depth",
+          "earthquake_count"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Among earthquake records with non-null magnitude, the most common magnitude type is \"ml\" (6,739 events, average depth ~18.2 km), followed by \"md\" (2,743 events, average depth ~8.1 km) and \"mb\" (863 events, average depth ~82.2 km). Rarer types like \"mun\" and \"mh\" show negative average depths (~0.0 km and -1.8 km respectively), while \"mww\" events average ~60.6 km depth and \"mwr\" average ~30.5 km.\n\n**Cautious Interpretation:** Different magnitude types appear to be associated with distinct depth ranges—\"mb\" events are notably deeper (~82 km) than \"ml\" or \"md\" events, which may reflect that different magnitude scales are preferentially used for different tectonic settings (e.g., body-wave magnitude for deeper events, local magnitude for shallow crustal events). The negative average depths for \"mun\" and \"mh\" likely indicate data quality issues (e.g., recording errors or unphysical depth values) rather than actual below-surface events.\n\n**Causal Limitations:** This is an observational summary of associations, not a causal analysis. Differences in average depth across magnitude types may be driven by measurement conventions, regional reporting practices, or data collection biases rather than any inherent physical relationship between magnitude type and depth. The small sample sizes for several types (e.g., \"mwb\" with only 2 events) make their averages unreliable.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.magtype",
+          "data.depth",
+          "earthquake_count",
+          "data.mag"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "5f063ef3-5bdf-4ccc-ac04-fbf07a75e000",
+      "request_id": "34eb3ddf-1758-4941-a306-bd770e3fc240",
+      "created_at": "2026-07-13T06:01:22.301149",
+      "completed_at": "2026-07-13T06:01:31.588861",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "bb73779f-4067-4c24-aebc-06e9c600d321"
+      ]
+    },
+    {
+      "id": "zh-CN-usgs-05",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "按深度区间（10公里以内、10到50、50到100、100公里以上）统计地震数量。",
+      "rewritten_question": "按深度区间（10公里以内、10到50、50到100、100公里以上）统计地震数量。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT\n  CASE\n    WHEN depth < 10 THEN 'under_10_km'\n    WHEN depth >= 10 AND depth < 50 THEN '10_50_km'\n    WHEN depth >= 50 AND depth < 100 THEN '50_100_km'\n    WHEN depth >= 100 THEN '100_km_or_more'\n  END AS depth_band,\n  COUNT(*) AS earthquake_count\nFROM data\nGROUP BY depth_band\nORDER BY earthquake_count DESC",
+      "validated_sql": "SELECT CASE WHEN depth < 10 THEN 'under_10_km' WHEN depth >= 10 AND depth < 50 THEN '10_50_km' WHEN depth >= 50 AND depth < 100 THEN '50_100_km' WHEN depth >= 100 THEN '100_km_or_more' END AS depth_band, COUNT(*) AS earthquake_count FROM data GROUP BY depth_band ORDER BY earthquake_count DESC LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 4,
+      "chart_type": "bar",
+      "execution_time_ms": 9022.65576171875,
+      "columns": [
+        "depth_band",
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "depth_band": "under_10_km",
+          "earthquake_count": 6302
+        },
+        {
+          "depth_band": "10_50_km",
+          "earthquake_count": 3072
+        },
+        {
+          "depth_band": "50_100_km",
+          "earthquake_count": 690
+        },
+        {
+          "depth_band": "100_km_or_more",
+          "earthquake_count": 428
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "depth_band",
+        "y_columns": [
+          "earthquake_count"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Earthquakes are most frequent at shallow depths, with 6,302 events (60.1%) occurring within 10 km of the surface, followed by 3,072 (29.3%) between 10–50 km, 690 (6.6%) between 50–100 km, and 428 (4.1%) at 100 km or deeper.\n\n**Cautious interpretation:** The steep decline in earthquake count with increasing depth likely reflects the brittle-ductile transition in the Earth's crust, where rocks become less prone to brittle fracture under higher temperature and pressure. However, this pattern may also be influenced by detection bias—shallow earthquakes produce stronger surface signals and are more easily recorded by seismic networks, while deeper events may be undercounted. Additionally, the dataset's geographic and temporal coverage is unknown, so these proportions may not generalize globally or across different tectonic settings. **Causal limitation:** The SQL query only counts events per depth band; it does not control for magnitude, location, or network sensitivity, so no causal relationship between depth and earthquake occurrence can be inferred.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "depth_band",
+          "earthquake_count",
+          "data.depth"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "c50d1c1f-2002-45f5-a382-f10e5b02eef7",
+      "request_id": "07f8e1de-f78e-4903-87e7-6aede605bd65",
+      "created_at": "2026-07-13T06:01:32.500342",
+      "completed_at": "2026-07-13T06:01:41.510237",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "3967b28b-1784-403b-b987-90f4f0d0d9b6"
+      ]
+    },
+    {
+      "id": "zh-CN-noaa-01",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "2025年哪一天的最高气温最高？",
+      "rewritten_question": "2025年哪一天的最高气温最高？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT date, tmax_c FROM data ORDER BY tmax_c DESC LIMIT 1",
+      "validated_sql": "SELECT date, tmax_c FROM data ORDER BY tmax_c DESC LIMIT 1",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "table",
+      "execution_time_ms": 7124.171875,
+      "columns": [
+        "date",
+        "tmax_c"
+      ],
+      "rows": [
+        {
+          "date": "2025-06-24",
+          "tmax_c": 38.9
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "观察：2025年6月24日的最高气温最高，达到38.9°C。谨慎解读：该日期在数据集中记录了全年最高的日最高气温。因果限制：此结论仅基于现有数据，未考虑数据缺失、测量误差或气象条件（如热浪、地理位置）等潜在影响因素，不能推断该日气温异常的原因。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.date",
+          "data.tmax_c"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "b15602fd-918f-4bba-a2d8-a2d31654dd22",
+      "request_id": "c7f0268e-7e40-4f6b-88b4-b00c61ea0e15",
+      "created_at": "2026-07-13T05:42:46.176730",
+      "completed_at": "2026-07-13T05:42:53.287459",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-noaa-02",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "2025年每月总降水量是多少？",
+      "rewritten_question": "2025年每月总降水量是多少？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT strftime('%Y-%m', date) AS month, SUM(precipitation_mm) AS total_precipitation_mm\nFROM data\nWHERE date >= '2025-01-01' AND date < '2026-01-01'\nGROUP BY strftime('%Y-%m', date)\nORDER BY month",
+      "validated_sql": "SELECT STRFTIME('%Y-%m', date) AS month, SUM(precipitation_mm) AS total_precipitation_mm FROM data WHERE date >= '2025-01-01' AND date < '2026-01-01' GROUP BY STRFTIME('%Y-%m', date) ORDER BY month LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 12,
+      "chart_type": "line",
+      "execution_time_ms": 9082.08203125,
+      "columns": [
+        "month",
+        "total_precipitation_mm"
+      ],
+      "rows": [
+        {
+          "month": "2025-01",
+          "total_precipitation_mm": 16.5
+        },
+        {
+          "month": "2025-02",
+          "total_precipitation_mm": 80.7
+        },
+        {
+          "month": "2025-03",
+          "total_precipitation_mm": 108.1
+        },
+        {
+          "month": "2025-04",
+          "total_precipitation_mm": 55.2
+        },
+        {
+          "month": "2025-05",
+          "total_precipitation_mm": 112.6
+        },
+        {
+          "month": "2025-06",
+          "total_precipitation_mm": 65.1
+        },
+        {
+          "month": "2025-07",
+          "total_precipitation_mm": 79.7
+        },
+        {
+          "month": "2025-08",
+          "total_precipitation_mm": 45.1
+        },
+        {
+          "month": "2025-09",
+          "total_precipitation_mm": 75.3
+        },
+        {
+          "month": "2025-10",
+          "total_precipitation_mm": 101.5
+        },
+        {
+          "month": "2025-11",
+          "total_precipitation_mm": 45.699999999999996
+        },
+        {
+          "month": "2025-12",
+          "total_precipitation_mm": 80.7
+        }
+      ],
+      "chart": {
+        "type": "line",
+        "x_column": "month",
+        "y_columns": [
+          "total_precipitation_mm"
+        ],
+        "series_name": null,
+        "title": "Trend over time",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** 2025年各月总降水量（毫米）分别为：1月16.5、2月80.7、3月108.1、4月55.2、5月112.6、6月65.1、7月79.7、8月45.1、9月75.3、10月101.5、11月45.7、12月80.7。全年降水量呈现双峰型分布，峰值出现在5月（112.6毫米）和3月（108.1毫米），低谷出现在1月（16.5毫米）和8月（45.1毫米）。\n\n**Cautious Interpretation:** 这可能反映了该地区春季（3-5月）和秋季（10月）降水较多、冬季（1月）和夏末（8月）降水较少的季节性降水模式。\n\n**Causal Limitation:** 数据仅覆盖2025年一年，无法区分这是该地区的典型气候模式还是特定年份的异常波动；且未提供地理位置信息，不同地区的降水季节特征差异显著。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.precipitation_mm",
+          "month",
+          "data.date"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "db750364-1ed5-4d94-b7dd-c1b082adb88a",
+      "request_id": "880dd593-87c0-4837-b710-5645d88fe106",
+      "created_at": "2026-07-13T05:42:53.902001",
+      "completed_at": "2026-07-13T05:43:02.969073",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-noaa-03",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "有多少天记录到大于零的降雪量，总降雪量是多少？",
+      "rewritten_question": "有多少天记录到大于零的降雪量，总降雪量是多少？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT COUNT(*) AS days_with_snow, SUM(snowfall_mm) AS total_snowfall_mm FROM data WHERE snowfall_mm > 0",
+      "validated_sql": "SELECT COUNT(*) AS days_with_snow, SUM(snowfall_mm) AS total_snowfall_mm FROM data WHERE snowfall_mm > 0 LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "number",
+      "execution_time_ms": 7489.489501953125,
+      "columns": [
+        "days_with_snow",
+        "total_snowfall_mm"
+      ],
+      "rows": [
+        {
+          "days_with_snow": 13,
+          "total_snowfall_mm": 454.0
+        }
+      ],
+      "chart": {
+        "type": "number",
+        "x_column": null,
+        "y_columns": [
+          "days_with_snow",
+          "total_snowfall_mm"
+        ],
+        "series_name": "Days With Snow",
+        "title": "Days With Snow",
+        "value_format": "number"
+      },
+      "insight": "在数据集中，有13天记录到大于零的降雪量，总降雪量为454.0毫米。观察：降雪事件集中在少数天数（13天），平均每次降雪约34.9毫米。谨慎解读：这可能表明该地区降雪频率较低但单次降雪量较大，或数据采集时段有限。因果限制：无法推断降雪频率与总量的因果关系，结果受数据采集周期和季节覆盖范围影响。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.snowfall_mm"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "8a958f3a-5e87-4474-b4c3-de045ab13329",
+      "request_id": "7a8a3dec-5a66-4c36-97a5-ff99ff3b8a50",
+      "created_at": "2026-07-13T05:43:03.757414",
+      "completed_at": "2026-07-13T05:43:11.227442",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-noaa-04",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "找出平均风速最高的10天，并显示日期、平均风速和最大两分钟风速。",
+      "rewritten_question": "找出平均风速最高的10天，并显示日期、平均风速和最大两分钟风速。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT date, avg_wind_speed_ms, max_2min_wind_speed_ms\nFROM data\nORDER BY avg_wind_speed_ms DESC\nLIMIT 10",
+      "validated_sql": "SELECT date, avg_wind_speed_ms, max_2min_wind_speed_ms FROM data ORDER BY avg_wind_speed_ms DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "table",
+      "execution_time_ms": 9261.40673828125,
+      "columns": [
+        "date",
+        "avg_wind_speed_ms",
+        "max_2min_wind_speed_ms"
+      ],
+      "rows": [
+        {
+          "date": "2025-01-09",
+          "avg_wind_speed_ms": 11.4,
+          "max_2min_wind_speed_ms": 17.4
+        },
+        {
+          "date": "2025-02-17",
+          "avg_wind_speed_ms": 11.2,
+          "max_2min_wind_speed_ms": 17.4
+        },
+        {
+          "date": "2025-01-07",
+          "avg_wind_speed_ms": 11.0,
+          "max_2min_wind_speed_ms": 17.4
+        },
+        {
+          "date": "2025-01-08",
+          "avg_wind_speed_ms": 10.6,
+          "max_2min_wind_speed_ms": 14.3
+        },
+        {
+          "date": "2025-10-31",
+          "avg_wind_speed_ms": 10.6,
+          "max_2min_wind_speed_ms": 16.1
+        },
+        {
+          "date": "2025-12-30",
+          "avg_wind_speed_ms": 10.4,
+          "max_2min_wind_speed_ms": 16.1
+        },
+        {
+          "date": "2025-12-19",
+          "avg_wind_speed_ms": 10.3,
+          "max_2min_wind_speed_ms": 17.9
+        },
+        {
+          "date": "2025-03-07",
+          "avg_wind_speed_ms": 10.2,
+          "max_2min_wind_speed_ms": 17.0
+        },
+        {
+          "date": "2025-10-13",
+          "avg_wind_speed_ms": 10.1,
+          "max_2min_wind_speed_ms": 13.9
+        },
+        {
+          "date": "2025-11-11",
+          "avg_wind_speed_ms": 10.1,
+          "max_2min_wind_speed_ms": 15.6
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** The 10 windiest days (by average wind speed) range from 10.1 to 11.4 m/s, with dates concentrated in early January (2025-01-07 to 2025-01-09) and late December (2025-12-19, 2025-12-30), plus scattered dates in February, March, October, and November. The highest average (11.4 m/s on 2025-01-09) ties with two other dates for the highest max 2-minute gust (17.4 m/s), while 2025-12-19 has the single highest max gust (17.9 m/s) despite a lower average (10.3 m/s).\n\n**Cautious Interpretation:** The clustering of high-wind days in early January and late December suggests a seasonal pattern, possibly linked to winter storm activity in that region. The decoupling of average wind speed from peak gusts (e.g., 2025-12-19 has the highest gust but not the highest average) indicates that sustained high winds and short-duration gusts are distinct phenomena.\n\n**Causal Limitations:** This is a descriptive ranking of the top 10 days only; it cannot determine whether these dates represent a broader seasonal trend or random extremes, nor can it attribute the wind patterns to any specific weather systems or climate factors without additional meteorological data.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.date",
+          "data.avg_wind_speed_ms",
+          "data.max_2min_wind_speed_ms"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "f9917bdc-d677-4a82-8fc8-62f6b0293800",
+      "request_id": "2035a24b-2ff6-4998-9d51-3d7925a7ff49",
+      "created_at": "2026-07-13T05:43:12.002770",
+      "completed_at": "2026-07-13T05:43:21.229918",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-noaa-05",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "比较2025年各月平均最高气温和平均最低气温。",
+      "rewritten_question": "比较2025年各月平均最高气温和平均最低气温。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT strftime('%Y-%m', date) AS month, AVG(tmax_c) AS avg_max_temp_c, AVG(tmin_c) AS avg_min_temp_c FROM data WHERE date >= '2025-01-01' AND date < '2026-01-01' GROUP BY month ORDER BY month",
+      "validated_sql": "SELECT STRFTIME('%Y-%m', date) AS month, AVG(tmax_c) AS avg_max_temp_c, AVG(tmin_c) AS avg_min_temp_c FROM data WHERE date >= '2025-01-01' AND date < '2026-01-01' GROUP BY month ORDER BY month LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 12,
+      "chart_type": "line",
+      "execution_time_ms": 9466.154541015625,
+      "columns": [
+        "month",
+        "avg_max_temp_c",
+        "avg_min_temp_c"
+      ],
+      "rows": [
+        {
+          "month": "2025-01",
+          "avg_max_temp_c": 3.9451612903225803,
+          "avg_min_temp_c": -2.7
+        },
+        {
+          "month": "2025-02",
+          "avg_max_temp_c": 6.646428571428571,
+          "avg_min_temp_c": -0.817857142857143
+        },
+        {
+          "month": "2025-03",
+          "avg_max_temp_c": 13.203225806451613,
+          "avg_min_temp_c": 3.551612903225806
+        },
+        {
+          "month": "2025-04",
+          "avg_max_temp_c": 16.706666666666667,
+          "avg_min_temp_c": 7.556666666666667
+        },
+        {
+          "month": "2025-05",
+          "avg_max_temp_c": 21.15806451612903,
+          "avg_min_temp_c": 12.841935483870968
+        },
+        {
+          "month": "2025-06",
+          "avg_max_temp_c": 26.863333333333333,
+          "avg_min_temp_c": 18.553333333333335
+        },
+        {
+          "month": "2025-07",
+          "avg_max_temp_c": 30.574193548387097,
+          "avg_min_temp_c": 22.612903225806452
+        },
+        {
+          "month": "2025-08",
+          "avg_max_temp_c": 26.916129032258063,
+          "avg_min_temp_c": 18.38064516129032
+        },
+        {
+          "month": "2025-09",
+          "avg_max_temp_c": 24.94333333333333,
+          "avg_min_temp_c": 16.696666666666665
+        },
+        {
+          "month": "2025-10",
+          "avg_max_temp_c": 18.5,
+          "avg_min_temp_c": 10.864516129032259
+        },
+        {
+          "month": "2025-11",
+          "avg_max_temp_c": 12.020000000000001,
+          "avg_min_temp_c": 4.253333333333333
+        },
+        {
+          "month": "2025-12",
+          "avg_max_temp_c": 4.603225806451612,
+          "avg_min_temp_c": -2.97741935483871
+        }
+      ],
+      "chart": {
+        "type": "line",
+        "x_column": "month",
+        "y_columns": [
+          "avg_max_temp_c",
+          "avg_min_temp_c"
+        ],
+        "series_name": null,
+        "title": "Trend over time",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** In 2025, both average maximum and minimum temperatures follow a clear seasonal pattern, peaking in July (avg max 30.6°C, avg min 22.6°C) and reaching their lowest in January (avg max 3.9°C, avg min -2.7°C) and December (avg max 4.6°C, avg min -3.0°C). The average daily temperature range (max minus min) is relatively consistent across months, typically between 6–8°C, with the narrowest range in December (7.6°C) and the widest in March (9.7°C).\n\n**Cautious Interpretation:** The data reflects a typical mid-latitude continental climate with warm summers and cold winters. The slightly wider temperature range in spring (March) may indicate greater diurnal variability during seasonal transition. However, these are monthly averages from a single year (2025), so year-to-year climate variability or extreme weather events are not captured.\n\n**Causal Limitations:** This is purely descriptive of 2025 conditions. No causal inferences can be drawn about climate trends, weather drivers, or comparisons to other years without additional data.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "month",
+          "data.tmax_c",
+          "data.tmin_c",
+          "data.date"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "4a3ee893-6ec7-4c84-9cba-c0c181a619aa",
+      "request_id": "07c72842-fed8-4c2b-8d1a-dd87f9637a9b",
+      "created_at": "2026-07-13T06:01:47.616236",
+      "completed_at": "2026-07-13T06:01:57.065394",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "adb080a5-7f1b-489e-8e44-abf739abd756"
+      ]
+    },
+    {
+      "id": "zh-CN-world_bank-01",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "2024年GDP最高的10个国家是哪些？排除缺失值。",
+      "rewritten_question": "2024年GDP最高的10个国家是哪些？排除缺失值。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, gdp_current_usd\nFROM data\nWHERE year = 2024 AND gdp_current_usd IS NOT NULL\nORDER BY gdp_current_usd DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, gdp_current_usd FROM data WHERE year = 2024 AND NOT gdp_current_usd IS NULL ORDER BY gdp_current_usd DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 10289.752197265625,
+      "columns": [
+        "country",
+        "gdp_current_usd"
+      ],
+      "rows": [
+        {
+          "country": "United States",
+          "gdp_current_usd": 29298013000000.0
+        },
+        {
+          "country": "China",
+          "gdp_current_usd": 18729668435848.0
+        },
+        {
+          "country": "Germany",
+          "gdp_current_usd": 4685592577804.69
+        },
+        {
+          "country": "Japan",
+          "gdp_current_usd": 4190008188358.57
+        },
+        {
+          "country": "India",
+          "gdp_current_usd": 3760813470500.86
+        },
+        {
+          "country": "United Kingdom",
+          "gdp_current_usd": 3695539513534.15
+        },
+        {
+          "country": "France",
+          "gdp_current_usd": 3160442622465.08
+        },
+        {
+          "country": "Italy",
+          "gdp_current_usd": 2383435562458.12
+        },
+        {
+          "country": "Canada",
+          "gdp_current_usd": 2270076189683.46
+        },
+        {
+          "country": "Russian Federation",
+          "gdp_current_usd": 2186462268813.08
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "country",
+        "y_columns": [
+          "gdp_current_usd"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** 2024年GDP最高的10个国家依次为：美国（$29.30万亿）、中国（$18.73万亿）、德国（$4.69万亿）、日本（$4.19万亿）、印度（$3.76万亿）、英国（$3.70万亿）、法国（$3.16万亿）、意大利（$2.38万亿）、加拿大（$2.27万亿）和俄罗斯（$2.19万亿）。美国与中国之间的GDP差距约为$10.57万亿，而排名第3的德国与第10的俄罗斯之间差距相对较小（约$2.50万亿）。\n\n**Cautious Interpretation:** 数据反映了2024年全球经济格局的头部集中特征——美中两国GDP远超其余国家，合计占前十总量的约63%。印度作为人口大国已跃居第五，显示出新兴经济体的持续追赶态势。俄罗斯位列第十，其经济规模受国际制裁等因素影响仍具韧性。\n\n**Causal Limitations:** 本数据仅反映2024年以当前美元计价的GDP排名，未考虑购买力平价（PPP）、汇率波动、通货膨胀率差异或经济结构质量。排名受美元汇率变动影响较大，且缺失值已被排除，不排除部分国家因数据缺失未纳入排名。GDP数值本身不能直接推断国民福利水平或经济健康程度。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.gdp_current_usd",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "083b0273-8ad5-4961-8555-ee3d978cc375",
+      "request_id": "321adf4c-40f1-4aa8-9a5d-1cbaabab13a9",
+      "created_at": "2026-07-13T05:43:45.677389",
+      "completed_at": "2026-07-13T05:43:55.951361",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-world_bank-02",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "2024年人口最多的10个国家是哪些？",
+      "rewritten_question": "2024年人口最多的10个国家是哪些？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, population\nFROM data\nWHERE year = 2024\nORDER BY population DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, population FROM data WHERE year = 2024 ORDER BY population DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 7535.018310546875,
+      "columns": [
+        "country",
+        "population"
+      ],
+      "rows": [
+        {
+          "country": "India",
+          "population": 1450935791
+        },
+        {
+          "country": "China",
+          "population": 1408975000
+        },
+        {
+          "country": "United States",
+          "population": 340003797
+        },
+        {
+          "country": "Indonesia",
+          "population": 283487931
+        },
+        {
+          "country": "Pakistan",
+          "population": 251269164
+        },
+        {
+          "country": "Nigeria",
+          "population": 232679478
+        },
+        {
+          "country": "Brazil",
+          "population": 211998573
+        },
+        {
+          "country": "Bangladesh",
+          "population": 173562364
+        },
+        {
+          "country": "Russian Federation",
+          "population": 143669648
+        },
+        {
+          "country": "Ethiopia",
+          "population": 132059767
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "country",
+        "y_columns": [
+          "population"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "2024年人口最多的10个国家依次为：印度（约14.51亿）、中国（约14.09亿）、美国（约3.40亿）、印度尼西亚（约2.83亿）、巴基斯坦（约2.51亿）、尼日利亚（约2.33亿）、巴西（约2.12亿）、孟加拉国（约1.74亿）、俄罗斯（约1.44亿）和埃塞俄比亚（约1.32亿）。印度已超过中国成为全球人口第一大国，两国合计占全球人口约36%；前十名中亚洲国家占6席，非洲国家占2席（尼日利亚、埃塞俄比亚），显示全球人口重心向亚洲和非洲倾斜。需注意该数据为2024年估算值，实际人口可能因统计口径和时效性存在偏差，且排名仅反映人口数量，不涉及人口结构、密度或经济增长等维度。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.population",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "f939020c-e1de-49ab-9ce6-5e7cf92f42a0",
+      "request_id": "2bf63d63-6198-447f-9146-de38f23ae8a6",
+      "created_at": "2026-07-13T05:43:56.769236",
+      "completed_at": "2026-07-13T05:44:04.287172",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-world_bank-03",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "2015到2024年中国人口变化了多少，变化率是多少？",
+      "rewritten_question": "2015到2024年中国人口变化了多少，变化率是多少？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT\n  (SELECT population FROM data WHERE country = 'China' AND year = 2024) -\n  (SELECT population FROM data WHERE country = 'China' AND year = 2015) AS population_change,\n  ROUND(\n    ((SELECT population FROM data WHERE country = 'China' AND year = 2024) -\n     (SELECT population FROM data WHERE country = 'China' AND year = 2015)) * 100.0 /\n    (SELECT population FROM data WHERE country = 'China' AND year = 2015),\n    2\n  ) AS change_rate_pct\nFROM data\nWHERE country = 'China' AND year IN (2015, 2024)\nLIMIT 1",
+      "validated_sql": "SELECT (SELECT population FROM data WHERE country = 'China' AND year = 2024) - (SELECT population FROM data WHERE country = 'China' AND year = 2015) AS population_change, ROUND(((SELECT population FROM data WHERE country = 'China' AND year = 2024) - (SELECT population FROM data WHERE country = 'China' AND year = 2015)) * 100.0 / (SELECT population FROM data WHERE country = 'China' AND year = 2015), 2) AS change_rate_pct FROM data WHERE country = 'China' AND year IN (2015, 2024) LIMIT 1",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "number",
+      "execution_time_ms": 8937.519775390625,
+      "columns": [
+        "population_change",
+        "change_rate_pct"
+      ],
+      "rows": [
+        {
+          "population_change": 29115000,
+          "change_rate_pct": 2.11
+        }
+      ],
+      "chart": {
+        "type": "number",
+        "x_column": null,
+        "y_columns": [
+          "population_change",
+          "change_rate_pct"
+        ],
+        "series_name": "Population Change",
+        "title": "Population Change",
+        "value_format": "number"
+      },
+      "insight": "从2015年到2024年，中国人口增加了29,115,000人，变化率为2.11%。观察：中国人口在这九年间保持正增长，但增长率相对较低（年均约0.23%），反映出人口增长已进入缓慢阶段。谨慎解读：这一变化率远低于中国历史上的人口增速，可能受到生育率下降和人口老龄化趋势的影响，但需注意本数据仅反映总量变化，未区分自然增长（出生减死亡）与机械增长（国际移民）的各自贡献。因果限制：无法从总量变化推断人口增长放缓的具体原因，如生育政策调整（如三孩政策）的效果、年龄结构变化或城乡迁移等因素均需进一步数据支持。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.year",
+          "data.population"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "be1138d8-5ed1-474e-83db-f25533f7e036",
+      "request_id": "ffda0cbd-a09b-4edc-ad62-b285fc767b46",
+      "created_at": "2026-07-13T05:44:05.202722",
+      "completed_at": "2026-07-13T05:44:14.121015",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-world_bank-04",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "用GDP除以人口计算2024年人均GDP，列出最高的10个国家并排除缺失值。",
+      "rewritten_question": "用GDP除以人口计算2024年人均GDP，列出最高的10个国家并排除缺失值。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, gdp_current_usd / CAST(population AS REAL) AS gdp_per_capita\nFROM data\nWHERE year = 2024 AND population IS NOT NULL AND gdp_current_usd IS NOT NULL AND population > 0\nORDER BY gdp_per_capita DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, gdp_current_usd / CAST(population AS REAL) AS gdp_per_capita FROM data WHERE year = 2024 AND NOT population IS NULL AND NOT gdp_current_usd IS NULL AND population > 0 ORDER BY gdp_per_capita DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 11381.031982421875,
+      "columns": [
+        "country",
+        "gdp_per_capita"
+      ],
+      "rows": [
+        {
+          "country": "Monaco",
+          "gdp_per_capita": 288001.5748564935
+        },
+        {
+          "country": "Liechtenstein",
+          "gdp_per_capita": 220167.22547355745
+        },
+        {
+          "country": "Bermuda",
+          "gdp_per_capita": 142250.43319512345
+        },
+        {
+          "country": "Luxembourg",
+          "gdp_per_capita": 137781.68165912305
+        },
+        {
+          "country": "Ireland",
+          "gdp_per_capita": 112894.95324080532
+        },
+        {
+          "country": "Switzerland",
+          "gdp_per_capita": 107702.06594031169
+        },
+        {
+          "country": "Cayman Islands",
+          "gdp_per_capita": 104292.9006721086
+        },
+        {
+          "country": "Singapore",
+          "gdp_per_capita": 94896.5621495988
+        },
+        {
+          "country": "Norway",
+          "gdp_per_capita": 89888.95352047573
+        },
+        {
+          "country": "United States",
+          "gdp_per_capita": 86169.66415819174
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "country",
+        "y_columns": [
+          "gdp_per_capita"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** 2024年人均GDP最高的10个国家/地区依次为：摩纳哥（$288,002）、列支敦士登（$220,167）、百慕大（$142,250）、卢森堡（$137,782）、爱尔兰（$112,895）、瑞士（$107,702）、开曼群岛（$104,293）、新加坡（$94,897）、挪威（$89,889）和美国（$86,170）。榜单以小型高收入经济体为主，其中欧洲国家/地区占据6席，北美（百慕大、开曼群岛、美国）占3席，亚洲仅新加坡1席。\n\n**Cautious Interpretation:** 高人均GDP集中出现在金融中心（摩纳哥、卢森堡、开曼群岛）和避税地（列支敦士登、百慕大、爱尔兰），这可能反映这些经济体通过吸引跨国资本和公司注册推高了GDP分母（人口小）和分子（经济活动集中）。新加坡和美国作为大型经济体上榜，表明其高附加值产业（金融、科技）的竞争力。\n\n**Causal Limitations:** 人均GDP是总量除以人口的简单比值，无法反映收入分配、生活成本或购买力差异。摩纳哥和列支敦士登等微型国家的高数值受人口基数极小（数万人）的统计放大效应影响，且GDP可能包含大量非居民经济活动（如跨国公司注册），不能直接等同于居民实际收入水平。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.gdp_current_usd",
+          "gdp_per_capita",
+          "data.population",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "39bdd843-eda3-43a4-aff6-a4d9493a3646",
+      "request_id": "e05d61b3-196b-4a54-8b7c-1f628ccdc055",
+      "created_at": "2026-07-13T05:44:15.209010",
+      "completed_at": "2026-07-13T05:44:26.574311",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-world_bank-05",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "列出2023年预期寿命最高的10个国家，同时显示GDP和人口。",
+      "rewritten_question": "列出2023年预期寿命最高的10个国家，同时显示GDP和人口。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, life_expectancy_years, gdp_current_usd, population\nFROM data\nWHERE year = 2023\nORDER BY life_expectancy_years DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, life_expectancy_years, gdp_current_usd, population FROM data WHERE year = 2023 ORDER BY life_expectancy_years DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "table",
+      "execution_time_ms": 9786.9658203125,
+      "columns": [
+        "country",
+        "life_expectancy_years",
+        "gdp_current_usd",
+        "population"
+      ],
+      "rows": [
+        {
+          "country": "Monaco",
+          "life_expectancy_years": 86.372,
+          "gdp_current_usd": 10003897341.1766,
+          "population": 38956
+        },
+        {
+          "country": "San Marino",
+          "life_expectancy_years": 85.706,
+          "gdp_current_usd": 2027243193.5116,
+          "population": 33860
+        },
+        {
+          "country": "Hong Kong SAR, China",
+          "life_expectancy_years": 85.2473170731707,
+          "gdp_current_usd": 380762296025.216,
+          "population": 7536100
+        },
+        {
+          "country": "Liechtenstein",
+          "life_expectancy_years": 84.5951219512195,
+          "gdp_current_usd": 8239379403.22096,
+          "population": 39846
+        },
+        {
+          "country": "Switzerland",
+          "life_expectancy_years": 84.1560975609756,
+          "gdp_current_usd": 928435275851.707,
+          "population": 8888822
+        },
+        {
+          "country": "French Polynesia",
+          "life_expectancy_years": 84.07,
+          "gdp_current_usd": 6137447782.87066,
+          "population": 281118
+        },
+        {
+          "country": "Japan",
+          "life_expectancy_years": 84.0412195121951,
+          "gdp_current_usd": 4384854269961.93,
+          "population": 124516650
+        },
+        {
+          "country": "Andorra",
+          "life_expectancy_years": 84.041,
+          "gdp_current_usd": 3785067331.88242,
+          "population": 80856
+        },
+        {
+          "country": "Spain",
+          "life_expectancy_years": 83.9341463414634,
+          "gdp_current_usd": 1619481980719.64,
+          "population": 48352528
+        },
+        {
+          "country": "Gibraltar",
+          "life_expectancy_years": 83.553,
+          "gdp_current_usd": null,
+          "population": 38471
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** In 2023, the 10 highest life expectancies range from 86.37 years (Monaco) to 83.55 years (Gibraltar). These countries/territories are predominantly small European microstates (Monaco, San Marino, Liechtenstein, Andorra, Gibraltar) or high-income developed economies (Switzerland, Japan, Spain), plus Hong Kong SAR and French Polynesia. GDP varies enormously—from ~$2B (San Marino) to ~$4.4T (Japan)—and population ranges from ~33,860 (San Marino) to ~124.5M (Japan). Notably, Gibraltar has no reported GDP data.\n\n**Cautious Interpretation:** The data suggest that very high life expectancy clusters in small, wealthy jurisdictions and advanced economies, but the wide variation in GDP and population among these top-10 countries indicates that sheer economic size or population scale is not a direct driver of longevity. Small microstates may achieve high life expectancy through concentrated healthcare resources and favorable demographics, while large economies like Japan and Spain do so through universal healthcare systems and healthy lifestyles.\n\n**Causal Limitation:** This is a cross-sectional snapshot for one year only; no causal relationship between GDP, population, and life expectancy can be inferred. Confounding factors (e.g., healthcare spending per capita, diet, genetics, reporting differences for small territories) are not controlled for. The inclusion of territories (Hong Kong, Gibraltar, French Polynesia) may reflect different data collection standards than sovereign nations.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.life_expectancy_years",
+          "data.gdp_current_usd",
+          "data.population",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "f98160a3-eb55-4342-969e-8810d5bef4ba",
+      "request_id": "61c80b75-b270-4cda-a319-5507e31852aa",
+      "created_at": "2026-07-13T05:44:27.377811",
+      "completed_at": "2026-07-13T05:44:37.146599",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-china_nbs-01",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "2024年地区生产总值最高的10个省级地区是哪些？",
+      "rewritten_question": "2024年地区生产总值最高的10个省级地区是哪些？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS 地区, column_2 AS 地区生产总值_亿元\nFROM data\nORDER BY column_2 DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS 地区, column_2 AS 地区生产总值_亿元 FROM data ORDER BY column_2 DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 8290.763671875,
+      "columns": [
+        "地区",
+        "地区生产总值_亿元"
+      ],
+      "rows": [
+        {
+          "地区": "广东",
+          "地区生产总值_亿元": 141633.8
+        },
+        {
+          "地区": "江苏",
+          "地区生产总值_亿元": 137008.0
+        },
+        {
+          "地区": "山东",
+          "地区生产总值_亿元": 98565.8
+        },
+        {
+          "地区": "浙江",
+          "地区生产总值_亿元": 90130.6
+        },
+        {
+          "地区": "四川",
+          "地区生产总值_亿元": 64697.0
+        },
+        {
+          "地区": "河南",
+          "地区生产总值_亿元": 63590.0
+        },
+        {
+          "地区": "湖北",
+          "地区生产总值_亿元": 60013.0
+        },
+        {
+          "地区": "福建",
+          "地区生产总值_亿元": 57761.0
+        },
+        {
+          "地区": "上海",
+          "地区生产总值_亿元": 53926.7
+        },
+        {
+          "地区": "湖南",
+          "地区生产总值_亿元": 53231.0
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "地区",
+        "y_columns": [
+          "地区生产总值_亿元"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**观察**：2024年地区生产总值最高的10个省级地区依次为广东（141,633.8亿元）、江苏（137,008.0亿元）、山东（98,565.8亿元）、浙江（90,130.6亿元）、四川（64,697.0亿元）、河南（63,590.0亿元）、湖北（60,013.0亿元）、福建（57,761.0亿元）、上海（53,926.7亿元）、湖南（53,231.0亿元）。**谨慎解读**：广东和江苏以超13万亿元的GDP显著领先，构成第一梯队；山东和浙江处于9—10万亿元的第二梯队；其余六省（市）GDP在5.3—6.5万亿元之间，差距相对较小。**因果局限**：该排名仅反映2024年各地区生产总值总量，未考虑人口规模、人均水平、产业结构或价格因素，不能直接推断经济发展质量或效率的高低。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_2"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "aefd4363-9517-4c94-b062-b3eb6650b6ff",
+      "request_id": "c9f241b3-3923-424a-9c6a-2fe6bf45b820",
+      "created_at": "2026-07-13T05:45:02.884198",
+      "completed_at": "2026-07-13T05:45:11.159105",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-china_nbs-02",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "列出人均地区生产总值最高的10个地区，并比较其城镇人口比重。",
+      "rewritten_question": "列出人均地区生产总值最高的10个地区，并比较其城镇人口比重。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS 地区, column_6 AS 人均地区生产总值_元, column_10 AS 城镇人口比重_百分比\nFROM data\nORDER BY column_6 DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS 地区, column_6 AS 人均地区生产总值_元, column_10 AS 城镇人口比重_百分比 FROM data ORDER BY column_6 DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 9072.223388671875,
+      "columns": [
+        "地区",
+        "人均地区生产总值_元",
+        "城镇人口比重_百分比"
+      ],
+      "rows": [
+        {
+          "地区": "北京",
+          "人均地区生产总值_元": 228167,
+          "城镇人口比重_百分比": 88.22
+        },
+        {
+          "地区": "上海",
+          "人均地区生产总值_元": 217140,
+          "城镇人口比重_百分比": 89.85
+        },
+        {
+          "地区": "江苏",
+          "人均地区生产总值_元": 160694,
+          "城镇人口比重_百分比": 75.53
+        },
+        {
+          "地区": "福建",
+          "人均地区生产总值_元": 137920,
+          "城镇人口比重_百分比": 71.8
+        },
+        {
+          "地区": "浙江",
+          "人均地区生产总值_元": 135565,
+          "城镇人口比重_百分比": 75.46
+        },
+        {
+          "地区": "天津",
+          "人均地区生产总值_元": 132143,
+          "城镇人口比重_百分比": 86.01
+        },
+        {
+          "地区": "广东",
+          "人均地区生产总值_元": 111146,
+          "城镇人口比重_百分比": 75.91
+        },
+        {
+          "地区": "内蒙古",
+          "人均地区生产总值_元": 110011,
+          "城镇人口比重_百分比": 70.73
+        },
+        {
+          "地区": "湖北",
+          "人均地区生产总值_元": 102832,
+          "城镇人口比重_百分比": 66.35
+        },
+        {
+          "地区": "重庆",
+          "人均地区生产总值_元": 100903,
+          "城镇人口比重_百分比": 72.14
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "地区",
+        "y_columns": [
+          "人均地区生产总值_元",
+          "城镇人口比重_百分比"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**观察：** 人均地区生产总值最高的10个地区依次为北京（228,167元）、上海（217,140元）、江苏（160,694元）、福建（137,920元）、浙江（135,565元）、天津（132,143元）、广东（111,146元）、内蒙古（110,011元）、湖北（102,832元）、重庆（100,903元）。这些地区的城镇人口比重均超过66%，其中上海（89.85%）、北京（88.22%）、天津（86.01%）位列前三，而湖北（66.35%）和内蒙古（70.73%）相对较低。\n\n**谨慎解读：** 数据表明，人均GDP最高的地区普遍伴随较高的城镇化水平，但并非严格线性——例如内蒙古人均GDP（110,011元）高于湖北（102,832元），其城镇人口比重（70.73%）却低于广东（75.91%）和浙江（75.46%）。**因果局限：** 本数据仅展示截面相关性，无法推断人均GDP与城镇化之间的因果关系；城镇化水平受历史政策、地理条件、产业结构等多重因素影响，且人均GDP高可能源于资源禀赋（如内蒙古）或服务业集聚（如京沪），而非城镇化本身所致。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_6",
+          "data.column_10"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "d2f2a2a2-3410-40ef-9199-c76e2ce480d2",
+      "request_id": "a4db026f-83a4-4f5c-a188-5558f77b01b8",
+      "created_at": "2026-07-13T05:45:11.858192",
+      "completed_at": "2026-07-13T05:45:20.915287",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-china_nbs-03",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "哪些地区的自然增长率为负？按自然增长率从低到高排列。",
+      "rewritten_question": "哪些地区的自然增长率为负？按自然增长率从低到高排列。",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS 地区, column_14 AS 自然增长率_千分比\nFROM data\nWHERE column_14 < 0\nORDER BY column_14 ASC",
+      "validated_sql": "SELECT column_1 AS 地区, column_14 AS 自然增长率_千分比 FROM data WHERE column_14 < 0 ORDER BY column_14 ASC LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 20,
+      "chart_type": "bar",
+      "execution_time_ms": 9198.229736328125,
+      "columns": [
+        "地区",
+        "自然增长率_千分比"
+      ],
+      "rows": [
+        {
+          "地区": "黑龙江",
+          "自然增长率_千分比": -6.34
+        },
+        {
+          "地区": "辽宁",
+          "自然增长率_千分比": -5.3
+        },
+        {
+          "地区": "吉林",
+          "自然增长率_千分比": -4.85
+        },
+        {
+          "地区": "湖北",
+          "自然增长率_千分比": -3.14
+        },
+        {
+          "地区": "湖南",
+          "自然增长率_千分比": -3.04
+        },
+        {
+          "地区": "四川",
+          "自然增长率_千分比": -3.02
+        },
+        {
+          "地区": "重庆",
+          "自然增长率_千分比": -2.88
+        },
+        {
+          "地区": "内蒙古",
+          "自然增长率_千分比": -2.84
+        },
+        {
+          "地区": "江苏",
+          "自然增长率_千分比": -2.5
+        },
+        {
+          "地区": "河北",
+          "自然增长率_千分比": -2.32
+        },
+        {
+          "地区": "安徽",
+          "自然增长率_千分比": -2.24
+        },
+        {
+          "地区": "天津",
+          "自然增长率_千分比": -1.97
+        },
+        {
+          "地区": "山东",
+          "自然增长率_千分比": -1.67
+        },
+        {
+          "地区": "上海",
+          "自然增长率_千分比": -1.53
+        },
+        {
+          "地区": "山西",
+          "自然增长率_千分比": -1.39
+        },
+        {
+          "地区": "甘肃",
+          "自然增长率_千分比": -0.9
+        },
+        {
+          "地区": "陕西",
+          "自然增长率_千分比": -0.69
+        },
+        {
+          "地区": "江西",
+          "自然增长率_千分比": -0.58
+        },
+        {
+          "地区": "浙江",
+          "自然增长率_千分比": -0.36
+        },
+        {
+          "地区": "河南",
+          "自然增长率_千分比": -0.11
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "地区",
+        "y_columns": [
+          "自然增长率_千分比"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**观察：** 查询结果显示，共有20个地区的自然增长率为负值，按从低到高排列依次为：黑龙江（-6.34‰）、辽宁（-5.30‰）、吉林（-4.85‰）、湖北（-3.14‰）、湖南（-3.04‰）、四川（-3.02‰）、重庆（-2.88‰）、内蒙古（-2.84‰）、江苏（-2.50‰）、河北（-2.32‰）、安徽（-2.24‰）、天津（-1.97‰）、山东（-1.67‰）、上海（-1.53‰）、山西（-1.39‰）、甘肃（-0.90‰）、陕西（-0.69‰）、江西（-0.58‰）、浙江（-0.36‰）、河南（-0.11‰）。其中东北三省（黑龙江、辽宁、吉林）的自然负增长幅度最大，均低于-4.5‰。\n\n**谨慎解读：** 这些地区的人口自然增长率（出生减死亡）为负，表明死亡人数超过出生人数。东北地区负值最大，可能与该区域长期的人口外流、老龄化加剧及生育率偏低有关；而河南、浙江等地的负值接近零，处于临界状态。**因果局限：** 本数据仅反映自然增长率的数值排序，无法推断负增长的具体成因（如生育政策、经济因素、人口结构或迁移影响），也无法区分各因素的相对贡献。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_14"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "3e6abe55-0882-40b1-bfcc-3b18fc5ac856",
+      "request_id": "3e763877-fbb3-4ff5-834b-3e63d678c0bc",
+      "created_at": "2026-07-13T05:45:22.187412",
+      "completed_at": "2026-07-13T05:45:31.367878",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-china_nbs-04",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "第三产业增加值占地区生产总值比重最高的10个地区是哪些？",
+      "rewritten_question": "第三产业增加值占地区生产总值比重最高的10个地区是哪些？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS 地区, (column_5 / column_2) * 100 AS 第三产业增加值占地区生产总值比重\nFROM data\nORDER BY (column_5 / column_2) DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS 地区, (column_5 / column_2) * 100 AS 第三产业增加值占地区生产总值比重 FROM data ORDER BY (column_5 / column_2) DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 8243.37158203125,
+      "columns": [
+        "地区",
+        "第三产业增加值占地区生产总值比重"
+      ],
+      "rows": [
+        {
+          "地区": "北京",
+          "第三产业增加值占地区生产总值比重": 85.26736900393436
+        },
+        {
+          "地区": "上海",
+          "第三产业增加值占地区生产总值比重": 78.23471490004025
+        },
+        {
+          "地区": "天津",
+          "第三产业增加值占地区生产总值比重": 63.945895263616336
+        },
+        {
+          "地区": "海南",
+          "第三产业增加值占地区生产总值比重": 60.61343044721953
+        },
+        {
+          "地区": "浙江",
+          "第三产业增加值占地区生产总值比重": 58.53883142905961
+        },
+        {
+          "地区": "广东",
+          "第三产业增加值占地区生产总值比重": 57.494256314523795
+        },
+        {
+          "地区": "吉林",
+          "第三产业增加值占地区生产总值比重": 57.05512074199927
+        },
+        {
+          "地区": "重庆",
+          "第三产业增加值占地区生产总值比重": 57.05148913435135
+        },
+        {
+          "地区": "辽宁",
+          "第三产业增加值占地区生产总值比重": 56.860364213941196
+        },
+        {
+          "地区": "四川",
+          "第三产业增加值占地区生产总值比重": 56.046184521693434
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "地区",
+        "y_columns": [
+          "第三产业增加值占地区生产总值比重"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** 第三产业增加值占地区生产总值比重最高的10个地区依次为：北京（85.27%）、上海（78.23%）、天津（63.95%）、海南（60.61%）、浙江（58.54%）、广东（57.49%）、吉林（57.06%）、重庆（57.05%）、辽宁（56.86%）、四川（56.05%）。**Cautious interpretation:** 北京和上海显著领先，第三产业占比均超过75%，表明其经济结构以服务业为主导；其余地区集中在56%–64%区间，产业结构相对均衡。**Causal limitations:** 该排名仅反映各地区第三产业增加值占GDP的比重，无法推断第三产业发展的绝对规模、增速或质量，也不能说明产业结构优化的因果关系（如政策导向、资源禀赋或发展阶段差异）。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_5",
+          "data.column_2"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "d33c2353-2e28-4d36-a274-890b9a9fe0e0",
+      "request_id": "5fe861a1-c001-4f76-9eed-f87d1db24adc",
+      "created_at": "2026-07-13T05:45:32.179319",
+      "completed_at": "2026-07-13T05:45:40.403897",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "zh-CN-china_nbs-05",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "人口最多的10个地区及其城镇人口比重是多少？",
+      "rewritten_question": "人口最多的10个地区及其城镇人口比重是多少？",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS 地区, column_8 AS 总人口_万人, column_10 AS 城镇人口比重_百分比\nFROM data\nORDER BY column_8 DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS 地区, column_8 AS 总人口_万人, column_10 AS 城镇人口比重_百分比 FROM data ORDER BY column_8 DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 8318.538818359375,
+      "columns": [
+        "地区",
+        "总人口_万人",
+        "城镇人口比重_百分比"
+      ],
+      "rows": [
+        {
+          "地区": "广东",
+          "总人口_万人": 12780,
+          "城镇人口比重_百分比": 75.91
+        },
+        {
+          "地区": "山东",
+          "总人口_万人": 10080,
+          "城镇人口比重_百分比": 66.48
+        },
+        {
+          "地区": "河南",
+          "总人口_万人": 9785,
+          "城镇人口比重_百分比": 59.22
+        },
+        {
+          "地区": "江苏",
+          "总人口_万人": 8526,
+          "城镇人口比重_百分比": 75.53
+        },
+        {
+          "地区": "四川",
+          "总人口_万人": 8364,
+          "城镇人口比重_百分比": 60.1
+        },
+        {
+          "地区": "河北",
+          "总人口_万人": 7378,
+          "城镇人口比重_百分比": 63.42
+        },
+        {
+          "地区": "浙江",
+          "总人口_万人": 6670,
+          "城镇人口比重_百分比": 75.46
+        },
+        {
+          "地区": "湖南",
+          "总人口_万人": 6539,
+          "城镇人口比重_百分比": 62.07
+        },
+        {
+          "地区": "安徽",
+          "总人口_万人": 6123,
+          "城镇人口比重_百分比": 62.57
+        },
+        {
+          "地区": "湖北",
+          "总人口_万人": 5834,
+          "城镇人口比重_百分比": 66.35
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "地区",
+        "y_columns": [
+          "总人口_万人",
+          "城镇人口比重_百分比"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**观察：** 人口最多的10个地区依次为广东（12,780万人，城镇人口比重75.91%）、山东（10,080万人，66.48%）、河南（9,785万人，59.22%）、江苏（8,526万人，75.53%）、四川（8,364万人，60.10%）、河北（7,378万人，63.42%）、浙江（6,670万人，75.46%）、湖南（6,539万人，62.07%）、安徽（6,123万人，62.57%）、湖北（5,834万人，66.35%）。其中广东总人口最高，河南总人口第三但城镇人口比重最低（59.22%），广东、江苏、浙江的城镇人口比重均超过75%。\n\n**谨慎解读：** 人口大省中，广东、江苏、浙江的城镇化水平显著高于河南、四川等省份，可能反映经济发展水平与城镇化进程的关联。但本数据仅展示截面静态数值，无法推断城镇化率与人口规模之间的因果关系，也未控制各省面积、经济结构或统计口径差异（如城镇人口定义可能因地区调整）。",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_8",
+          "data.column_10"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "a00e4b4b-1130-473d-818c-66a9b880bd5b",
+      "request_id": "18466ee8-d5df-49b0-afdd-8358e50afb70",
+      "created_at": "2026-07-13T05:45:41.196399",
+      "completed_at": "2026-07-13T05:45:49.498670",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-usgs-01",
+      "language": "en",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "How many earthquakes with magnitude at least 4.5 occurred in the past 30 days?",
+      "rewritten_question": "How many earthquakes with magnitude at least 4.5 occurred in the past 30 days?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT COUNT(*) AS earthquake_count\nFROM data\nWHERE mag >= 4.5",
+      "validated_sql": "SELECT COUNT(*) AS earthquake_count FROM data WHERE mag >= 4.5 LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "number",
+      "execution_time_ms": 8372.217041015625,
+      "columns": [
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "earthquake_count": 533
+        }
+      ],
+      "chart": {
+        "type": "number",
+        "x_column": null,
+        "y_columns": [
+          "earthquake_count"
+        ],
+        "series_name": "Earthquake Count",
+        "title": "Earthquake Count",
+        "value_format": "number"
+      },
+      "insight": "Observation: The query returned 533 earthquakes with magnitude ≥4.5 in the past 30 days. Cautious interpretation: This indicates a substantial level of global seismic activity at this magnitude threshold over the monthly period. Causal limitation: The count reflects only recorded events meeting the magnitude criterion; it does not account for detection thresholds, regional monitoring coverage, or whether this count is typical or anomalous relative to historical baselines.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.mag"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "e624a286-df65-4bb2-ade3-4c587d998b5e",
+      "request_id": "254f959a-6303-435c-b3f0-e6b4cd114599",
+      "created_at": "2026-07-13T06:03:31.568116",
+      "completed_at": "2026-07-13T06:03:39.911503",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "2fa3c896-efd8-4ea5-be13-8571cbbe2f30"
+      ]
+    },
+    {
+      "id": "en-usgs-02",
+      "language": "en",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "Show the 10 strongest earthquakes with time, place, magnitude, and depth.",
+      "rewritten_question": "Show the 10 strongest earthquakes with time, place, magnitude, and depth.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT time, place, mag, depth FROM data ORDER BY mag DESC LIMIT 10",
+      "validated_sql": "SELECT time, place, mag, depth FROM data ORDER BY mag DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "table",
+      "execution_time_ms": 8079.28955078125,
+      "columns": [
+        "time",
+        "place",
+        "mag",
+        "depth"
+      ],
+      "rows": [
+        {
+          "time": "2026-06-24T22:05:11.743Z",
+          "place": "20 km ESE of Yumare, Venezuela",
+          "mag": 7.5,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-06-24T22:04:34.363Z",
+          "place": "21 km ENE of San Felipe, Venezuela",
+          "mag": 7.2,
+          "depth": 27.588
+        },
+        {
+          "time": "2026-06-24T22:30:12.989Z",
+          "place": "33 km ENE of Noda, Japan",
+          "mag": 6.9,
+          "depth": 34.0
+        },
+        {
+          "time": "2026-06-16T03:27:44.379Z",
+          "place": "42 km SE of Palu, Indonesia",
+          "mag": 6.7,
+          "depth": 11.0
+        },
+        {
+          "time": "2026-06-19T06:52:31.597Z",
+          "place": "133 km ESE of Petropavlovsk-Kamchatsky, Russia",
+          "mag": 6.6,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-06-17T18:56:58.028Z",
+          "place": "central Mid-Atlantic Ridge",
+          "mag": 6.6,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-06-26T11:34:41.498Z",
+          "place": "34 km WSW of Sarangani, Philippines",
+          "mag": 6.5,
+          "depth": 42.0
+        },
+        {
+          "time": "2026-06-16T09:06:55.517Z",
+          "place": "262 km SSE of Dunhuang, China",
+          "mag": 6.3,
+          "depth": 10.0
+        },
+        {
+          "time": "2026-07-03T02:31:28.846Z",
+          "place": "58 km W of Tobelo, Indonesia",
+          "mag": 6.2,
+          "depth": 120.932
+        },
+        {
+          "time": "2026-06-15T09:18:36.126Z",
+          "place": "68 km ESE of Pondaguitan, Philippines",
+          "mag": 6.2,
+          "depth": 84.0
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "The 10 strongest earthquakes in the dataset range from magnitude 7.5 down to 6.2, with the top two events (7.5 and 7.2) occurring near Yumare and San Felipe, Venezuela on June 24, 2026, within about 30 seconds of each other. The remaining eight events span June 15 to July 3, 2026, across Japan, Indonesia, Russia, the Mid-Atlantic Ridge, the Philippines, and China. Depths vary widely from shallow (10 km) to deeper events (up to ~121 km near Tobelo, Indonesia). Cautiously, the Venezuela pair may represent a mainshock-aftershock sequence given their close timing and proximity, but without additional seismic catalog data this cannot be confirmed. Causally, the query only orders by magnitude and limits to 10 rows, so these are the top events in the dataset but not necessarily the only significant earthquakes in the period.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.time",
+          "data.place",
+          "data.mag",
+          "data.depth"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "5cb55bcb-b462-447f-9f93-ee9ed900c393",
+      "request_id": "5d8b3e84-64b1-4a04-9ce2-178f384f60ee",
+      "created_at": "2026-07-13T05:46:26.236369",
+      "completed_at": "2026-07-13T05:46:34.299180",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-usgs-03",
+      "language": "en",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "Show the daily earthquake count trend by UTC date.",
+      "rewritten_question": "Show the daily earthquake count trend by UTC date.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT DATE(time) AS utc_date, COUNT(*) AS earthquake_count\nFROM data\nGROUP BY DATE(time)\nORDER BY utc_date",
+      "validated_sql": "SELECT DATE(time) AS utc_date, COUNT(*) AS earthquake_count FROM data GROUP BY DATE(time) ORDER BY utc_date LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 31,
+      "chart_type": "line",
+      "execution_time_ms": 9205.62646484375,
+      "columns": [
+        "utc_date",
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "utc_date": "2026-06-11",
+          "earthquake_count": 259
+        },
+        {
+          "utc_date": "2026-06-12",
+          "earthquake_count": 341
+        },
+        {
+          "utc_date": "2026-06-13",
+          "earthquake_count": 350
+        },
+        {
+          "utc_date": "2026-06-14",
+          "earthquake_count": 410
+        },
+        {
+          "utc_date": "2026-06-15",
+          "earthquake_count": 458
+        },
+        {
+          "utc_date": "2026-06-16",
+          "earthquake_count": 451
+        },
+        {
+          "utc_date": "2026-06-17",
+          "earthquake_count": 437
+        },
+        {
+          "utc_date": "2026-06-18",
+          "earthquake_count": 376
+        },
+        {
+          "utc_date": "2026-06-19",
+          "earthquake_count": 311
+        },
+        {
+          "utc_date": "2026-06-20",
+          "earthquake_count": 326
+        },
+        {
+          "utc_date": "2026-06-21",
+          "earthquake_count": 358
+        },
+        {
+          "utc_date": "2026-06-22",
+          "earthquake_count": 365
+        },
+        {
+          "utc_date": "2026-06-23",
+          "earthquake_count": 459
+        },
+        {
+          "utc_date": "2026-06-24",
+          "earthquake_count": 469
+        },
+        {
+          "utc_date": "2026-06-25",
+          "earthquake_count": 356
+        },
+        {
+          "utc_date": "2026-06-26",
+          "earthquake_count": 300
+        },
+        {
+          "utc_date": "2026-06-27",
+          "earthquake_count": 326
+        },
+        {
+          "utc_date": "2026-06-28",
+          "earthquake_count": 373
+        },
+        {
+          "utc_date": "2026-06-29",
+          "earthquake_count": 289
+        },
+        {
+          "utc_date": "2026-06-30",
+          "earthquake_count": 337
+        },
+        {
+          "utc_date": "2026-07-01",
+          "earthquake_count": 335
+        },
+        {
+          "utc_date": "2026-07-02",
+          "earthquake_count": 341
+        },
+        {
+          "utc_date": "2026-07-03",
+          "earthquake_count": 336
+        },
+        {
+          "utc_date": "2026-07-04",
+          "earthquake_count": 409
+        },
+        {
+          "utc_date": "2026-07-05",
+          "earthquake_count": 336
+        },
+        {
+          "utc_date": "2026-07-06",
+          "earthquake_count": 251
+        },
+        {
+          "utc_date": "2026-07-07",
+          "earthquake_count": 284
+        },
+        {
+          "utc_date": "2026-07-08",
+          "earthquake_count": 275
+        },
+        {
+          "utc_date": "2026-07-09",
+          "earthquake_count": 254
+        },
+        {
+          "utc_date": "2026-07-10",
+          "earthquake_count": 252
+        },
+        {
+          "utc_date": "2026-07-11",
+          "earthquake_count": 68
+        }
+      ],
+      "chart": {
+        "type": "line",
+        "x_column": "utc_date",
+        "y_columns": [
+          "earthquake_count"
+        ],
+        "series_name": null,
+        "title": "Trend over time",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Daily earthquake counts from June 11–30, 2026, range from 259 to 469 events per day. The lowest count occurred on June 11 (259) and the highest on June 24 (469). The series shows a general upward trend from June 11 to a peak around June 15–18, followed by a decline and then a second peak around June 23–24, before declining again toward month-end.\n\n**Cautious Interpretation:** The data suggests two distinct periods of elevated seismic activity within the 20-day window, possibly reflecting episodic clustering of earthquakes. However, these fluctuations may also be influenced by variations in detection sensitivity, data reporting delays, or incomplete catalog coverage.\n\n**Causal Limitation:** This is an observational trend only; no causal relationship can be inferred between dates and earthquake occurrence without additional geological, temporal, or instrumental context.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.time",
+          "utc_date"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "b98e20ba-c298-4196-b67d-1b07cc0d5a15",
+      "request_id": "620038e3-8e0c-427d-9f92-29c75966a669",
+      "created_at": "2026-07-13T05:46:35.211550",
+      "completed_at": "2026-07-13T05:46:44.400011",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-usgs-04",
+      "language": "en",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "Compare average depth and earthquake count by magnitude type, excluding records with missing magnitudes.",
+      "rewritten_question": "Compare average depth and earthquake count by magnitude type, excluding records with missing magnitudes.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT magtype, AVG(depth) AS avg_depth, COUNT(*) AS earthquake_count\nFROM data\nWHERE mag IS NOT NULL AND magtype IS NOT NULL\nGROUP BY magtype\nORDER BY earthquake_count DESC",
+      "validated_sql": "SELECT magtype, AVG(depth) AS avg_depth, COUNT(*) AS earthquake_count FROM data WHERE NOT mag IS NULL AND NOT magtype IS NULL GROUP BY magtype ORDER BY earthquake_count DESC LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 8735.26416015625,
+      "columns": [
+        "magtype",
+        "avg_depth",
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "magtype": "ml",
+          "avg_depth": 18.212830523595073,
+          "earthquake_count": 6739
+        },
+        {
+          "magtype": "md",
+          "avg_depth": 8.052300400582462,
+          "earthquake_count": 2743
+        },
+        {
+          "magtype": "mb",
+          "avg_depth": 82.17204750869061,
+          "earthquake_count": 863
+        },
+        {
+          "magtype": "mww",
+          "avg_depth": 60.61617777777778,
+          "earthquake_count": 90
+        },
+        {
+          "magtype": "mwr",
+          "avg_depth": 30.518578947368418,
+          "earthquake_count": 19
+        },
+        {
+          "magtype": "mun",
+          "avg_depth": -0.021666666666666667,
+          "earthquake_count": 12
+        },
+        {
+          "magtype": "mb_lg",
+          "avg_depth": 7.12275,
+          "earthquake_count": 8
+        },
+        {
+          "magtype": "mw",
+          "avg_depth": 9.324285752432715,
+          "earthquake_count": 7
+        },
+        {
+          "magtype": "mh",
+          "avg_depth": -1.8099999999999998,
+          "earthquake_count": 6
+        },
+        {
+          "magtype": "mwb",
+          "avg_depth": 21.5,
+          "earthquake_count": 2
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "magtype",
+        "y_columns": [
+          "avg_depth",
+          "earthquake_count"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Among 10 magnitude types (excluding missing values), \"ml\" (local magnitude) dominates with 6,739 earthquakes (avg depth 18.2 km), followed by \"md\" (duration magnitude) with 2,743 events (avg depth 8.1 km). Deeper average depths appear for \"mb\" (82.2 km, n=863) and \"mww\" (60.6 km, n=90). Two types (\"mun\" and \"mh\") show negative average depths (−0.02 km and −1.8 km), indicating possible data anomalies or surface/above-surface recordings.\n\n**Cautious Interpretation:** The prevalence of \"ml\" and \"md\" likely reflects their use as default magnitude types in regional networks for shallow, smaller events. The greater depths for \"mb\" and \"mww\" are consistent with these types being assigned to deeper tectonic or teleseismic events. The negative depth averages for \"mun\" and \"mh\" (n=12 and n=6) are implausible for true depth and may reflect recording errors, elevation corrections, or non-standard depth assignments.\n\n**Causal Limitations:** This is a descriptive aggregate; no causal relationship between magnitude type and depth can be inferred. Differences in average depth may reflect regional monitoring practices, event selection criteria, or magnitude assignment protocols rather than intrinsic physical differences. The small sample sizes for several types (e.g., \"mwb\" n=2) preclude robust comparison.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.magtype",
+          "data.depth",
+          "earthquake_count",
+          "data.mag"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "c1c04c30-7c3c-488d-ae4e-fc9fd652fced",
+      "request_id": "3e2e57ab-b9ae-4ca3-8e78-d978d73e1993",
+      "created_at": "2026-07-13T06:03:48.973944",
+      "completed_at": "2026-07-13T06:03:57.693100",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "5f9f9625-8b8a-41b7-a355-a50750e5a8d5"
+      ]
+    },
+    {
+      "id": "en-usgs-05",
+      "language": "en",
+      "dataset": "usgs",
+      "dataset_id": "060689f0-6605-4944-a512-ba16cbb5712a",
+      "question": "Count earthquakes by depth band: within 10 km, 10 to 50 km, 50 to 100 km, and over 100 km.",
+      "rewritten_question": "Count earthquakes by depth band: within 10 km, 10 to 50 km, 50 to 100 km, and over 100 km.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT\n  CASE\n    WHEN depth < 10 THEN 'under_10_km'\n    WHEN depth >= 10 AND depth < 50 THEN '10_50_km'\n    WHEN depth >= 50 AND depth < 100 THEN '50_100_km'\n    WHEN depth >= 100 THEN '100_km_or_more'\n  END AS depth_band,\n  COUNT(*) AS earthquake_count\nFROM data\nGROUP BY depth_band\nORDER BY earthquake_count DESC",
+      "validated_sql": "SELECT CASE WHEN depth < 10 THEN 'under_10_km' WHEN depth >= 10 AND depth < 50 THEN '10_50_km' WHEN depth >= 50 AND depth < 100 THEN '50_100_km' WHEN depth >= 100 THEN '100_km_or_more' END AS depth_band, COUNT(*) AS earthquake_count FROM data GROUP BY depth_band ORDER BY earthquake_count DESC LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 4,
+      "chart_type": "bar",
+      "execution_time_ms": 7772.2353515625,
+      "columns": [
+        "depth_band",
+        "earthquake_count"
+      ],
+      "rows": [
+        {
+          "depth_band": "under_10_km",
+          "earthquake_count": 6302
+        },
+        {
+          "depth_band": "10_50_km",
+          "earthquake_count": 3072
+        },
+        {
+          "depth_band": "50_100_km",
+          "earthquake_count": 690
+        },
+        {
+          "depth_band": "100_km_or_more",
+          "earthquake_count": 428
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "depth_band",
+        "y_columns": [
+          "earthquake_count"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "Observation: Earthquakes are most frequent at shallow depths, with 6,302 events under 10 km, followed by 3,072 between 10–50 km, 690 between 50–100 km, and 428 at 100 km or deeper. Interpretation: This steep decline in earthquake count with increasing depth likely reflects the brittle-ductile transition in the Earth's crust, where deeper rocks deform plastically rather than rupturing. Causal limitation: The data only show counts per depth band; factors such as regional tectonic setting, monitoring network sensitivity, and catalog completeness (e.g., deeper events may be harder to detect) could influence the observed distribution and are not controlled for here.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "depth_band",
+          "earthquake_count",
+          "data.depth"
+        ],
+        "schema_hash": "229df4ce34a68c217e9d3b4d76bf08c0ce253cbedb75a624f2161b3b79cc03ba"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "1c8e130c-5e48-4e0d-9eb6-01feac6336ac",
+      "request_id": "1d6f2347-d061-4ba2-9a2b-f23249dddfec",
+      "created_at": "2026-07-13T06:03:58.463969",
+      "completed_at": "2026-07-13T06:04:06.221499",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "e3655a9e-e3e6-4d51-9734-35fce40f2524"
+      ]
+    },
+    {
+      "id": "en-noaa-01",
+      "language": "en",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "Which date had the highest maximum temperature in 2025?",
+      "rewritten_question": "Which date had the highest maximum temperature in 2025?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT date, tmax_c\nFROM data\nWHERE date >= '2025-01-01' AND date < '2026-01-01'\nORDER BY tmax_c DESC\nLIMIT 1",
+      "validated_sql": "SELECT date, tmax_c FROM data WHERE date >= '2025-01-01' AND date < '2026-01-01' ORDER BY tmax_c DESC LIMIT 1",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "table",
+      "execution_time_ms": 6911.36279296875,
+      "columns": [
+        "date",
+        "tmax_c"
+      ],
+      "rows": [
+        {
+          "date": "2025-06-24",
+          "tmax_c": 38.9
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "Observation: On June 24, 2025, the maximum temperature reached 38.9°C, which was the highest recorded value in 2025. Interpretation: This suggests that late June experienced an extreme heat event, potentially a heatwave, though this is a cautious inference as a single day's peak does not confirm a prolonged heatwave. Causal limitations: This finding is purely descriptive of the recorded data; no causal factors (e.g., weather patterns, climate change) can be determined from this single observation.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.date",
+          "data.tmax_c"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "5363f688-899e-45b7-babc-79917addb4a6",
+      "request_id": "b894715c-64f6-4a7a-910b-9c4299487203",
+      "created_at": "2026-07-13T05:47:15.118019",
+      "completed_at": "2026-07-13T05:47:22.015872",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-noaa-02",
+      "language": "en",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "What was the total precipitation for each month of 2025?",
+      "rewritten_question": "What was the total precipitation for each month of 2025?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT strftime('%Y-%m', date) AS month, SUM(precipitation_mm) AS total_precipitation_mm\nFROM data\nWHERE date >= '2025-01-01' AND date < '2026-01-01'\nGROUP BY strftime('%Y-%m', date)\nORDER BY month",
+      "validated_sql": "SELECT STRFTIME('%Y-%m', date) AS month, SUM(precipitation_mm) AS total_precipitation_mm FROM data WHERE date >= '2025-01-01' AND date < '2026-01-01' GROUP BY STRFTIME('%Y-%m', date) ORDER BY month LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 12,
+      "chart_type": "line",
+      "execution_time_ms": 8106.98095703125,
+      "columns": [
+        "month",
+        "total_precipitation_mm"
+      ],
+      "rows": [
+        {
+          "month": "2025-01",
+          "total_precipitation_mm": 16.5
+        },
+        {
+          "month": "2025-02",
+          "total_precipitation_mm": 80.7
+        },
+        {
+          "month": "2025-03",
+          "total_precipitation_mm": 108.1
+        },
+        {
+          "month": "2025-04",
+          "total_precipitation_mm": 55.2
+        },
+        {
+          "month": "2025-05",
+          "total_precipitation_mm": 112.6
+        },
+        {
+          "month": "2025-06",
+          "total_precipitation_mm": 65.1
+        },
+        {
+          "month": "2025-07",
+          "total_precipitation_mm": 79.7
+        },
+        {
+          "month": "2025-08",
+          "total_precipitation_mm": 45.1
+        },
+        {
+          "month": "2025-09",
+          "total_precipitation_mm": 75.3
+        },
+        {
+          "month": "2025-10",
+          "total_precipitation_mm": 101.5
+        },
+        {
+          "month": "2025-11",
+          "total_precipitation_mm": 45.699999999999996
+        },
+        {
+          "month": "2025-12",
+          "total_precipitation_mm": 80.7
+        }
+      ],
+      "chart": {
+        "type": "line",
+        "x_column": "month",
+        "y_columns": [
+          "total_precipitation_mm"
+        ],
+        "series_name": null,
+        "title": "Trend over time",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Monthly total precipitation in 2025 ranged from a low of 16.5 mm in January to a high of 112.6 mm in May, with notable peaks also in March (108.1 mm) and October (101.5 mm). The year's total precipitation summed to approximately 865.1 mm.\n\n**Cautious Interpretation:** The data suggests a seasonal precipitation pattern, with relatively dry conditions in January and a wetter spring (March–May) and autumn (October) period. However, this is only a single year of data, so these patterns cannot be generalized as typical climate norms.\n\n**Causal Limitations:** This is a descriptive aggregation of observed precipitation values; no causal mechanisms (e.g., weather systems, climate cycles) can be inferred from these totals alone.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.precipitation_mm",
+          "month",
+          "data.date"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "13bc9106-6c2c-4d2f-ade2-25c171b290cf",
+      "request_id": "d090476f-660c-4ccc-906b-a56bdc4bbaa6",
+      "created_at": "2026-07-13T05:47:23.030629",
+      "completed_at": "2026-07-13T05:47:31.118747",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-noaa-03",
+      "language": "en",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "How many days recorded snowfall above zero, and what was the total snowfall?",
+      "rewritten_question": "How many days recorded snowfall above zero, and what was the total snowfall?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT COUNT(*) AS days_with_snow, SUM(snowfall_mm) AS total_snowfall_mm FROM data WHERE snowfall_mm > 0",
+      "validated_sql": "SELECT COUNT(*) AS days_with_snow, SUM(snowfall_mm) AS total_snowfall_mm FROM data WHERE snowfall_mm > 0 LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "number",
+      "execution_time_ms": 8041.6982421875,
+      "columns": [
+        "days_with_snow",
+        "total_snowfall_mm"
+      ],
+      "rows": [
+        {
+          "days_with_snow": 13,
+          "total_snowfall_mm": 454.0
+        }
+      ],
+      "chart": {
+        "type": "number",
+        "x_column": null,
+        "y_columns": [
+          "days_with_snow",
+          "total_snowfall_mm"
+        ],
+        "series_name": "Days With Snow",
+        "title": "Days With Snow",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Across the recorded period, 13 days had measurable snowfall (above 0 mm), accumulating a total of 454 mm of snow.\n\n**Cautious Interpretation:** This suggests a relatively modest snow season with infrequent snow events averaging about 35 mm per snowy day. However, this is a raw count and sum—it does not account for the length of the observation period, so the frequency and intensity cannot be assessed without a denominator (e.g., total days monitored).\n\n**Causal Limitations:** This is purely descriptive; no causal relationships can be inferred. The data does not indicate why snow fell on those specific days, nor does it control for seasonal, geographic, or meteorological factors that influenced snowfall occurrence or accumulation.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.snowfall_mm"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "836ef863-360f-40dc-be8a-f245d7decb86",
+      "request_id": "1e55a35d-5321-4162-97d2-5bd997ec02f5",
+      "created_at": "2026-07-13T05:47:31.940513",
+      "completed_at": "2026-07-13T05:47:39.966541",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-noaa-04",
+      "language": "en",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "Find the 10 days with the highest average wind speed and show date, average wind speed, and maximum two-minute wind speed.",
+      "rewritten_question": "Find the 10 days with the highest average wind speed and show date, average wind speed, and maximum two-minute wind speed.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT date, avg_wind_speed_ms, max_2min_wind_speed_ms\nFROM data\nORDER BY avg_wind_speed_ms DESC\nLIMIT 10",
+      "validated_sql": "SELECT date, avg_wind_speed_ms, max_2min_wind_speed_ms FROM data ORDER BY avg_wind_speed_ms DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "table",
+      "execution_time_ms": 8339.108154296875,
+      "columns": [
+        "date",
+        "avg_wind_speed_ms",
+        "max_2min_wind_speed_ms"
+      ],
+      "rows": [
+        {
+          "date": "2025-01-09",
+          "avg_wind_speed_ms": 11.4,
+          "max_2min_wind_speed_ms": 17.4
+        },
+        {
+          "date": "2025-02-17",
+          "avg_wind_speed_ms": 11.2,
+          "max_2min_wind_speed_ms": 17.4
+        },
+        {
+          "date": "2025-01-07",
+          "avg_wind_speed_ms": 11.0,
+          "max_2min_wind_speed_ms": 17.4
+        },
+        {
+          "date": "2025-01-08",
+          "avg_wind_speed_ms": 10.6,
+          "max_2min_wind_speed_ms": 14.3
+        },
+        {
+          "date": "2025-10-31",
+          "avg_wind_speed_ms": 10.6,
+          "max_2min_wind_speed_ms": 16.1
+        },
+        {
+          "date": "2025-12-30",
+          "avg_wind_speed_ms": 10.4,
+          "max_2min_wind_speed_ms": 16.1
+        },
+        {
+          "date": "2025-12-19",
+          "avg_wind_speed_ms": 10.3,
+          "max_2min_wind_speed_ms": 17.9
+        },
+        {
+          "date": "2025-03-07",
+          "avg_wind_speed_ms": 10.2,
+          "max_2min_wind_speed_ms": 17.0
+        },
+        {
+          "date": "2025-10-13",
+          "avg_wind_speed_ms": 10.1,
+          "max_2min_wind_speed_ms": 13.9
+        },
+        {
+          "date": "2025-11-11",
+          "avg_wind_speed_ms": 10.1,
+          "max_2min_wind_speed_ms": 15.6
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** The 10 windiest days (by average wind speed) range from 10.1 to 11.4 m/s, with maximum two-minute gusts between 13.9 and 17.9 m/s. The top three dates (Jan 9, Feb 17, Jan 7) all share the same peak gust of 17.4 m/s despite differing averages. Notably, Dec 19 has the highest recorded gust (17.9 m/s) but ranks 7th in average speed.\n\n**Cautious Interpretation:** This suggests that days with the highest sustained winds do not always produce the strongest peak gusts—Dec 19's gust exceeded all others despite a lower average. The clustering of top dates in January, February, and late in the year may hint at seasonal wind patterns, but the data covers only one year.\n\n**Causal Limitations:** This is a descriptive ranking of observed values; no causal factors (e.g., weather systems, geography, seasonality) can be inferred from this query alone. The results are limited to the dataset's time range and measurement methods.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.date",
+          "data.avg_wind_speed_ms",
+          "data.max_2min_wind_speed_ms"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "3f706f82-645c-4e92-9350-080c6968b668",
+      "request_id": "edc8e6ab-273f-48b1-af29-2321bb6a5838",
+      "created_at": "2026-07-13T05:47:40.886770",
+      "completed_at": "2026-07-13T05:47:49.208212",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-noaa-05",
+      "language": "en",
+      "dataset": "noaa",
+      "dataset_id": "f220ca38-5a3b-4f4f-b6f6-e563d7eb7a23",
+      "question": "Compare monthly average maximum and minimum temperatures in 2025.",
+      "rewritten_question": "Compare monthly average maximum and minimum temperatures in 2025.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT \n  strftime('%Y-%m', date) AS month,\n  AVG(tmax_c) AS avg_max_temperature_c,\n  AVG(tmin_c) AS avg_min_temperature_c\nFROM data\nWHERE strftime('%Y', date) = '2025'\nGROUP BY strftime('%Y-%m', date)\nORDER BY month",
+      "validated_sql": "SELECT STRFTIME('%Y-%m', date) AS month, AVG(tmax_c) AS avg_max_temperature_c, AVG(tmin_c) AS avg_min_temperature_c FROM data WHERE STRFTIME('%Y', date) = '2025' GROUP BY STRFTIME('%Y-%m', date) ORDER BY month LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 12,
+      "chart_type": "line",
+      "execution_time_ms": 9340.2197265625,
+      "columns": [
+        "month",
+        "avg_max_temperature_c",
+        "avg_min_temperature_c"
+      ],
+      "rows": [
+        {
+          "month": "2025-01",
+          "avg_max_temperature_c": 3.9451612903225803,
+          "avg_min_temperature_c": -2.7
+        },
+        {
+          "month": "2025-02",
+          "avg_max_temperature_c": 6.646428571428571,
+          "avg_min_temperature_c": -0.817857142857143
+        },
+        {
+          "month": "2025-03",
+          "avg_max_temperature_c": 13.203225806451613,
+          "avg_min_temperature_c": 3.551612903225806
+        },
+        {
+          "month": "2025-04",
+          "avg_max_temperature_c": 16.706666666666667,
+          "avg_min_temperature_c": 7.556666666666667
+        },
+        {
+          "month": "2025-05",
+          "avg_max_temperature_c": 21.15806451612903,
+          "avg_min_temperature_c": 12.841935483870968
+        },
+        {
+          "month": "2025-06",
+          "avg_max_temperature_c": 26.863333333333333,
+          "avg_min_temperature_c": 18.553333333333335
+        },
+        {
+          "month": "2025-07",
+          "avg_max_temperature_c": 30.574193548387097,
+          "avg_min_temperature_c": 22.612903225806452
+        },
+        {
+          "month": "2025-08",
+          "avg_max_temperature_c": 26.916129032258063,
+          "avg_min_temperature_c": 18.38064516129032
+        },
+        {
+          "month": "2025-09",
+          "avg_max_temperature_c": 24.94333333333333,
+          "avg_min_temperature_c": 16.696666666666665
+        },
+        {
+          "month": "2025-10",
+          "avg_max_temperature_c": 18.5,
+          "avg_min_temperature_c": 10.864516129032259
+        },
+        {
+          "month": "2025-11",
+          "avg_max_temperature_c": 12.020000000000001,
+          "avg_min_temperature_c": 4.253333333333333
+        },
+        {
+          "month": "2025-12",
+          "avg_max_temperature_c": 4.603225806451612,
+          "avg_min_temperature_c": -2.97741935483871
+        }
+      ],
+      "chart": {
+        "type": "line",
+        "x_column": "month",
+        "y_columns": [
+          "avg_max_temperature_c",
+          "avg_min_temperature_c"
+        ],
+        "series_name": null,
+        "title": "Trend over time",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** Monthly average temperatures in 2025 followed a clear seasonal cycle. The coldest month was January (avg max 3.9°C, avg min -2.7°C) and the warmest was July (avg max 30.6°C, avg min 22.6°C). The average temperature range (max minus min) was relatively consistent across months, typically between 6.6°C and 8.2°C, with the narrowest spread in December (7.6°C) and the widest in March (9.7°C).\n\n**Cautious Interpretation:** The data reflects a typical Northern Hemisphere temperate climate with peak warmth in mid-summer and coldest conditions in mid-winter. The March spread suggests greater diurnal temperature variation during the spring transition.\n\n**Causal Limitations:** These are averages for a single year (2025) and cannot be generalized to climate trends or compared to historical norms without additional multi-year data. The specific location(s) and data source are unknown, so regional or station-level influences on these values cannot be assessed.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.tmax_c",
+          "data.tmin_c",
+          "month",
+          "data.date"
+        ],
+        "schema_hash": "93096fff5e22016ebf9edf87e8dce5f8bed63c6196b14587b07c73889e8ec260"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "4652fa33-ae33-4b7a-81c7-221329c21429",
+      "request_id": "90d6f9ea-7b2a-4205-9399-59b6bcb53cee",
+      "created_at": "2026-07-13T05:47:50.399857",
+      "completed_at": "2026-07-13T05:47:59.714213",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-world_bank-01",
+      "language": "en",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "Which 10 countries had the highest GDP in 2024? Exclude missing values.",
+      "rewritten_question": "Which 10 countries had the highest GDP in 2024? Exclude missing values.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, gdp_current_usd AS gdp\nFROM data\nWHERE year = 2024 AND gdp_current_usd IS NOT NULL\nORDER BY gdp_current_usd DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, gdp_current_usd AS gdp FROM data WHERE year = 2024 AND NOT gdp_current_usd IS NULL ORDER BY gdp_current_usd DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 8386.19482421875,
+      "columns": [
+        "country",
+        "gdp"
+      ],
+      "rows": [
+        {
+          "country": "United States",
+          "gdp": 29298013000000.0
+        },
+        {
+          "country": "China",
+          "gdp": 18729668435848.0
+        },
+        {
+          "country": "Germany",
+          "gdp": 4685592577804.69
+        },
+        {
+          "country": "Japan",
+          "gdp": 4190008188358.57
+        },
+        {
+          "country": "India",
+          "gdp": 3760813470500.86
+        },
+        {
+          "country": "United Kingdom",
+          "gdp": 3695539513534.15
+        },
+        {
+          "country": "France",
+          "gdp": 3160442622465.08
+        },
+        {
+          "country": "Italy",
+          "gdp": 2383435562458.12
+        },
+        {
+          "country": "Canada",
+          "gdp": 2270076189683.46
+        },
+        {
+          "country": "Russian Federation",
+          "gdp": 2186462268813.08
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "country",
+        "y_columns": [
+          "gdp"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** In 2024, the ten countries with the highest GDP (current USD, excluding missing values) were, in descending order: United States ($29.30T), China ($18.73T), Germany ($4.69T), Japan ($4.19T), India ($3.76T), United Kingdom ($3.70T), France ($3.16T), Italy ($2.38T), Canada ($2.27T), and Russian Federation ($2.19T). The United States' GDP is approximately 1.6 times that of China, and the gap between the top two and the rest is substantial.\n\n**Cautious Interpretation:** This ranking reflects the relative size of national economies as measured by nominal GDP. The dominance of the U.S. and China, followed by major European and Asian economies, aligns with conventional economic hierarchies. However, GDP in current USD is influenced by exchange rates and inflation, not just real economic output.\n\n**Causal Limitations:** This is a descriptive snapshot, not a causal analysis. Differences in GDP cannot be attributed to any specific policy, geographic, or historical factor from this data alone. Rankings may shift with exchange rate fluctuations or revisions to national accounts.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.gdp_current_usd",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "17372b72-6fd9-4b74-a5f8-5a9ad5fefded",
+      "request_id": "abb50519-dc5b-4fb3-b22c-0a17e6725827",
+      "created_at": "2026-07-13T05:49:39.111507",
+      "completed_at": "2026-07-13T05:49:47.477419",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-world_bank-02",
+      "language": "en",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "Which 10 countries had the largest populations in 2024?",
+      "rewritten_question": "Which 10 countries had the largest populations in 2024?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, population\nFROM data\nWHERE year = 2024\nORDER BY population DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, population FROM data WHERE year = 2024 ORDER BY population DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 7426.962158203125,
+      "columns": [
+        "country",
+        "population"
+      ],
+      "rows": [
+        {
+          "country": "India",
+          "population": 1450935791
+        },
+        {
+          "country": "China",
+          "population": 1408975000
+        },
+        {
+          "country": "United States",
+          "population": 340003797
+        },
+        {
+          "country": "Indonesia",
+          "population": 283487931
+        },
+        {
+          "country": "Pakistan",
+          "population": 251269164
+        },
+        {
+          "country": "Nigeria",
+          "population": 232679478
+        },
+        {
+          "country": "Brazil",
+          "population": 211998573
+        },
+        {
+          "country": "Bangladesh",
+          "population": 173562364
+        },
+        {
+          "country": "Russian Federation",
+          "population": 143669648
+        },
+        {
+          "country": "Ethiopia",
+          "population": 132059767
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "country",
+        "y_columns": [
+          "population"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** In 2024, the ten most populous countries were led by India (1.45B) and China (1.41B), followed by the United States (340M), Indonesia (283M), Pakistan (251M), Nigeria (233M), Brazil (212M), Bangladesh (174M), Russia (144M), and Ethiopia (132M). India surpassed China as the world's most populous country.\n\n**Cautious Interpretation:** This ranking reflects a historic demographic shift where India now holds the top position, while China's population has plateaued or declined. The presence of five Asian and three African nations highlights where global population growth is concentrated.\n\n**Causal Limitations:** This is a static snapshot of 2024 estimates; it does not explain why populations differ (e.g., fertility rates, migration, mortality) nor does it reveal trends over time. Population figures are estimates subject to census accuracy and projection methodology differences across countries.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.population",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "2f4a3831-8cf7-4a09-b0ae-434768275027",
+      "request_id": "c75a02e3-b55b-444a-8098-c4c610080dde",
+      "created_at": "2026-07-13T05:49:54.742163",
+      "completed_at": "2026-07-13T05:50:02.153408",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-world_bank-03",
+      "language": "en",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "How much did China's population change from 2015 to 2024, and what was the percentage change?",
+      "rewritten_question": "How much did China's population change from 2015 to 2024, and what was the percentage change?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT \n  (SELECT population FROM data WHERE country = 'China' AND year = 2024) - \n  (SELECT population FROM data WHERE country = 'China' AND year = 2015) AS population_change,\n  ROUND(\n    ((SELECT population FROM data WHERE country = 'China' AND year = 2024) - \n     (SELECT population FROM data WHERE country = 'China' AND year = 2015)) * 100.0 / \n    (SELECT population FROM data WHERE country = 'China' AND year = 2015), 2\n  ) AS percentage_change\n",
+      "validated_sql": "SELECT (SELECT population FROM data WHERE country = 'China' AND year = 2024) - (SELECT population FROM data WHERE country = 'China' AND year = 2015) AS population_change, ROUND(((SELECT population FROM data WHERE country = 'China' AND year = 2024) - (SELECT population FROM data WHERE country = 'China' AND year = 2015)) * 100.0 / (SELECT population FROM data WHERE country = 'China' AND year = 2015), 2) AS percentage_change LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 1,
+      "chart_type": "number",
+      "execution_time_ms": 7392.27880859375,
+      "columns": [
+        "population_change",
+        "percentage_change"
+      ],
+      "rows": [
+        {
+          "population_change": 29115000,
+          "percentage_change": 2.11
+        }
+      ],
+      "chart": {
+        "type": "number",
+        "x_column": null,
+        "y_columns": [
+          "population_change",
+          "percentage_change"
+        ],
+        "series_name": "Population Change",
+        "title": "Population Change",
+        "value_format": "percent"
+      },
+      "insight": "**Observation:** China's population increased by 29,115,000 people from 2015 to 2024, representing a 2.11% growth over the nine-year period.\n\n**Cautious Interpretation:** This modest growth rate (roughly 0.23% annually) suggests China's population is approaching stabilization, consistent with long-term demographic trends of declining fertility rates and an aging population.\n\n**Causal Limitations:** The data shows aggregate change only; it does not reveal the underlying drivers (birth rates, death rates, migration patterns) or account for potential data quality issues in China's census or population estimates. No causal conclusions can be drawn about why the change occurred.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.population",
+          "data.country",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "0417e7f8-3d1a-4c69-ae82-08e6dfe301a8",
+      "request_id": "d91690fc-512a-4ab5-9b54-8f1d170b6e48",
+      "created_at": "2026-07-13T06:04:13.241134",
+      "completed_at": "2026-07-13T06:04:20.621812",
+      "attempt_count": 2,
+      "superseded_query_log_ids": [
+        "b6f47236-86ff-44c4-ae5c-3132831582d8"
+      ]
+    },
+    {
+      "id": "en-world_bank-04",
+      "language": "en",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "Rank the top 10 countries by 2024 GDP per capita using GDP divided by population; exclude missing values.",
+      "rewritten_question": "Rank the top 10 countries by 2024 GDP per capita using GDP divided by population; exclude missing values.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, gdp_current_usd / population AS gdp_per_capita\nFROM data\nWHERE year = 2024 AND population IS NOT NULL AND gdp_current_usd IS NOT NULL AND population > 0\nORDER BY gdp_per_capita DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, gdp_current_usd / population AS gdp_per_capita FROM data WHERE year = 2024 AND NOT population IS NULL AND NOT gdp_current_usd IS NULL AND population > 0 ORDER BY gdp_per_capita DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 10230.681640625,
+      "columns": [
+        "country",
+        "gdp_per_capita"
+      ],
+      "rows": [
+        {
+          "country": "Monaco",
+          "gdp_per_capita": 288001.5748564935
+        },
+        {
+          "country": "Liechtenstein",
+          "gdp_per_capita": 220167.22547355745
+        },
+        {
+          "country": "Bermuda",
+          "gdp_per_capita": 142250.43319512345
+        },
+        {
+          "country": "Luxembourg",
+          "gdp_per_capita": 137781.68165912305
+        },
+        {
+          "country": "Ireland",
+          "gdp_per_capita": 112894.95324080532
+        },
+        {
+          "country": "Switzerland",
+          "gdp_per_capita": 107702.06594031169
+        },
+        {
+          "country": "Cayman Islands",
+          "gdp_per_capita": 104292.9006721086
+        },
+        {
+          "country": "Singapore",
+          "gdp_per_capita": 94896.5621495988
+        },
+        {
+          "country": "Norway",
+          "gdp_per_capita": 89888.95352047573
+        },
+        {
+          "country": "United States",
+          "gdp_per_capita": 86169.66415819174
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "country",
+        "y_columns": [
+          "gdp_per_capita"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** The top 10 countries by 2024 GDP per capita (GDP divided by population) are led by Monaco ($288,002), Liechtenstein ($220,167), and Bermuda ($142,250), followed by Luxembourg, Ireland, Switzerland, Cayman Islands, Singapore, Norway, and the United States ($86,170). All values are derived from non-missing GDP and population data for 2024 with population > 0.\n\n**Cautious interpretation:** This ranking highlights a mix of small city-states, tax havens, and high-income economies, suggesting that very high GDP per capita is often associated with small populations and specialized financial or service sectors. However, GDP per capita is a mean measure that does not reflect income distribution, purchasing power parity, or non-market economic activity.\n\n**Causal limitations:** These data are observational and cross-sectional; no causal claims can be made about why these countries rank highest. Differences may reflect measurement artifacts (e.g., GDP attribution in tax havens), population size effects, or structural economic factors that cannot be disentangled from this single metric alone.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.gdp_current_usd",
+          "data.population",
+          "gdp_per_capita",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "3c9c9a86-f8d2-44c8-ba29-4afaa88cc545",
+      "request_id": "d22c99bb-27cc-46c2-bff7-bd8b140d38b9",
+      "created_at": "2026-07-13T05:50:18.484493",
+      "completed_at": "2026-07-13T05:50:28.697485",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-world_bank-05",
+      "language": "en",
+      "dataset": "world_bank",
+      "dataset_id": "61168b07-45ba-4adf-8ebd-9741a971c9ee",
+      "question": "List the 10 countries with the highest life expectancy in 2023 and also show GDP and population.",
+      "rewritten_question": "List the 10 countries with the highest life expectancy in 2023 and also show GDP and population.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT country, life_expectancy_years, gdp_current_usd, population\nFROM data\nWHERE year = 2023\nORDER BY life_expectancy_years DESC\nLIMIT 10",
+      "validated_sql": "SELECT country, life_expectancy_years, gdp_current_usd, population FROM data WHERE year = 2023 ORDER BY life_expectancy_years DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "table",
+      "execution_time_ms": 9256.37548828125,
+      "columns": [
+        "country",
+        "life_expectancy_years",
+        "gdp_current_usd",
+        "population"
+      ],
+      "rows": [
+        {
+          "country": "Monaco",
+          "life_expectancy_years": 86.372,
+          "gdp_current_usd": 10003897341.1766,
+          "population": 38956
+        },
+        {
+          "country": "San Marino",
+          "life_expectancy_years": 85.706,
+          "gdp_current_usd": 2027243193.5116,
+          "population": 33860
+        },
+        {
+          "country": "Hong Kong SAR, China",
+          "life_expectancy_years": 85.2473170731707,
+          "gdp_current_usd": 380762296025.216,
+          "population": 7536100
+        },
+        {
+          "country": "Liechtenstein",
+          "life_expectancy_years": 84.5951219512195,
+          "gdp_current_usd": 8239379403.22096,
+          "population": 39846
+        },
+        {
+          "country": "Switzerland",
+          "life_expectancy_years": 84.1560975609756,
+          "gdp_current_usd": 928435275851.707,
+          "population": 8888822
+        },
+        {
+          "country": "French Polynesia",
+          "life_expectancy_years": 84.07,
+          "gdp_current_usd": 6137447782.87066,
+          "population": 281118
+        },
+        {
+          "country": "Japan",
+          "life_expectancy_years": 84.0412195121951,
+          "gdp_current_usd": 4384854269961.93,
+          "population": 124516650
+        },
+        {
+          "country": "Andorra",
+          "life_expectancy_years": 84.041,
+          "gdp_current_usd": 3785067331.88242,
+          "population": 80856
+        },
+        {
+          "country": "Spain",
+          "life_expectancy_years": 83.9341463414634,
+          "gdp_current_usd": 1619481980719.64,
+          "population": 48352528
+        },
+        {
+          "country": "Gibraltar",
+          "life_expectancy_years": 83.553,
+          "gdp_current_usd": null,
+          "population": 38471
+        }
+      ],
+      "chart": {
+        "type": "table",
+        "x_column": null,
+        "y_columns": [],
+        "series_name": null,
+        "title": "Query result",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** The 10 countries/territories with the highest life expectancy in 2023 are predominantly small, wealthy European microstates and territories (Monaco, San Marino, Liechtenstein, Andorra, Gibraltar) alongside Switzerland, Hong Kong SAR, Japan, Spain, and French Polynesia. Life expectancy ranges from 86.4 years (Monaco) down to 83.6 years (Gibraltar). GDP varies enormously—from Japan's ~$4.4 trillion to Gibraltar's null value—and populations range from ~33,860 (San Marino) to ~124.5 million (Japan).\n\n**Cautious Interpretation:** The clustering of high life expectancy among small, affluent European states and territories suggests a possible association between high per-capita wealth, access to advanced healthcare, and longevity. However, Japan and Spain—large, populous nations—also appear, indicating that high life expectancy is not exclusive to microstates. The presence of Hong Kong SAR and French Polynesia further suggests that regional economic integration and healthcare infrastructure may play roles.\n\n**Causal Limitations:** This is a descriptive ranking with no controls for confounding factors such as healthcare spending per capita, diet, lifestyle, environmental quality, or genetic predispositions. GDP and population are shown as contextual covariates but are not tested as causal drivers of life expectancy. No causal inference can be drawn from this cross-sectional snapshot alone.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.country",
+          "data.life_expectancy_years",
+          "data.gdp_current_usd",
+          "data.population",
+          "data.year"
+        ],
+        "schema_hash": "633a9e2e568a15046653bf34968c7452a35a9dfcbc19d9ad217b394e4964ded6"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "53a3f0c3-ec09-49a9-9823-59f57e4ba1a7",
+      "request_id": "ea4846cd-2447-463f-b01b-288d1688849e",
+      "created_at": "2026-07-13T05:50:29.345799",
+      "completed_at": "2026-07-13T05:50:38.585789",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-china_nbs-01",
+      "language": "en",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "Which 10 provincial-level regions had the highest GDP in 2024?",
+      "rewritten_question": "Which 10 provincial-level regions had the highest GDP in 2024?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS region, column_2 AS gdp_billion_yuan\nFROM data\nORDER BY column_2 DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS region, column_2 AS gdp_billion_yuan FROM data ORDER BY column_2 DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 13393.11083984375,
+      "columns": [
+        "region",
+        "gdp_billion_yuan"
+      ],
+      "rows": [
+        {
+          "region": "广东",
+          "gdp_billion_yuan": 141633.8
+        },
+        {
+          "region": "江苏",
+          "gdp_billion_yuan": 137008.0
+        },
+        {
+          "region": "山东",
+          "gdp_billion_yuan": 98565.8
+        },
+        {
+          "region": "浙江",
+          "gdp_billion_yuan": 90130.6
+        },
+        {
+          "region": "四川",
+          "gdp_billion_yuan": 64697.0
+        },
+        {
+          "region": "河南",
+          "gdp_billion_yuan": 63590.0
+        },
+        {
+          "region": "湖北",
+          "gdp_billion_yuan": 60013.0
+        },
+        {
+          "region": "福建",
+          "gdp_billion_yuan": 57761.0
+        },
+        {
+          "region": "上海",
+          "gdp_billion_yuan": 53926.7
+        },
+        {
+          "region": "湖南",
+          "gdp_billion_yuan": 53231.0
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "region",
+        "y_columns": [
+          "gdp_billion_yuan"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "number"
+      },
+      "insight": "**Observation:** The top 10 provincial-level regions by 2024 GDP (in billion yuan) are: Guangdong (141,633.8), Jiangsu (137,008.0), Shandong (98,565.8), Zhejiang (90,130.6), Sichuan (64,697.0), Henan (63,590.0), Hubei (60,013.0), Fujian (57,761.0), Shanghai (53,926.7), and Hunan (53,231.0). Guangdong and Jiangsu lead by a wide margin, each exceeding 137 trillion yuan, while the remaining eight regions range from approximately 53 to 99 trillion yuan.\n\n**Cautious Interpretation:** This ranking reflects the relative economic scale of China's provinces and municipalities in 2024, with coastal economic powerhouses (Guangdong, Jiangsu, Shandong, Zhejiang, Fujian, Shanghai) occupying six of the top ten positions, suggesting a continued concentration of economic output in eastern coastal areas. Inland provinces Sichuan, Henan, Hubei, and Hunan also rank highly, indicating significant economic mass in central and western regions.\n\n**Causal Limitations:** This data shows only the ranking and magnitude of GDP; it does not explain why these regions rank as they do. Factors such as population size, industrial structure, policy incentives, natural resources, or historical development patterns are not captured. No causal relationships between region characteristics and GDP outcomes can be inferred from this ranking alone.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_2"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "b417e4b8-b548-45e6-8878-1f01100ab249",
+      "request_id": "e9e9bc2a-178d-41f0-adfb-e80592d4784a",
+      "created_at": "2026-07-13T05:50:45.374650",
+      "completed_at": "2026-07-13T05:50:58.748135",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-china_nbs-02",
+      "language": "en",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "List the 10 regions with the highest GDP per capita and compare their urban population shares.",
+      "rewritten_question": "List the 10 regions with the highest GDP per capita and compare their urban population shares.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT \n  t.column_1 AS region,\n  t.column_6 AS gdp_per_capita,\n  t.column_10 AS urban_population_share\nFROM data t\nORDER BY t.column_6 DESC\nLIMIT 10",
+      "validated_sql": "SELECT t.column_1 AS region, t.column_6 AS gdp_per_capita, t.column_10 AS urban_population_share FROM data AS t ORDER BY t.column_6 DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 13671.2958984375,
+      "columns": [
+        "region",
+        "gdp_per_capita",
+        "urban_population_share"
+      ],
+      "rows": [
+        {
+          "region": "北京",
+          "gdp_per_capita": 228167,
+          "urban_population_share": 88.22
+        },
+        {
+          "region": "上海",
+          "gdp_per_capita": 217140,
+          "urban_population_share": 89.85
+        },
+        {
+          "region": "江苏",
+          "gdp_per_capita": 160694,
+          "urban_population_share": 75.53
+        },
+        {
+          "region": "福建",
+          "gdp_per_capita": 137920,
+          "urban_population_share": 71.8
+        },
+        {
+          "region": "浙江",
+          "gdp_per_capita": 135565,
+          "urban_population_share": 75.46
+        },
+        {
+          "region": "天津",
+          "gdp_per_capita": 132143,
+          "urban_population_share": 86.01
+        },
+        {
+          "region": "广东",
+          "gdp_per_capita": 111146,
+          "urban_population_share": 75.91
+        },
+        {
+          "region": "内蒙古",
+          "gdp_per_capita": 110011,
+          "urban_population_share": 70.73
+        },
+        {
+          "region": "湖北",
+          "gdp_per_capita": 102832,
+          "urban_population_share": 66.35
+        },
+        {
+          "region": "重庆",
+          "gdp_per_capita": 100903,
+          "urban_population_share": 72.14
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "region",
+        "y_columns": [
+          "gdp_per_capita",
+          "urban_population_share"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "percent"
+      },
+      "insight": "**Observation:** Among the 10 regions with the highest GDP per capita (ranging from ¥100,903 in Chongqing to ¥228,167 in Beijing), urban population shares are consistently high, ranging from 66.35% (Hubei) to 89.85% (Shanghai). The top two regions by GDP per capita—Beijing (¥228,167) and Shanghai (¥217,140)—also have the highest urban population shares (88.22% and 89.85%, respectively). Regions with GDP per capita above ¥130,000 (Beijing, Shanghai, Jiangsu, Fujian, Zhejiang, Tianjin) all have urban shares above 71%, while the two lowest-GDP regions in this top-10 set—Hubei (¥102,832) and Chongqing (¥100,903)—have the lowest urban shares (66.35% and 72.14%).\n\n**Cautious Interpretation:** This pattern suggests a positive association between economic output per person and urbanization within China's wealthiest regions, where higher GDP per capita tends to coincide with a larger share of population living in urban areas. However, this is a correlation observed only among the top 10 regions, not a causal relationship. **Causal limitations:** The data do not establish whether higher urbanization drives GDP per capita, whether higher GDP enables urban expansion, or whether both are driven by other factors (e.g., industrial structure, policy, geography). The sample is limited to the top 10 regions, so these patterns may not generalize to lower-GDP regions.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_6",
+          "data.column_10"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "41d1a18f-153e-4b83-8ee2-546c50a4f003",
+      "request_id": "e6574a2f-48e9-4fe7-85e0-1a77c7370c86",
+      "created_at": "2026-07-13T05:50:59.645910",
+      "completed_at": "2026-07-13T05:51:13.301371",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-china_nbs-03",
+      "language": "en",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "Which regions had negative natural population growth? Sort from the lowest growth rate upward.",
+      "rewritten_question": "Which regions had negative natural population growth? Sort from the lowest growth rate upward.",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS region, column_14 AS natural_growth_rate\nFROM data\nWHERE column_14 < 0\nORDER BY column_14 ASC",
+      "validated_sql": "SELECT column_1 AS region, column_14 AS natural_growth_rate FROM data WHERE column_14 < 0 ORDER BY column_14 ASC LIMIT 100",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 20,
+      "chart_type": "bar",
+      "execution_time_ms": 9635.5078125,
+      "columns": [
+        "region",
+        "natural_growth_rate"
+      ],
+      "rows": [
+        {
+          "region": "黑龙江",
+          "natural_growth_rate": -6.34
+        },
+        {
+          "region": "辽宁",
+          "natural_growth_rate": -5.3
+        },
+        {
+          "region": "吉林",
+          "natural_growth_rate": -4.85
+        },
+        {
+          "region": "湖北",
+          "natural_growth_rate": -3.14
+        },
+        {
+          "region": "湖南",
+          "natural_growth_rate": -3.04
+        },
+        {
+          "region": "四川",
+          "natural_growth_rate": -3.02
+        },
+        {
+          "region": "重庆",
+          "natural_growth_rate": -2.88
+        },
+        {
+          "region": "内蒙古",
+          "natural_growth_rate": -2.84
+        },
+        {
+          "region": "江苏",
+          "natural_growth_rate": -2.5
+        },
+        {
+          "region": "河北",
+          "natural_growth_rate": -2.32
+        },
+        {
+          "region": "安徽",
+          "natural_growth_rate": -2.24
+        },
+        {
+          "region": "天津",
+          "natural_growth_rate": -1.97
+        },
+        {
+          "region": "山东",
+          "natural_growth_rate": -1.67
+        },
+        {
+          "region": "上海",
+          "natural_growth_rate": -1.53
+        },
+        {
+          "region": "山西",
+          "natural_growth_rate": -1.39
+        },
+        {
+          "region": "甘肃",
+          "natural_growth_rate": -0.9
+        },
+        {
+          "region": "陕西",
+          "natural_growth_rate": -0.69
+        },
+        {
+          "region": "江西",
+          "natural_growth_rate": -0.58
+        },
+        {
+          "region": "浙江",
+          "natural_growth_rate": -0.36
+        },
+        {
+          "region": "河南",
+          "natural_growth_rate": -0.11
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "region",
+        "y_columns": [
+          "natural_growth_rate"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "percent"
+      },
+      "insight": "**Observation:** 20 regions exhibited negative natural population growth, with Heilongjiang (-6.34), Liaoning (-5.30), and Jilin (-4.85) showing the most severe declines, while Henan (-0.11), Zhejiang (-0.36), and Jiangxi (-0.58) had the mildest negative rates.\n\n**Cautious Interpretation:** The three northeastern provinces (Heilongjiang, Liaoning, Jilin) form a distinct cluster with the lowest natural growth rates, suggesting a regional demographic pattern possibly linked to industrial restructuring, out-migration of younger populations, and aging. Central and coastal provinces (Hubei, Hunan, Sichuan, Chongqing, Jiangsu) form a middle tier of moderate decline, while several provinces are near zero (Henan, Zhejiang, Jiangxi, Shaanxi, Gansu).\n\n**Causal Limitations:** This SQL output identifies only the magnitude and ranking of negative growth rates; it does not reveal why these declines occurred. Factors such as fertility rates, mortality rates, age structure, migration patterns, economic conditions, and policy effects cannot be determined from this data alone. The data represents a single time period, so temporal trends or recent changes are not observable.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_14"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "399ce92b-ff92-42ce-9335-fc4724e33d59",
+      "request_id": "1bd7f26e-c376-43e1-8e77-9c7ba1ab560c",
+      "created_at": "2026-07-13T05:51:22.267092",
+      "completed_at": "2026-07-13T05:51:31.882573",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-china_nbs-04",
+      "language": "en",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "Which 10 regions had the highest tertiary-industry share of regional GDP?",
+      "rewritten_question": "Which 10 regions had the highest tertiary-industry share of regional GDP?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS region, (column_5 / column_2) * 100 AS tertiary_share_pct\nFROM data\nORDER BY tertiary_share_pct DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS region, (column_5 / column_2) * 100 AS tertiary_share_pct FROM data ORDER BY tertiary_share_pct DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 9952.739013671875,
+      "columns": [
+        "region",
+        "tertiary_share_pct"
+      ],
+      "rows": [
+        {
+          "region": "北京",
+          "tertiary_share_pct": 85.26736900393436
+        },
+        {
+          "region": "上海",
+          "tertiary_share_pct": 78.23471490004025
+        },
+        {
+          "region": "天津",
+          "tertiary_share_pct": 63.945895263616336
+        },
+        {
+          "region": "海南",
+          "tertiary_share_pct": 60.61343044721953
+        },
+        {
+          "region": "浙江",
+          "tertiary_share_pct": 58.53883142905961
+        },
+        {
+          "region": "广东",
+          "tertiary_share_pct": 57.494256314523795
+        },
+        {
+          "region": "吉林",
+          "tertiary_share_pct": 57.05512074199927
+        },
+        {
+          "region": "重庆",
+          "tertiary_share_pct": 57.05148913435135
+        },
+        {
+          "region": "辽宁",
+          "tertiary_share_pct": 56.860364213941196
+        },
+        {
+          "region": "四川",
+          "tertiary_share_pct": 56.046184521693434
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "region",
+        "y_columns": [
+          "tertiary_share_pct"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "percent"
+      },
+      "insight": "**Observation:** The 10 regions with the highest tertiary-industry share of regional GDP are Beijing (85.3%), Shanghai (78.2%), Tianjin (63.9%), Hainan (60.6%), Zhejiang (58.5%), Guangdong (57.5%), Jilin (57.1%), Chongqing (57.1%), Liaoning (56.9%), and Sichuan (56.0%). Beijing and Shanghai stand out with shares exceeding 78%, while the remaining eight regions cluster between 56% and 64%.\n\n**Cautious Interpretation:** The dominance of Beijing and Shanghai likely reflects their roles as national economic, financial, and service hubs, where service sectors (finance, tech, trade) naturally concentrate. The presence of coastal provinces (Zhejiang, Guangdong, Hainan, Liaoning) and municipalities (Tianjin, Chongqing) suggests that urbanization, higher income levels, and openness to trade may correlate with a larger tertiary sector. However, **causal limitations** apply: these data are cross-sectional and do not establish why tertiary share is higher—factors such as industrial policy, historical development paths, natural resource endowments, or data classification differences are not controlled for. The metric itself (tertiary GDP / total GDP) reflects economic structure but not absolute output or growth rates.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "tertiary_share_pct",
+          "data.column_5",
+          "data.column_2"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "280738aa-13a3-4e42-a247-d2304f354fb6",
+      "request_id": "0b4dd788-2d26-4049-91c5-aab17508df1d",
+      "created_at": "2026-07-13T05:51:32.921144",
+      "completed_at": "2026-07-13T05:51:42.856712",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    },
+    {
+      "id": "en-china_nbs-05",
+      "language": "en",
+      "dataset": "china_nbs",
+      "dataset_id": "9b34651a-2c2a-47e4-a782-2d1d3ba1dc30",
+      "question": "What were the 10 most populous regions and their urban population shares?",
+      "rewritten_question": "What were the 10 most populous regions and their urban population shares?",
+      "status": "success",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "generated_sql": "SELECT column_1 AS region, column_8 AS total_population, column_10 AS urban_population_share\nFROM data\nORDER BY column_8 DESC\nLIMIT 10",
+      "validated_sql": "SELECT column_1 AS region, column_8 AS total_population, column_10 AS urban_population_share FROM data ORDER BY column_8 DESC LIMIT 10",
+      "safe_sql": true,
+      "risk_level": "low",
+      "approval_id": null,
+      "row_count": 10,
+      "chart_type": "bar",
+      "execution_time_ms": 8661.084716796875,
+      "columns": [
+        "region",
+        "total_population",
+        "urban_population_share"
+      ],
+      "rows": [
+        {
+          "region": "广东",
+          "total_population": 12780,
+          "urban_population_share": 75.91
+        },
+        {
+          "region": "山东",
+          "total_population": 10080,
+          "urban_population_share": 66.48
+        },
+        {
+          "region": "河南",
+          "total_population": 9785,
+          "urban_population_share": 59.22
+        },
+        {
+          "region": "江苏",
+          "total_population": 8526,
+          "urban_population_share": 75.53
+        },
+        {
+          "region": "四川",
+          "total_population": 8364,
+          "urban_population_share": 60.1
+        },
+        {
+          "region": "河北",
+          "total_population": 7378,
+          "urban_population_share": 63.42
+        },
+        {
+          "region": "浙江",
+          "total_population": 6670,
+          "urban_population_share": 75.46
+        },
+        {
+          "region": "湖南",
+          "total_population": 6539,
+          "urban_population_share": 62.07
+        },
+        {
+          "region": "安徽",
+          "total_population": 6123,
+          "urban_population_share": 62.57
+        },
+        {
+          "region": "湖北",
+          "total_population": 5834,
+          "urban_population_share": 66.35
+        }
+      ],
+      "chart": {
+        "type": "bar",
+        "x_column": "region",
+        "y_columns": [
+          "total_population",
+          "urban_population_share"
+        ],
+        "series_name": null,
+        "title": "Comparison",
+        "value_format": "percent"
+      },
+      "insight": "**Observation:** The 10 most populous regions (all Chinese provinces) range from Guangdong (12,780 population units) down to Hubei (5,834). Urban population shares vary from 75.91% (Guangdong) to 59.22% (Henan). Notably, the three most urbanized regions—Guangdong (75.91%), Jiangsu (75.53%), and Zhejiang (75.46%)—are all coastal, while Henan (59.22%) and Sichuan (60.10%) are inland and have the lowest shares among the top 10.\n\n**Cautious Interpretation:** This suggests a pattern where coastal, economically developed provinces tend to have both larger total populations and higher urbanization levels, whereas populous inland provinces remain less urbanized. However, **causal limitations** apply: these data are a cross-sectional snapshot with no temporal or economic controls, so one cannot infer that coastal location or economic policy *causes* higher urbanization—other unmeasured factors (e.g., historical development, migration policy, industrial structure) could drive the observed association.",
+      "lineage": {
+        "tables": [
+          "data"
+        ],
+        "columns": [
+          "data.column_1",
+          "data.column_8",
+          "data.column_10"
+        ],
+        "schema_hash": "658b76038d63b363021d2ba94dc4a83161fba5f53afc14fb8004723643e00502"
+      },
+      "error_type": null,
+      "error_message": null,
+      "query_log_id": "ccaeb6b8-a54b-44af-8d36-39210759b133",
+      "request_id": "ca35cfe4-bce2-44d3-bbf1-f671bcc0a677",
+      "created_at": "2026-07-13T05:51:50.541908",
+      "completed_at": "2026-07-13T05:51:59.181146",
+      "attempt_count": 1,
+      "superseded_query_log_ids": []
+    }
+  ]
+}

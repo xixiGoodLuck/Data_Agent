@@ -1,0 +1,4197 @@
+{
+  "overall": {
+    "total": 40,
+    "status_success": 40,
+    "result_correct": 40,
+    "chart_correct": 40,
+    "result_accuracy": 100.0,
+    "chart_accuracy": 100.0
+  },
+  "by_language": {
+    "zh-CN": {
+      "total": 20,
+      "status_success": 20,
+      "result_correct": 20,
+      "chart_correct": 20,
+      "result_accuracy": 100.0,
+      "chart_accuracy": 100.0
+    },
+    "en": {
+      "total": 20,
+      "status_success": 20,
+      "result_correct": 20,
+      "chart_correct": 20,
+      "result_accuracy": 100.0,
+      "chart_accuracy": 100.0
+    }
+  },
+  "by_dataset": {
+    "usgs": {
+      "total": 10,
+      "status_success": 10,
+      "result_correct": 10,
+      "chart_correct": 10,
+      "result_accuracy": 100.0,
+      "chart_accuracy": 100.0
+    },
+    "noaa": {
+      "total": 10,
+      "status_success": 10,
+      "result_correct": 10,
+      "chart_correct": 10,
+      "result_accuracy": 100.0,
+      "chart_accuracy": 100.0
+    },
+    "world_bank": {
+      "total": 10,
+      "status_success": 10,
+      "result_correct": 10,
+      "chart_correct": 10,
+      "result_accuracy": 100.0,
+      "chart_accuracy": 100.0
+    },
+    "china_nbs": {
+      "total": 10,
+      "status_success": 10,
+      "result_correct": 10,
+      "chart_correct": 10,
+      "result_accuracy": 100.0,
+      "chart_accuracy": 100.0
+    }
+  },
+  "failures": [],
+  "cases": [
+    {
+      "id": "zh-CN-usgs-01",
+      "oracle_id": "usgs_magnitude_45_count",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "number",
+      "actual_chart": "number",
+      "generated_sql": "SELECT COUNT(*) AS earthquake_count\nFROM data\nWHERE mag >= 4.5",
+      "expected_rows": [
+        [
+          533
+        ]
+      ],
+      "actual_rows": [
+        [
+          533
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-usgs-02",
+      "oracle_id": "usgs_strongest_events",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT time, place, mag, depth FROM data ORDER BY mag DESC LIMIT 10",
+      "expected_rows": [
+        [
+          "2026-06-24T22:05:11.743Z",
+          "20 km ESE of Yumare, Venezuela",
+          7.5,
+          10.0
+        ],
+        [
+          "2026-06-24T22:04:34.363Z",
+          "21 km ENE of San Felipe, Venezuela",
+          7.2,
+          27.588
+        ],
+        [
+          "2026-06-24T22:30:12.989Z",
+          "33 km ENE of Noda, Japan",
+          6.9,
+          34.0
+        ],
+        [
+          "2026-06-16T03:27:44.379Z",
+          "42 km SE of Palu, Indonesia",
+          6.7,
+          11.0
+        ],
+        [
+          "2026-06-19T06:52:31.597Z",
+          "133 km ESE of Petropavlovsk-Kamchatsky, Russia",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-17T18:56:58.028Z",
+          "central Mid-Atlantic Ridge",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-26T11:34:41.498Z",
+          "34 km WSW of Sarangani, Philippines",
+          6.5,
+          42.0
+        ],
+        [
+          "2026-06-16T09:06:55.517Z",
+          "262 km SSE of Dunhuang, China",
+          6.3,
+          10.0
+        ],
+        [
+          "2026-07-03T02:31:28.846Z",
+          "58 km W of Tobelo, Indonesia",
+          6.2,
+          120.932
+        ],
+        [
+          "2026-06-15T09:18:36.126Z",
+          "68 km ESE of Pondaguitan, Philippines",
+          6.2,
+          84.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2026-06-24T22:05:11.743Z",
+          "20 km ESE of Yumare, Venezuela",
+          7.5,
+          10.0
+        ],
+        [
+          "2026-06-24T22:04:34.363Z",
+          "21 km ENE of San Felipe, Venezuela",
+          7.2,
+          27.588
+        ],
+        [
+          "2026-06-24T22:30:12.989Z",
+          "33 km ENE of Noda, Japan",
+          6.9,
+          34.0
+        ],
+        [
+          "2026-06-16T03:27:44.379Z",
+          "42 km SE of Palu, Indonesia",
+          6.7,
+          11.0
+        ],
+        [
+          "2026-06-19T06:52:31.597Z",
+          "133 km ESE of Petropavlovsk-Kamchatsky, Russia",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-17T18:56:58.028Z",
+          "central Mid-Atlantic Ridge",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-26T11:34:41.498Z",
+          "34 km WSW of Sarangani, Philippines",
+          6.5,
+          42.0
+        ],
+        [
+          "2026-06-16T09:06:55.517Z",
+          "262 km SSE of Dunhuang, China",
+          6.3,
+          10.0
+        ],
+        [
+          "2026-07-03T02:31:28.846Z",
+          "58 km W of Tobelo, Indonesia",
+          6.2,
+          120.932
+        ],
+        [
+          "2026-06-15T09:18:36.126Z",
+          "68 km ESE of Pondaguitan, Philippines",
+          6.2,
+          84.0
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-usgs-03",
+      "oracle_id": "usgs_daily_trend",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "line",
+      "actual_chart": "line",
+      "generated_sql": "SELECT DATE(time) AS utc_date, COUNT(*) AS earthquake_count\nFROM data\nGROUP BY DATE(time)\nORDER BY utc_date",
+      "expected_rows": [
+        [
+          "2026-06-11",
+          259
+        ],
+        [
+          "2026-06-12",
+          341
+        ],
+        [
+          "2026-06-13",
+          350
+        ],
+        [
+          "2026-06-14",
+          410
+        ],
+        [
+          "2026-06-15",
+          458
+        ],
+        [
+          "2026-06-16",
+          451
+        ],
+        [
+          "2026-06-17",
+          437
+        ],
+        [
+          "2026-06-18",
+          376
+        ],
+        [
+          "2026-06-19",
+          311
+        ],
+        [
+          "2026-06-20",
+          326
+        ],
+        [
+          "2026-06-21",
+          358
+        ],
+        [
+          "2026-06-22",
+          365
+        ],
+        [
+          "2026-06-23",
+          459
+        ],
+        [
+          "2026-06-24",
+          469
+        ],
+        [
+          "2026-06-25",
+          356
+        ],
+        [
+          "2026-06-26",
+          300
+        ],
+        [
+          "2026-06-27",
+          326
+        ],
+        [
+          "2026-06-28",
+          373
+        ],
+        [
+          "2026-06-29",
+          289
+        ],
+        [
+          "2026-06-30",
+          337
+        ],
+        [
+          "2026-07-01",
+          335
+        ],
+        [
+          "2026-07-02",
+          341
+        ],
+        [
+          "2026-07-03",
+          336
+        ],
+        [
+          "2026-07-04",
+          409
+        ],
+        [
+          "2026-07-05",
+          336
+        ],
+        [
+          "2026-07-06",
+          251
+        ],
+        [
+          "2026-07-07",
+          284
+        ],
+        [
+          "2026-07-08",
+          275
+        ],
+        [
+          "2026-07-09",
+          254
+        ],
+        [
+          "2026-07-10",
+          252
+        ],
+        [
+          "2026-07-11",
+          68
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2026-06-11",
+          259
+        ],
+        [
+          "2026-06-12",
+          341
+        ],
+        [
+          "2026-06-13",
+          350
+        ],
+        [
+          "2026-06-14",
+          410
+        ],
+        [
+          "2026-06-15",
+          458
+        ],
+        [
+          "2026-06-16",
+          451
+        ],
+        [
+          "2026-06-17",
+          437
+        ],
+        [
+          "2026-06-18",
+          376
+        ],
+        [
+          "2026-06-19",
+          311
+        ],
+        [
+          "2026-06-20",
+          326
+        ],
+        [
+          "2026-06-21",
+          358
+        ],
+        [
+          "2026-06-22",
+          365
+        ],
+        [
+          "2026-06-23",
+          459
+        ],
+        [
+          "2026-06-24",
+          469
+        ],
+        [
+          "2026-06-25",
+          356
+        ],
+        [
+          "2026-06-26",
+          300
+        ],
+        [
+          "2026-06-27",
+          326
+        ],
+        [
+          "2026-06-28",
+          373
+        ],
+        [
+          "2026-06-29",
+          289
+        ],
+        [
+          "2026-06-30",
+          337
+        ],
+        [
+          "2026-07-01",
+          335
+        ],
+        [
+          "2026-07-02",
+          341
+        ],
+        [
+          "2026-07-03",
+          336
+        ],
+        [
+          "2026-07-04",
+          409
+        ],
+        [
+          "2026-07-05",
+          336
+        ],
+        [
+          "2026-07-06",
+          251
+        ],
+        [
+          "2026-07-07",
+          284
+        ],
+        [
+          "2026-07-08",
+          275
+        ],
+        [
+          "2026-07-09",
+          254
+        ],
+        [
+          "2026-07-10",
+          252
+        ],
+        [
+          "2026-07-11",
+          68
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-usgs-04",
+      "oracle_id": "usgs_depth_by_magnitude_type",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT magtype AS mag_type, AVG(depth) AS avg_depth, COUNT(*) AS earthquake_count\nFROM data\nWHERE mag IS NOT NULL\nGROUP BY magtype\nORDER BY earthquake_count DESC",
+      "expected_rows": [
+        [
+          "ml",
+          18.213,
+          6739
+        ],
+        [
+          "md",
+          8.052,
+          2743
+        ],
+        [
+          "mb",
+          82.172,
+          863
+        ],
+        [
+          "mww",
+          60.616,
+          90
+        ],
+        [
+          "mwr",
+          30.519,
+          19
+        ],
+        [
+          "mun",
+          -0.022,
+          12
+        ],
+        [
+          "mb_lg",
+          7.123,
+          8
+        ],
+        [
+          "mw",
+          9.324,
+          7
+        ],
+        [
+          "mh",
+          -1.81,
+          6
+        ],
+        [
+          "mwb",
+          21.5,
+          2
+        ]
+      ],
+      "actual_rows": [
+        [
+          "ml",
+          18.212830523595073,
+          6739
+        ],
+        [
+          "md",
+          8.052300400582462,
+          2743
+        ],
+        [
+          "mb",
+          82.17204750869061,
+          863
+        ],
+        [
+          "mww",
+          60.61617777777778,
+          90
+        ],
+        [
+          "mwr",
+          30.518578947368418,
+          19
+        ],
+        [
+          "mun",
+          -0.021666666666666667,
+          12
+        ],
+        [
+          "mb_lg",
+          7.12275,
+          8
+        ],
+        [
+          "mw",
+          9.324285752432715,
+          7
+        ],
+        [
+          "mh",
+          -1.8099999999999998,
+          6
+        ],
+        [
+          "mwb",
+          21.5,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-usgs-05",
+      "oracle_id": "usgs_depth_bands",
+      "language": "zh-CN",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT\n  CASE\n    WHEN depth < 10 THEN 'under_10_km'\n    WHEN depth >= 10 AND depth < 50 THEN '10_50_km'\n    WHEN depth >= 50 AND depth < 100 THEN '50_100_km'\n    WHEN depth >= 100 THEN '100_km_or_more'\n  END AS depth_band,\n  COUNT(*) AS earthquake_count\nFROM data\nGROUP BY depth_band\nORDER BY earthquake_count DESC",
+      "expected_rows": [
+        [
+          "under_10_km",
+          6302
+        ],
+        [
+          "10_50_km",
+          3072
+        ],
+        [
+          "50_100_km",
+          690
+        ],
+        [
+          "100_km_or_more",
+          428
+        ]
+      ],
+      "actual_rows": [
+        [
+          "under_10_km",
+          6302
+        ],
+        [
+          "10_50_km",
+          3072
+        ],
+        [
+          "50_100_km",
+          690
+        ],
+        [
+          "100_km_or_more",
+          428
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-noaa-01",
+      "oracle_id": "noaa_hottest_day",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT date, tmax_c FROM data ORDER BY tmax_c DESC LIMIT 1",
+      "expected_rows": [
+        [
+          "2025-06-24",
+          38.9
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-06-24",
+          38.9
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-noaa-02",
+      "oracle_id": "noaa_monthly_precipitation",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "line",
+      "actual_chart": "line",
+      "generated_sql": "SELECT strftime('%Y-%m', date) AS month, SUM(precipitation_mm) AS total_precipitation_mm\nFROM data\nWHERE date >= '2025-01-01' AND date < '2026-01-01'\nGROUP BY strftime('%Y-%m', date)\nORDER BY month",
+      "expected_rows": [
+        [
+          "2025-01",
+          16.5
+        ],
+        [
+          "2025-02",
+          80.7
+        ],
+        [
+          "2025-03",
+          108.1
+        ],
+        [
+          "2025-04",
+          55.2
+        ],
+        [
+          "2025-05",
+          112.6
+        ],
+        [
+          "2025-06",
+          65.1
+        ],
+        [
+          "2025-07",
+          79.7
+        ],
+        [
+          "2025-08",
+          45.1
+        ],
+        [
+          "2025-09",
+          75.3
+        ],
+        [
+          "2025-10",
+          101.5
+        ],
+        [
+          "2025-11",
+          45.7
+        ],
+        [
+          "2025-12",
+          80.7
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-01",
+          16.5
+        ],
+        [
+          "2025-02",
+          80.7
+        ],
+        [
+          "2025-03",
+          108.1
+        ],
+        [
+          "2025-04",
+          55.2
+        ],
+        [
+          "2025-05",
+          112.6
+        ],
+        [
+          "2025-06",
+          65.1
+        ],
+        [
+          "2025-07",
+          79.7
+        ],
+        [
+          "2025-08",
+          45.1
+        ],
+        [
+          "2025-09",
+          75.3
+        ],
+        [
+          "2025-10",
+          101.5
+        ],
+        [
+          "2025-11",
+          45.699999999999996
+        ],
+        [
+          "2025-12",
+          80.7
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-noaa-03",
+      "oracle_id": "noaa_snow_days",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "number",
+      "actual_chart": "number",
+      "generated_sql": "SELECT COUNT(*) AS days_with_snow, SUM(snowfall_mm) AS total_snowfall_mm FROM data WHERE snowfall_mm > 0",
+      "expected_rows": [
+        [
+          13,
+          454.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          13,
+          454.0
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-noaa-04",
+      "oracle_id": "noaa_windiest_days",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT date, avg_wind_speed_ms, max_2min_wind_speed_ms\nFROM data\nORDER BY avg_wind_speed_ms DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "2025-01-09",
+          11.4,
+          17.4
+        ],
+        [
+          "2025-02-17",
+          11.2,
+          17.4
+        ],
+        [
+          "2025-01-07",
+          11.0,
+          17.4
+        ],
+        [
+          "2025-01-08",
+          10.6,
+          14.3
+        ],
+        [
+          "2025-10-31",
+          10.6,
+          16.1
+        ],
+        [
+          "2025-12-30",
+          10.4,
+          16.1
+        ],
+        [
+          "2025-12-19",
+          10.3,
+          17.9
+        ],
+        [
+          "2025-03-07",
+          10.2,
+          17.0
+        ],
+        [
+          "2025-10-13",
+          10.1,
+          13.9
+        ],
+        [
+          "2025-11-11",
+          10.1,
+          15.6
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-01-09",
+          11.4,
+          17.4
+        ],
+        [
+          "2025-02-17",
+          11.2,
+          17.4
+        ],
+        [
+          "2025-01-07",
+          11.0,
+          17.4
+        ],
+        [
+          "2025-01-08",
+          10.6,
+          14.3
+        ],
+        [
+          "2025-10-31",
+          10.6,
+          16.1
+        ],
+        [
+          "2025-12-30",
+          10.4,
+          16.1
+        ],
+        [
+          "2025-12-19",
+          10.3,
+          17.9
+        ],
+        [
+          "2025-03-07",
+          10.2,
+          17.0
+        ],
+        [
+          "2025-10-13",
+          10.1,
+          13.9
+        ],
+        [
+          "2025-11-11",
+          10.1,
+          15.6
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-noaa-05",
+      "oracle_id": "noaa_monthly_temperature",
+      "language": "zh-CN",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "line",
+      "actual_chart": "line",
+      "generated_sql": "SELECT strftime('%Y-%m', date) AS month, AVG(tmax_c) AS avg_max_temp_c, AVG(tmin_c) AS avg_min_temp_c FROM data WHERE date >= '2025-01-01' AND date < '2026-01-01' GROUP BY month ORDER BY month",
+      "expected_rows": [
+        [
+          "2025-01",
+          3.95,
+          -2.7
+        ],
+        [
+          "2025-02",
+          6.65,
+          -0.82
+        ],
+        [
+          "2025-03",
+          13.2,
+          3.55
+        ],
+        [
+          "2025-04",
+          16.71,
+          7.56
+        ],
+        [
+          "2025-05",
+          21.16,
+          12.84
+        ],
+        [
+          "2025-06",
+          26.86,
+          18.55
+        ],
+        [
+          "2025-07",
+          30.57,
+          22.61
+        ],
+        [
+          "2025-08",
+          26.92,
+          18.38
+        ],
+        [
+          "2025-09",
+          24.94,
+          16.7
+        ],
+        [
+          "2025-10",
+          18.5,
+          10.86
+        ],
+        [
+          "2025-11",
+          12.02,
+          4.25
+        ],
+        [
+          "2025-12",
+          4.6,
+          -2.98
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-01",
+          3.9451612903225803,
+          -2.7
+        ],
+        [
+          "2025-02",
+          6.646428571428571,
+          -0.817857142857143
+        ],
+        [
+          "2025-03",
+          13.203225806451613,
+          3.551612903225806
+        ],
+        [
+          "2025-04",
+          16.706666666666667,
+          7.556666666666667
+        ],
+        [
+          "2025-05",
+          21.15806451612903,
+          12.841935483870968
+        ],
+        [
+          "2025-06",
+          26.863333333333333,
+          18.553333333333335
+        ],
+        [
+          "2025-07",
+          30.574193548387097,
+          22.612903225806452
+        ],
+        [
+          "2025-08",
+          26.916129032258063,
+          18.38064516129032
+        ],
+        [
+          "2025-09",
+          24.94333333333333,
+          16.696666666666665
+        ],
+        [
+          "2025-10",
+          18.5,
+          10.864516129032259
+        ],
+        [
+          "2025-11",
+          12.020000000000001,
+          4.253333333333333
+        ],
+        [
+          "2025-12",
+          4.603225806451612,
+          -2.97741935483871
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-world_bank-01",
+      "oracle_id": "world_bank_top_gdp",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT country, gdp_current_usd\nFROM data\nWHERE year = 2024 AND gdp_current_usd IS NOT NULL\nORDER BY gdp_current_usd DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "United States",
+          29298013000000.0
+        ],
+        [
+          "China",
+          18729668435848.0
+        ],
+        [
+          "Germany",
+          4685592577804.69
+        ],
+        [
+          "Japan",
+          4190008188358.57
+        ],
+        [
+          "India",
+          3760813470500.86
+        ],
+        [
+          "United Kingdom",
+          3695539513534.15
+        ],
+        [
+          "France",
+          3160442622465.08
+        ],
+        [
+          "Italy",
+          2383435562458.12
+        ],
+        [
+          "Canada",
+          2270076189683.46
+        ],
+        [
+          "Russian Federation",
+          2186462268813.08
+        ]
+      ],
+      "actual_rows": [
+        [
+          "United States",
+          29298013000000.0
+        ],
+        [
+          "China",
+          18729668435848.0
+        ],
+        [
+          "Germany",
+          4685592577804.69
+        ],
+        [
+          "Japan",
+          4190008188358.57
+        ],
+        [
+          "India",
+          3760813470500.86
+        ],
+        [
+          "United Kingdom",
+          3695539513534.15
+        ],
+        [
+          "France",
+          3160442622465.08
+        ],
+        [
+          "Italy",
+          2383435562458.12
+        ],
+        [
+          "Canada",
+          2270076189683.46
+        ],
+        [
+          "Russian Federation",
+          2186462268813.08
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-world_bank-02",
+      "oracle_id": "world_bank_top_population",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT country, population\nFROM data\nWHERE year = 2024\nORDER BY population DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "India",
+          1450935791
+        ],
+        [
+          "China",
+          1408975000
+        ],
+        [
+          "United States",
+          340003797
+        ],
+        [
+          "Indonesia",
+          283487931
+        ],
+        [
+          "Pakistan",
+          251269164
+        ],
+        [
+          "Nigeria",
+          232679478
+        ],
+        [
+          "Brazil",
+          211998573
+        ],
+        [
+          "Bangladesh",
+          173562364
+        ],
+        [
+          "Russian Federation",
+          143669648
+        ],
+        [
+          "Ethiopia",
+          132059767
+        ]
+      ],
+      "actual_rows": [
+        [
+          "India",
+          1450935791
+        ],
+        [
+          "China",
+          1408975000
+        ],
+        [
+          "United States",
+          340003797
+        ],
+        [
+          "Indonesia",
+          283487931
+        ],
+        [
+          "Pakistan",
+          251269164
+        ],
+        [
+          "Nigeria",
+          232679478
+        ],
+        [
+          "Brazil",
+          211998573
+        ],
+        [
+          "Bangladesh",
+          173562364
+        ],
+        [
+          "Russian Federation",
+          143669648
+        ],
+        [
+          "Ethiopia",
+          132059767
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-world_bank-03",
+      "oracle_id": "world_bank_china_population_growth",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "number",
+      "actual_chart": "number",
+      "generated_sql": "SELECT\n  (SELECT population FROM data WHERE country = 'China' AND year = 2024) -\n  (SELECT population FROM data WHERE country = 'China' AND year = 2015) AS population_change,\n  ROUND(\n    ((SELECT population FROM data WHERE country = 'China' AND year = 2024) -\n     (SELECT population FROM data WHERE country = 'China' AND year = 2015)) * 100.0 /\n    (SELECT population FROM data WHERE country = 'China' AND year = 2015),\n    2\n  ) AS change_rate_pct\nFROM data\nWHERE country = 'China' AND year IN (2015, 2024)\nLIMIT 1",
+      "expected_rows": [
+        [
+          29115000,
+          2.11
+        ]
+      ],
+      "actual_rows": [
+        [
+          29115000,
+          2.11
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-world_bank-04",
+      "oracle_id": "world_bank_gdp_per_capita",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT country, gdp_current_usd / CAST(population AS REAL) AS gdp_per_capita\nFROM data\nWHERE year = 2024 AND population IS NOT NULL AND gdp_current_usd IS NOT NULL AND population > 0\nORDER BY gdp_per_capita DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "Monaco",
+          288001.57
+        ],
+        [
+          "Liechtenstein",
+          220167.23
+        ],
+        [
+          "Bermuda",
+          142250.43
+        ],
+        [
+          "Luxembourg",
+          137781.68
+        ],
+        [
+          "Ireland",
+          112894.95
+        ],
+        [
+          "Switzerland",
+          107702.07
+        ],
+        [
+          "Cayman Islands",
+          104292.9
+        ],
+        [
+          "Singapore",
+          94896.56
+        ],
+        [
+          "Norway",
+          89888.95
+        ],
+        [
+          "United States",
+          86169.66
+        ]
+      ],
+      "actual_rows": [
+        [
+          "Monaco",
+          288001.5748564935
+        ],
+        [
+          "Liechtenstein",
+          220167.22547355745
+        ],
+        [
+          "Bermuda",
+          142250.43319512345
+        ],
+        [
+          "Luxembourg",
+          137781.68165912305
+        ],
+        [
+          "Ireland",
+          112894.95324080532
+        ],
+        [
+          "Switzerland",
+          107702.06594031169
+        ],
+        [
+          "Cayman Islands",
+          104292.9006721086
+        ],
+        [
+          "Singapore",
+          94896.5621495988
+        ],
+        [
+          "Norway",
+          89888.95352047573
+        ],
+        [
+          "United States",
+          86169.66415819174
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-world_bank-05",
+      "oracle_id": "world_bank_life_expectancy",
+      "language": "zh-CN",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT country, life_expectancy_years, gdp_current_usd, population\nFROM data\nWHERE year = 2023\nORDER BY life_expectancy_years DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "Monaco",
+          86.372,
+          10003897341.1766,
+          38956
+        ],
+        [
+          "San Marino",
+          85.706,
+          2027243193.5116,
+          33860
+        ],
+        [
+          "Hong Kong SAR, China",
+          85.2473170731707,
+          380762296025.216,
+          7536100
+        ],
+        [
+          "Liechtenstein",
+          84.5951219512195,
+          8239379403.22096,
+          39846
+        ],
+        [
+          "Switzerland",
+          84.1560975609756,
+          928435275851.707,
+          8888822
+        ],
+        [
+          "French Polynesia",
+          84.07,
+          6137447782.87066,
+          281118
+        ],
+        [
+          "Japan",
+          84.0412195121951,
+          4384854269961.93,
+          124516650
+        ],
+        [
+          "Andorra",
+          84.041,
+          3785067331.88242,
+          80856
+        ],
+        [
+          "Spain",
+          83.9341463414634,
+          1619481980719.64,
+          48352528
+        ],
+        [
+          "Gibraltar",
+          83.553,
+          null,
+          38471
+        ]
+      ],
+      "actual_rows": [
+        [
+          "Monaco",
+          86.372,
+          10003897341.1766,
+          38956
+        ],
+        [
+          "San Marino",
+          85.706,
+          2027243193.5116,
+          33860
+        ],
+        [
+          "Hong Kong SAR, China",
+          85.2473170731707,
+          380762296025.216,
+          7536100
+        ],
+        [
+          "Liechtenstein",
+          84.5951219512195,
+          8239379403.22096,
+          39846
+        ],
+        [
+          "Switzerland",
+          84.1560975609756,
+          928435275851.707,
+          8888822
+        ],
+        [
+          "French Polynesia",
+          84.07,
+          6137447782.87066,
+          281118
+        ],
+        [
+          "Japan",
+          84.0412195121951,
+          4384854269961.93,
+          124516650
+        ],
+        [
+          "Andorra",
+          84.041,
+          3785067331.88242,
+          80856
+        ],
+        [
+          "Spain",
+          83.9341463414634,
+          1619481980719.64,
+          48352528
+        ],
+        [
+          "Gibraltar",
+          83.553,
+          null,
+          38471
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-china_nbs-01",
+      "oracle_id": "china_top_gdp",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS 地区, column_2 AS 地区生产总值_亿元\nFROM data\nORDER BY column_2 DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "广东",
+          141633.8
+        ],
+        [
+          "江苏",
+          137008.0
+        ],
+        [
+          "山东",
+          98565.8
+        ],
+        [
+          "浙江",
+          90130.6
+        ],
+        [
+          "四川",
+          64697.0
+        ],
+        [
+          "河南",
+          63590.0
+        ],
+        [
+          "湖北",
+          60013.0
+        ],
+        [
+          "福建",
+          57761.0
+        ],
+        [
+          "上海",
+          53926.7
+        ],
+        [
+          "湖南",
+          53231.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          "广东",
+          141633.8
+        ],
+        [
+          "江苏",
+          137008.0
+        ],
+        [
+          "山东",
+          98565.8
+        ],
+        [
+          "浙江",
+          90130.6
+        ],
+        [
+          "四川",
+          64697.0
+        ],
+        [
+          "河南",
+          63590.0
+        ],
+        [
+          "湖北",
+          60013.0
+        ],
+        [
+          "福建",
+          57761.0
+        ],
+        [
+          "上海",
+          53926.7
+        ],
+        [
+          "湖南",
+          53231.0
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-china_nbs-02",
+      "oracle_id": "china_per_capita_urbanization",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS 地区, column_6 AS 人均地区生产总值_元, column_10 AS 城镇人口比重_百分比\nFROM data\nORDER BY column_6 DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "北京",
+          228167,
+          88.22
+        ],
+        [
+          "上海",
+          217140,
+          89.85
+        ],
+        [
+          "江苏",
+          160694,
+          75.53
+        ],
+        [
+          "福建",
+          137920,
+          71.8
+        ],
+        [
+          "浙江",
+          135565,
+          75.46
+        ],
+        [
+          "天津",
+          132143,
+          86.01
+        ],
+        [
+          "广东",
+          111146,
+          75.91
+        ],
+        [
+          "内蒙古",
+          110011,
+          70.73
+        ],
+        [
+          "湖北",
+          102832,
+          66.35
+        ],
+        [
+          "重庆",
+          100903,
+          72.14
+        ]
+      ],
+      "actual_rows": [
+        [
+          "北京",
+          228167,
+          88.22
+        ],
+        [
+          "上海",
+          217140,
+          89.85
+        ],
+        [
+          "江苏",
+          160694,
+          75.53
+        ],
+        [
+          "福建",
+          137920,
+          71.8
+        ],
+        [
+          "浙江",
+          135565,
+          75.46
+        ],
+        [
+          "天津",
+          132143,
+          86.01
+        ],
+        [
+          "广东",
+          111146,
+          75.91
+        ],
+        [
+          "内蒙古",
+          110011,
+          70.73
+        ],
+        [
+          "湖北",
+          102832,
+          66.35
+        ],
+        [
+          "重庆",
+          100903,
+          72.14
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-china_nbs-03",
+      "oracle_id": "china_negative_population_growth",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS 地区, column_14 AS 自然增长率_千分比\nFROM data\nWHERE column_14 < 0\nORDER BY column_14 ASC",
+      "expected_rows": [
+        [
+          "黑龙江",
+          -6.34
+        ],
+        [
+          "辽宁",
+          -5.3
+        ],
+        [
+          "吉林",
+          -4.85
+        ],
+        [
+          "湖北",
+          -3.14
+        ],
+        [
+          "湖南",
+          -3.04
+        ],
+        [
+          "四川",
+          -3.02
+        ],
+        [
+          "重庆",
+          -2.88
+        ],
+        [
+          "内蒙古",
+          -2.84
+        ],
+        [
+          "江苏",
+          -2.5
+        ],
+        [
+          "河北",
+          -2.32
+        ],
+        [
+          "安徽",
+          -2.24
+        ],
+        [
+          "天津",
+          -1.97
+        ],
+        [
+          "山东",
+          -1.67
+        ],
+        [
+          "上海",
+          -1.53
+        ],
+        [
+          "山西",
+          -1.39
+        ],
+        [
+          "甘肃",
+          -0.9
+        ],
+        [
+          "陕西",
+          -0.69
+        ],
+        [
+          "江西",
+          -0.58
+        ],
+        [
+          "浙江",
+          -0.36
+        ],
+        [
+          "河南",
+          -0.11
+        ]
+      ],
+      "actual_rows": [
+        [
+          "黑龙江",
+          -6.34
+        ],
+        [
+          "辽宁",
+          -5.3
+        ],
+        [
+          "吉林",
+          -4.85
+        ],
+        [
+          "湖北",
+          -3.14
+        ],
+        [
+          "湖南",
+          -3.04
+        ],
+        [
+          "四川",
+          -3.02
+        ],
+        [
+          "重庆",
+          -2.88
+        ],
+        [
+          "内蒙古",
+          -2.84
+        ],
+        [
+          "江苏",
+          -2.5
+        ],
+        [
+          "河北",
+          -2.32
+        ],
+        [
+          "安徽",
+          -2.24
+        ],
+        [
+          "天津",
+          -1.97
+        ],
+        [
+          "山东",
+          -1.67
+        ],
+        [
+          "上海",
+          -1.53
+        ],
+        [
+          "山西",
+          -1.39
+        ],
+        [
+          "甘肃",
+          -0.9
+        ],
+        [
+          "陕西",
+          -0.69
+        ],
+        [
+          "江西",
+          -0.58
+        ],
+        [
+          "浙江",
+          -0.36
+        ],
+        [
+          "河南",
+          -0.11
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-china_nbs-04",
+      "oracle_id": "china_tertiary_share",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS 地区, (column_5 / column_2) * 100 AS 第三产业增加值占地区生产总值比重\nFROM data\nORDER BY (column_5 / column_2) DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "北京",
+          85.27
+        ],
+        [
+          "上海",
+          78.23
+        ],
+        [
+          "天津",
+          63.95
+        ],
+        [
+          "海南",
+          60.61
+        ],
+        [
+          "浙江",
+          58.54
+        ],
+        [
+          "广东",
+          57.49
+        ],
+        [
+          "吉林",
+          57.06
+        ],
+        [
+          "重庆",
+          57.05
+        ],
+        [
+          "辽宁",
+          56.86
+        ],
+        [
+          "四川",
+          56.05
+        ]
+      ],
+      "actual_rows": [
+        [
+          "北京",
+          85.26736900393436
+        ],
+        [
+          "上海",
+          78.23471490004025
+        ],
+        [
+          "天津",
+          63.945895263616336
+        ],
+        [
+          "海南",
+          60.61343044721953
+        ],
+        [
+          "浙江",
+          58.53883142905961
+        ],
+        [
+          "广东",
+          57.494256314523795
+        ],
+        [
+          "吉林",
+          57.05512074199927
+        ],
+        [
+          "重庆",
+          57.05148913435135
+        ],
+        [
+          "辽宁",
+          56.860364213941196
+        ],
+        [
+          "四川",
+          56.046184521693434
+        ]
+      ]
+    },
+    {
+      "id": "zh-CN-china_nbs-05",
+      "oracle_id": "china_top_population",
+      "language": "zh-CN",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS 地区, column_8 AS 总人口_万人, column_10 AS 城镇人口比重_百分比\nFROM data\nORDER BY column_8 DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "广东",
+          12780,
+          75.91
+        ],
+        [
+          "山东",
+          10080,
+          66.48
+        ],
+        [
+          "河南",
+          9785,
+          59.22
+        ],
+        [
+          "江苏",
+          8526,
+          75.53
+        ],
+        [
+          "四川",
+          8364,
+          60.1
+        ],
+        [
+          "河北",
+          7378,
+          63.42
+        ],
+        [
+          "浙江",
+          6670,
+          75.46
+        ],
+        [
+          "湖南",
+          6539,
+          62.07
+        ],
+        [
+          "安徽",
+          6123,
+          62.57
+        ],
+        [
+          "湖北",
+          5834,
+          66.35
+        ]
+      ],
+      "actual_rows": [
+        [
+          "广东",
+          12780,
+          75.91
+        ],
+        [
+          "山东",
+          10080,
+          66.48
+        ],
+        [
+          "河南",
+          9785,
+          59.22
+        ],
+        [
+          "江苏",
+          8526,
+          75.53
+        ],
+        [
+          "四川",
+          8364,
+          60.1
+        ],
+        [
+          "河北",
+          7378,
+          63.42
+        ],
+        [
+          "浙江",
+          6670,
+          75.46
+        ],
+        [
+          "湖南",
+          6539,
+          62.07
+        ],
+        [
+          "安徽",
+          6123,
+          62.57
+        ],
+        [
+          "湖北",
+          5834,
+          66.35
+        ]
+      ]
+    },
+    {
+      "id": "en-usgs-01",
+      "oracle_id": "usgs_magnitude_45_count",
+      "language": "en",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "number",
+      "actual_chart": "number",
+      "generated_sql": "SELECT COUNT(*) AS earthquake_count\nFROM data\nWHERE mag >= 4.5",
+      "expected_rows": [
+        [
+          533
+        ]
+      ],
+      "actual_rows": [
+        [
+          533
+        ]
+      ]
+    },
+    {
+      "id": "en-usgs-02",
+      "oracle_id": "usgs_strongest_events",
+      "language": "en",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT time, place, mag, depth FROM data ORDER BY mag DESC LIMIT 10",
+      "expected_rows": [
+        [
+          "2026-06-24T22:05:11.743Z",
+          "20 km ESE of Yumare, Venezuela",
+          7.5,
+          10.0
+        ],
+        [
+          "2026-06-24T22:04:34.363Z",
+          "21 km ENE of San Felipe, Venezuela",
+          7.2,
+          27.588
+        ],
+        [
+          "2026-06-24T22:30:12.989Z",
+          "33 km ENE of Noda, Japan",
+          6.9,
+          34.0
+        ],
+        [
+          "2026-06-16T03:27:44.379Z",
+          "42 km SE of Palu, Indonesia",
+          6.7,
+          11.0
+        ],
+        [
+          "2026-06-19T06:52:31.597Z",
+          "133 km ESE of Petropavlovsk-Kamchatsky, Russia",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-17T18:56:58.028Z",
+          "central Mid-Atlantic Ridge",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-26T11:34:41.498Z",
+          "34 km WSW of Sarangani, Philippines",
+          6.5,
+          42.0
+        ],
+        [
+          "2026-06-16T09:06:55.517Z",
+          "262 km SSE of Dunhuang, China",
+          6.3,
+          10.0
+        ],
+        [
+          "2026-07-03T02:31:28.846Z",
+          "58 km W of Tobelo, Indonesia",
+          6.2,
+          120.932
+        ],
+        [
+          "2026-06-15T09:18:36.126Z",
+          "68 km ESE of Pondaguitan, Philippines",
+          6.2,
+          84.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2026-06-24T22:05:11.743Z",
+          "20 km ESE of Yumare, Venezuela",
+          7.5,
+          10.0
+        ],
+        [
+          "2026-06-24T22:04:34.363Z",
+          "21 km ENE of San Felipe, Venezuela",
+          7.2,
+          27.588
+        ],
+        [
+          "2026-06-24T22:30:12.989Z",
+          "33 km ENE of Noda, Japan",
+          6.9,
+          34.0
+        ],
+        [
+          "2026-06-16T03:27:44.379Z",
+          "42 km SE of Palu, Indonesia",
+          6.7,
+          11.0
+        ],
+        [
+          "2026-06-19T06:52:31.597Z",
+          "133 km ESE of Petropavlovsk-Kamchatsky, Russia",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-17T18:56:58.028Z",
+          "central Mid-Atlantic Ridge",
+          6.6,
+          10.0
+        ],
+        [
+          "2026-06-26T11:34:41.498Z",
+          "34 km WSW of Sarangani, Philippines",
+          6.5,
+          42.0
+        ],
+        [
+          "2026-06-16T09:06:55.517Z",
+          "262 km SSE of Dunhuang, China",
+          6.3,
+          10.0
+        ],
+        [
+          "2026-07-03T02:31:28.846Z",
+          "58 km W of Tobelo, Indonesia",
+          6.2,
+          120.932
+        ],
+        [
+          "2026-06-15T09:18:36.126Z",
+          "68 km ESE of Pondaguitan, Philippines",
+          6.2,
+          84.0
+        ]
+      ]
+    },
+    {
+      "id": "en-usgs-03",
+      "oracle_id": "usgs_daily_trend",
+      "language": "en",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "line",
+      "actual_chart": "line",
+      "generated_sql": "SELECT DATE(time) AS utc_date, COUNT(*) AS earthquake_count\nFROM data\nGROUP BY DATE(time)\nORDER BY utc_date",
+      "expected_rows": [
+        [
+          "2026-06-11",
+          259
+        ],
+        [
+          "2026-06-12",
+          341
+        ],
+        [
+          "2026-06-13",
+          350
+        ],
+        [
+          "2026-06-14",
+          410
+        ],
+        [
+          "2026-06-15",
+          458
+        ],
+        [
+          "2026-06-16",
+          451
+        ],
+        [
+          "2026-06-17",
+          437
+        ],
+        [
+          "2026-06-18",
+          376
+        ],
+        [
+          "2026-06-19",
+          311
+        ],
+        [
+          "2026-06-20",
+          326
+        ],
+        [
+          "2026-06-21",
+          358
+        ],
+        [
+          "2026-06-22",
+          365
+        ],
+        [
+          "2026-06-23",
+          459
+        ],
+        [
+          "2026-06-24",
+          469
+        ],
+        [
+          "2026-06-25",
+          356
+        ],
+        [
+          "2026-06-26",
+          300
+        ],
+        [
+          "2026-06-27",
+          326
+        ],
+        [
+          "2026-06-28",
+          373
+        ],
+        [
+          "2026-06-29",
+          289
+        ],
+        [
+          "2026-06-30",
+          337
+        ],
+        [
+          "2026-07-01",
+          335
+        ],
+        [
+          "2026-07-02",
+          341
+        ],
+        [
+          "2026-07-03",
+          336
+        ],
+        [
+          "2026-07-04",
+          409
+        ],
+        [
+          "2026-07-05",
+          336
+        ],
+        [
+          "2026-07-06",
+          251
+        ],
+        [
+          "2026-07-07",
+          284
+        ],
+        [
+          "2026-07-08",
+          275
+        ],
+        [
+          "2026-07-09",
+          254
+        ],
+        [
+          "2026-07-10",
+          252
+        ],
+        [
+          "2026-07-11",
+          68
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2026-06-11",
+          259
+        ],
+        [
+          "2026-06-12",
+          341
+        ],
+        [
+          "2026-06-13",
+          350
+        ],
+        [
+          "2026-06-14",
+          410
+        ],
+        [
+          "2026-06-15",
+          458
+        ],
+        [
+          "2026-06-16",
+          451
+        ],
+        [
+          "2026-06-17",
+          437
+        ],
+        [
+          "2026-06-18",
+          376
+        ],
+        [
+          "2026-06-19",
+          311
+        ],
+        [
+          "2026-06-20",
+          326
+        ],
+        [
+          "2026-06-21",
+          358
+        ],
+        [
+          "2026-06-22",
+          365
+        ],
+        [
+          "2026-06-23",
+          459
+        ],
+        [
+          "2026-06-24",
+          469
+        ],
+        [
+          "2026-06-25",
+          356
+        ],
+        [
+          "2026-06-26",
+          300
+        ],
+        [
+          "2026-06-27",
+          326
+        ],
+        [
+          "2026-06-28",
+          373
+        ],
+        [
+          "2026-06-29",
+          289
+        ],
+        [
+          "2026-06-30",
+          337
+        ],
+        [
+          "2026-07-01",
+          335
+        ],
+        [
+          "2026-07-02",
+          341
+        ],
+        [
+          "2026-07-03",
+          336
+        ],
+        [
+          "2026-07-04",
+          409
+        ],
+        [
+          "2026-07-05",
+          336
+        ],
+        [
+          "2026-07-06",
+          251
+        ],
+        [
+          "2026-07-07",
+          284
+        ],
+        [
+          "2026-07-08",
+          275
+        ],
+        [
+          "2026-07-09",
+          254
+        ],
+        [
+          "2026-07-10",
+          252
+        ],
+        [
+          "2026-07-11",
+          68
+        ]
+      ]
+    },
+    {
+      "id": "en-usgs-04",
+      "oracle_id": "usgs_depth_by_magnitude_type",
+      "language": "en",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT magtype, AVG(depth) AS avg_depth, COUNT(*) AS earthquake_count\nFROM data\nWHERE mag IS NOT NULL AND magtype IS NOT NULL\nGROUP BY magtype\nORDER BY earthquake_count DESC",
+      "expected_rows": [
+        [
+          "ml",
+          18.213,
+          6739
+        ],
+        [
+          "md",
+          8.052,
+          2743
+        ],
+        [
+          "mb",
+          82.172,
+          863
+        ],
+        [
+          "mww",
+          60.616,
+          90
+        ],
+        [
+          "mwr",
+          30.519,
+          19
+        ],
+        [
+          "mun",
+          -0.022,
+          12
+        ],
+        [
+          "mb_lg",
+          7.123,
+          8
+        ],
+        [
+          "mw",
+          9.324,
+          7
+        ],
+        [
+          "mh",
+          -1.81,
+          6
+        ],
+        [
+          "mwb",
+          21.5,
+          2
+        ]
+      ],
+      "actual_rows": [
+        [
+          "ml",
+          18.212830523595073,
+          6739
+        ],
+        [
+          "md",
+          8.052300400582462,
+          2743
+        ],
+        [
+          "mb",
+          82.17204750869061,
+          863
+        ],
+        [
+          "mww",
+          60.61617777777778,
+          90
+        ],
+        [
+          "mwr",
+          30.518578947368418,
+          19
+        ],
+        [
+          "mun",
+          -0.021666666666666667,
+          12
+        ],
+        [
+          "mb_lg",
+          7.12275,
+          8
+        ],
+        [
+          "mw",
+          9.324285752432715,
+          7
+        ],
+        [
+          "mh",
+          -1.8099999999999998,
+          6
+        ],
+        [
+          "mwb",
+          21.5,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "en-usgs-05",
+      "oracle_id": "usgs_depth_bands",
+      "language": "en",
+      "dataset": "usgs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT\n  CASE\n    WHEN depth < 10 THEN 'under_10_km'\n    WHEN depth >= 10 AND depth < 50 THEN '10_50_km'\n    WHEN depth >= 50 AND depth < 100 THEN '50_100_km'\n    WHEN depth >= 100 THEN '100_km_or_more'\n  END AS depth_band,\n  COUNT(*) AS earthquake_count\nFROM data\nGROUP BY depth_band\nORDER BY earthquake_count DESC",
+      "expected_rows": [
+        [
+          "under_10_km",
+          6302
+        ],
+        [
+          "10_50_km",
+          3072
+        ],
+        [
+          "50_100_km",
+          690
+        ],
+        [
+          "100_km_or_more",
+          428
+        ]
+      ],
+      "actual_rows": [
+        [
+          "under_10_km",
+          6302
+        ],
+        [
+          "10_50_km",
+          3072
+        ],
+        [
+          "50_100_km",
+          690
+        ],
+        [
+          "100_km_or_more",
+          428
+        ]
+      ]
+    },
+    {
+      "id": "en-noaa-01",
+      "oracle_id": "noaa_hottest_day",
+      "language": "en",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT date, tmax_c\nFROM data\nWHERE date >= '2025-01-01' AND date < '2026-01-01'\nORDER BY tmax_c DESC\nLIMIT 1",
+      "expected_rows": [
+        [
+          "2025-06-24",
+          38.9
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-06-24",
+          38.9
+        ]
+      ]
+    },
+    {
+      "id": "en-noaa-02",
+      "oracle_id": "noaa_monthly_precipitation",
+      "language": "en",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "line",
+      "actual_chart": "line",
+      "generated_sql": "SELECT strftime('%Y-%m', date) AS month, SUM(precipitation_mm) AS total_precipitation_mm\nFROM data\nWHERE date >= '2025-01-01' AND date < '2026-01-01'\nGROUP BY strftime('%Y-%m', date)\nORDER BY month",
+      "expected_rows": [
+        [
+          "2025-01",
+          16.5
+        ],
+        [
+          "2025-02",
+          80.7
+        ],
+        [
+          "2025-03",
+          108.1
+        ],
+        [
+          "2025-04",
+          55.2
+        ],
+        [
+          "2025-05",
+          112.6
+        ],
+        [
+          "2025-06",
+          65.1
+        ],
+        [
+          "2025-07",
+          79.7
+        ],
+        [
+          "2025-08",
+          45.1
+        ],
+        [
+          "2025-09",
+          75.3
+        ],
+        [
+          "2025-10",
+          101.5
+        ],
+        [
+          "2025-11",
+          45.7
+        ],
+        [
+          "2025-12",
+          80.7
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-01",
+          16.5
+        ],
+        [
+          "2025-02",
+          80.7
+        ],
+        [
+          "2025-03",
+          108.1
+        ],
+        [
+          "2025-04",
+          55.2
+        ],
+        [
+          "2025-05",
+          112.6
+        ],
+        [
+          "2025-06",
+          65.1
+        ],
+        [
+          "2025-07",
+          79.7
+        ],
+        [
+          "2025-08",
+          45.1
+        ],
+        [
+          "2025-09",
+          75.3
+        ],
+        [
+          "2025-10",
+          101.5
+        ],
+        [
+          "2025-11",
+          45.699999999999996
+        ],
+        [
+          "2025-12",
+          80.7
+        ]
+      ]
+    },
+    {
+      "id": "en-noaa-03",
+      "oracle_id": "noaa_snow_days",
+      "language": "en",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "number",
+      "actual_chart": "number",
+      "generated_sql": "SELECT COUNT(*) AS days_with_snow, SUM(snowfall_mm) AS total_snowfall_mm FROM data WHERE snowfall_mm > 0",
+      "expected_rows": [
+        [
+          13,
+          454.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          13,
+          454.0
+        ]
+      ]
+    },
+    {
+      "id": "en-noaa-04",
+      "oracle_id": "noaa_windiest_days",
+      "language": "en",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT date, avg_wind_speed_ms, max_2min_wind_speed_ms\nFROM data\nORDER BY avg_wind_speed_ms DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "2025-01-09",
+          11.4,
+          17.4
+        ],
+        [
+          "2025-02-17",
+          11.2,
+          17.4
+        ],
+        [
+          "2025-01-07",
+          11.0,
+          17.4
+        ],
+        [
+          "2025-01-08",
+          10.6,
+          14.3
+        ],
+        [
+          "2025-10-31",
+          10.6,
+          16.1
+        ],
+        [
+          "2025-12-30",
+          10.4,
+          16.1
+        ],
+        [
+          "2025-12-19",
+          10.3,
+          17.9
+        ],
+        [
+          "2025-03-07",
+          10.2,
+          17.0
+        ],
+        [
+          "2025-10-13",
+          10.1,
+          13.9
+        ],
+        [
+          "2025-11-11",
+          10.1,
+          15.6
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-01-09",
+          11.4,
+          17.4
+        ],
+        [
+          "2025-02-17",
+          11.2,
+          17.4
+        ],
+        [
+          "2025-01-07",
+          11.0,
+          17.4
+        ],
+        [
+          "2025-01-08",
+          10.6,
+          14.3
+        ],
+        [
+          "2025-10-31",
+          10.6,
+          16.1
+        ],
+        [
+          "2025-12-30",
+          10.4,
+          16.1
+        ],
+        [
+          "2025-12-19",
+          10.3,
+          17.9
+        ],
+        [
+          "2025-03-07",
+          10.2,
+          17.0
+        ],
+        [
+          "2025-10-13",
+          10.1,
+          13.9
+        ],
+        [
+          "2025-11-11",
+          10.1,
+          15.6
+        ]
+      ]
+    },
+    {
+      "id": "en-noaa-05",
+      "oracle_id": "noaa_monthly_temperature",
+      "language": "en",
+      "dataset": "noaa",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "line",
+      "actual_chart": "line",
+      "generated_sql": "SELECT \n  strftime('%Y-%m', date) AS month,\n  AVG(tmax_c) AS avg_max_temperature_c,\n  AVG(tmin_c) AS avg_min_temperature_c\nFROM data\nWHERE strftime('%Y', date) = '2025'\nGROUP BY strftime('%Y-%m', date)\nORDER BY month",
+      "expected_rows": [
+        [
+          "2025-01",
+          3.95,
+          -2.7
+        ],
+        [
+          "2025-02",
+          6.65,
+          -0.82
+        ],
+        [
+          "2025-03",
+          13.2,
+          3.55
+        ],
+        [
+          "2025-04",
+          16.71,
+          7.56
+        ],
+        [
+          "2025-05",
+          21.16,
+          12.84
+        ],
+        [
+          "2025-06",
+          26.86,
+          18.55
+        ],
+        [
+          "2025-07",
+          30.57,
+          22.61
+        ],
+        [
+          "2025-08",
+          26.92,
+          18.38
+        ],
+        [
+          "2025-09",
+          24.94,
+          16.7
+        ],
+        [
+          "2025-10",
+          18.5,
+          10.86
+        ],
+        [
+          "2025-11",
+          12.02,
+          4.25
+        ],
+        [
+          "2025-12",
+          4.6,
+          -2.98
+        ]
+      ],
+      "actual_rows": [
+        [
+          "2025-01",
+          3.9451612903225803,
+          -2.7
+        ],
+        [
+          "2025-02",
+          6.646428571428571,
+          -0.817857142857143
+        ],
+        [
+          "2025-03",
+          13.203225806451613,
+          3.551612903225806
+        ],
+        [
+          "2025-04",
+          16.706666666666667,
+          7.556666666666667
+        ],
+        [
+          "2025-05",
+          21.15806451612903,
+          12.841935483870968
+        ],
+        [
+          "2025-06",
+          26.863333333333333,
+          18.553333333333335
+        ],
+        [
+          "2025-07",
+          30.574193548387097,
+          22.612903225806452
+        ],
+        [
+          "2025-08",
+          26.916129032258063,
+          18.38064516129032
+        ],
+        [
+          "2025-09",
+          24.94333333333333,
+          16.696666666666665
+        ],
+        [
+          "2025-10",
+          18.5,
+          10.864516129032259
+        ],
+        [
+          "2025-11",
+          12.020000000000001,
+          4.253333333333333
+        ],
+        [
+          "2025-12",
+          4.603225806451612,
+          -2.97741935483871
+        ]
+      ]
+    },
+    {
+      "id": "en-world_bank-01",
+      "oracle_id": "world_bank_top_gdp",
+      "language": "en",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT country, gdp_current_usd AS gdp\nFROM data\nWHERE year = 2024 AND gdp_current_usd IS NOT NULL\nORDER BY gdp_current_usd DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "United States",
+          29298013000000.0
+        ],
+        [
+          "China",
+          18729668435848.0
+        ],
+        [
+          "Germany",
+          4685592577804.69
+        ],
+        [
+          "Japan",
+          4190008188358.57
+        ],
+        [
+          "India",
+          3760813470500.86
+        ],
+        [
+          "United Kingdom",
+          3695539513534.15
+        ],
+        [
+          "France",
+          3160442622465.08
+        ],
+        [
+          "Italy",
+          2383435562458.12
+        ],
+        [
+          "Canada",
+          2270076189683.46
+        ],
+        [
+          "Russian Federation",
+          2186462268813.08
+        ]
+      ],
+      "actual_rows": [
+        [
+          "United States",
+          29298013000000.0
+        ],
+        [
+          "China",
+          18729668435848.0
+        ],
+        [
+          "Germany",
+          4685592577804.69
+        ],
+        [
+          "Japan",
+          4190008188358.57
+        ],
+        [
+          "India",
+          3760813470500.86
+        ],
+        [
+          "United Kingdom",
+          3695539513534.15
+        ],
+        [
+          "France",
+          3160442622465.08
+        ],
+        [
+          "Italy",
+          2383435562458.12
+        ],
+        [
+          "Canada",
+          2270076189683.46
+        ],
+        [
+          "Russian Federation",
+          2186462268813.08
+        ]
+      ]
+    },
+    {
+      "id": "en-world_bank-02",
+      "oracle_id": "world_bank_top_population",
+      "language": "en",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT country, population\nFROM data\nWHERE year = 2024\nORDER BY population DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "India",
+          1450935791
+        ],
+        [
+          "China",
+          1408975000
+        ],
+        [
+          "United States",
+          340003797
+        ],
+        [
+          "Indonesia",
+          283487931
+        ],
+        [
+          "Pakistan",
+          251269164
+        ],
+        [
+          "Nigeria",
+          232679478
+        ],
+        [
+          "Brazil",
+          211998573
+        ],
+        [
+          "Bangladesh",
+          173562364
+        ],
+        [
+          "Russian Federation",
+          143669648
+        ],
+        [
+          "Ethiopia",
+          132059767
+        ]
+      ],
+      "actual_rows": [
+        [
+          "India",
+          1450935791
+        ],
+        [
+          "China",
+          1408975000
+        ],
+        [
+          "United States",
+          340003797
+        ],
+        [
+          "Indonesia",
+          283487931
+        ],
+        [
+          "Pakistan",
+          251269164
+        ],
+        [
+          "Nigeria",
+          232679478
+        ],
+        [
+          "Brazil",
+          211998573
+        ],
+        [
+          "Bangladesh",
+          173562364
+        ],
+        [
+          "Russian Federation",
+          143669648
+        ],
+        [
+          "Ethiopia",
+          132059767
+        ]
+      ]
+    },
+    {
+      "id": "en-world_bank-03",
+      "oracle_id": "world_bank_china_population_growth",
+      "language": "en",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "number",
+      "actual_chart": "number",
+      "generated_sql": "SELECT \n  (SELECT population FROM data WHERE country = 'China' AND year = 2024) - \n  (SELECT population FROM data WHERE country = 'China' AND year = 2015) AS population_change,\n  ROUND(\n    ((SELECT population FROM data WHERE country = 'China' AND year = 2024) - \n     (SELECT population FROM data WHERE country = 'China' AND year = 2015)) * 100.0 / \n    (SELECT population FROM data WHERE country = 'China' AND year = 2015), 2\n  ) AS percentage_change\n",
+      "expected_rows": [
+        [
+          29115000,
+          2.11
+        ]
+      ],
+      "actual_rows": [
+        [
+          29115000,
+          2.11
+        ]
+      ]
+    },
+    {
+      "id": "en-world_bank-04",
+      "oracle_id": "world_bank_gdp_per_capita",
+      "language": "en",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT country, gdp_current_usd / population AS gdp_per_capita\nFROM data\nWHERE year = 2024 AND population IS NOT NULL AND gdp_current_usd IS NOT NULL AND population > 0\nORDER BY gdp_per_capita DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "Monaco",
+          288001.57
+        ],
+        [
+          "Liechtenstein",
+          220167.23
+        ],
+        [
+          "Bermuda",
+          142250.43
+        ],
+        [
+          "Luxembourg",
+          137781.68
+        ],
+        [
+          "Ireland",
+          112894.95
+        ],
+        [
+          "Switzerland",
+          107702.07
+        ],
+        [
+          "Cayman Islands",
+          104292.9
+        ],
+        [
+          "Singapore",
+          94896.56
+        ],
+        [
+          "Norway",
+          89888.95
+        ],
+        [
+          "United States",
+          86169.66
+        ]
+      ],
+      "actual_rows": [
+        [
+          "Monaco",
+          288001.5748564935
+        ],
+        [
+          "Liechtenstein",
+          220167.22547355745
+        ],
+        [
+          "Bermuda",
+          142250.43319512345
+        ],
+        [
+          "Luxembourg",
+          137781.68165912305
+        ],
+        [
+          "Ireland",
+          112894.95324080532
+        ],
+        [
+          "Switzerland",
+          107702.06594031169
+        ],
+        [
+          "Cayman Islands",
+          104292.9006721086
+        ],
+        [
+          "Singapore",
+          94896.5621495988
+        ],
+        [
+          "Norway",
+          89888.95352047573
+        ],
+        [
+          "United States",
+          86169.66415819174
+        ]
+      ]
+    },
+    {
+      "id": "en-world_bank-05",
+      "oracle_id": "world_bank_life_expectancy",
+      "language": "en",
+      "dataset": "world_bank",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "table",
+      "actual_chart": "table",
+      "generated_sql": "SELECT country, life_expectancy_years, gdp_current_usd, population\nFROM data\nWHERE year = 2023\nORDER BY life_expectancy_years DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "Monaco",
+          86.372,
+          10003897341.1766,
+          38956
+        ],
+        [
+          "San Marino",
+          85.706,
+          2027243193.5116,
+          33860
+        ],
+        [
+          "Hong Kong SAR, China",
+          85.2473170731707,
+          380762296025.216,
+          7536100
+        ],
+        [
+          "Liechtenstein",
+          84.5951219512195,
+          8239379403.22096,
+          39846
+        ],
+        [
+          "Switzerland",
+          84.1560975609756,
+          928435275851.707,
+          8888822
+        ],
+        [
+          "French Polynesia",
+          84.07,
+          6137447782.87066,
+          281118
+        ],
+        [
+          "Japan",
+          84.0412195121951,
+          4384854269961.93,
+          124516650
+        ],
+        [
+          "Andorra",
+          84.041,
+          3785067331.88242,
+          80856
+        ],
+        [
+          "Spain",
+          83.9341463414634,
+          1619481980719.64,
+          48352528
+        ],
+        [
+          "Gibraltar",
+          83.553,
+          null,
+          38471
+        ]
+      ],
+      "actual_rows": [
+        [
+          "Monaco",
+          86.372,
+          10003897341.1766,
+          38956
+        ],
+        [
+          "San Marino",
+          85.706,
+          2027243193.5116,
+          33860
+        ],
+        [
+          "Hong Kong SAR, China",
+          85.2473170731707,
+          380762296025.216,
+          7536100
+        ],
+        [
+          "Liechtenstein",
+          84.5951219512195,
+          8239379403.22096,
+          39846
+        ],
+        [
+          "Switzerland",
+          84.1560975609756,
+          928435275851.707,
+          8888822
+        ],
+        [
+          "French Polynesia",
+          84.07,
+          6137447782.87066,
+          281118
+        ],
+        [
+          "Japan",
+          84.0412195121951,
+          4384854269961.93,
+          124516650
+        ],
+        [
+          "Andorra",
+          84.041,
+          3785067331.88242,
+          80856
+        ],
+        [
+          "Spain",
+          83.9341463414634,
+          1619481980719.64,
+          48352528
+        ],
+        [
+          "Gibraltar",
+          83.553,
+          null,
+          38471
+        ]
+      ]
+    },
+    {
+      "id": "en-china_nbs-01",
+      "oracle_id": "china_top_gdp",
+      "language": "en",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS region, column_2 AS gdp_billion_yuan\nFROM data\nORDER BY column_2 DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "广东",
+          141633.8
+        ],
+        [
+          "江苏",
+          137008.0
+        ],
+        [
+          "山东",
+          98565.8
+        ],
+        [
+          "浙江",
+          90130.6
+        ],
+        [
+          "四川",
+          64697.0
+        ],
+        [
+          "河南",
+          63590.0
+        ],
+        [
+          "湖北",
+          60013.0
+        ],
+        [
+          "福建",
+          57761.0
+        ],
+        [
+          "上海",
+          53926.7
+        ],
+        [
+          "湖南",
+          53231.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          "广东",
+          141633.8
+        ],
+        [
+          "江苏",
+          137008.0
+        ],
+        [
+          "山东",
+          98565.8
+        ],
+        [
+          "浙江",
+          90130.6
+        ],
+        [
+          "四川",
+          64697.0
+        ],
+        [
+          "河南",
+          63590.0
+        ],
+        [
+          "湖北",
+          60013.0
+        ],
+        [
+          "福建",
+          57761.0
+        ],
+        [
+          "上海",
+          53926.7
+        ],
+        [
+          "湖南",
+          53231.0
+        ]
+      ]
+    },
+    {
+      "id": "en-china_nbs-02",
+      "oracle_id": "china_per_capita_urbanization",
+      "language": "en",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT \n  t.column_1 AS region,\n  t.column_6 AS gdp_per_capita,\n  t.column_10 AS urban_population_share\nFROM data t\nORDER BY t.column_6 DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "北京",
+          228167,
+          88.22
+        ],
+        [
+          "上海",
+          217140,
+          89.85
+        ],
+        [
+          "江苏",
+          160694,
+          75.53
+        ],
+        [
+          "福建",
+          137920,
+          71.8
+        ],
+        [
+          "浙江",
+          135565,
+          75.46
+        ],
+        [
+          "天津",
+          132143,
+          86.01
+        ],
+        [
+          "广东",
+          111146,
+          75.91
+        ],
+        [
+          "内蒙古",
+          110011,
+          70.73
+        ],
+        [
+          "湖北",
+          102832,
+          66.35
+        ],
+        [
+          "重庆",
+          100903,
+          72.14
+        ]
+      ],
+      "actual_rows": [
+        [
+          "北京",
+          228167,
+          88.22
+        ],
+        [
+          "上海",
+          217140,
+          89.85
+        ],
+        [
+          "江苏",
+          160694,
+          75.53
+        ],
+        [
+          "福建",
+          137920,
+          71.8
+        ],
+        [
+          "浙江",
+          135565,
+          75.46
+        ],
+        [
+          "天津",
+          132143,
+          86.01
+        ],
+        [
+          "广东",
+          111146,
+          75.91
+        ],
+        [
+          "内蒙古",
+          110011,
+          70.73
+        ],
+        [
+          "湖北",
+          102832,
+          66.35
+        ],
+        [
+          "重庆",
+          100903,
+          72.14
+        ]
+      ]
+    },
+    {
+      "id": "en-china_nbs-03",
+      "oracle_id": "china_negative_population_growth",
+      "language": "en",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS region, column_14 AS natural_growth_rate\nFROM data\nWHERE column_14 < 0\nORDER BY column_14 ASC",
+      "expected_rows": [
+        [
+          "黑龙江",
+          -6.34
+        ],
+        [
+          "辽宁",
+          -5.3
+        ],
+        [
+          "吉林",
+          -4.85
+        ],
+        [
+          "湖北",
+          -3.14
+        ],
+        [
+          "湖南",
+          -3.04
+        ],
+        [
+          "四川",
+          -3.02
+        ],
+        [
+          "重庆",
+          -2.88
+        ],
+        [
+          "内蒙古",
+          -2.84
+        ],
+        [
+          "江苏",
+          -2.5
+        ],
+        [
+          "河北",
+          -2.32
+        ],
+        [
+          "安徽",
+          -2.24
+        ],
+        [
+          "天津",
+          -1.97
+        ],
+        [
+          "山东",
+          -1.67
+        ],
+        [
+          "上海",
+          -1.53
+        ],
+        [
+          "山西",
+          -1.39
+        ],
+        [
+          "甘肃",
+          -0.9
+        ],
+        [
+          "陕西",
+          -0.69
+        ],
+        [
+          "江西",
+          -0.58
+        ],
+        [
+          "浙江",
+          -0.36
+        ],
+        [
+          "河南",
+          -0.11
+        ]
+      ],
+      "actual_rows": [
+        [
+          "黑龙江",
+          -6.34
+        ],
+        [
+          "辽宁",
+          -5.3
+        ],
+        [
+          "吉林",
+          -4.85
+        ],
+        [
+          "湖北",
+          -3.14
+        ],
+        [
+          "湖南",
+          -3.04
+        ],
+        [
+          "四川",
+          -3.02
+        ],
+        [
+          "重庆",
+          -2.88
+        ],
+        [
+          "内蒙古",
+          -2.84
+        ],
+        [
+          "江苏",
+          -2.5
+        ],
+        [
+          "河北",
+          -2.32
+        ],
+        [
+          "安徽",
+          -2.24
+        ],
+        [
+          "天津",
+          -1.97
+        ],
+        [
+          "山东",
+          -1.67
+        ],
+        [
+          "上海",
+          -1.53
+        ],
+        [
+          "山西",
+          -1.39
+        ],
+        [
+          "甘肃",
+          -0.9
+        ],
+        [
+          "陕西",
+          -0.69
+        ],
+        [
+          "江西",
+          -0.58
+        ],
+        [
+          "浙江",
+          -0.36
+        ],
+        [
+          "河南",
+          -0.11
+        ]
+      ]
+    },
+    {
+      "id": "en-china_nbs-04",
+      "oracle_id": "china_tertiary_share",
+      "language": "en",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS region, (column_5 / column_2) * 100 AS tertiary_share_pct\nFROM data\nORDER BY tertiary_share_pct DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "北京",
+          85.27
+        ],
+        [
+          "上海",
+          78.23
+        ],
+        [
+          "天津",
+          63.95
+        ],
+        [
+          "海南",
+          60.61
+        ],
+        [
+          "浙江",
+          58.54
+        ],
+        [
+          "广东",
+          57.49
+        ],
+        [
+          "吉林",
+          57.06
+        ],
+        [
+          "重庆",
+          57.05
+        ],
+        [
+          "辽宁",
+          56.86
+        ],
+        [
+          "四川",
+          56.05
+        ]
+      ],
+      "actual_rows": [
+        [
+          "北京",
+          85.26736900393436
+        ],
+        [
+          "上海",
+          78.23471490004025
+        ],
+        [
+          "天津",
+          63.945895263616336
+        ],
+        [
+          "海南",
+          60.61343044721953
+        ],
+        [
+          "浙江",
+          58.53883142905961
+        ],
+        [
+          "广东",
+          57.494256314523795
+        ],
+        [
+          "吉林",
+          57.05512074199927
+        ],
+        [
+          "重庆",
+          57.05148913435135
+        ],
+        [
+          "辽宁",
+          56.860364213941196
+        ],
+        [
+          "四川",
+          56.046184521693434
+        ]
+      ]
+    },
+    {
+      "id": "en-china_nbs-05",
+      "oracle_id": "china_top_population",
+      "language": "en",
+      "dataset": "china_nbs",
+      "status": "success",
+      "status_ok": true,
+      "result_ok": true,
+      "chart_ok": true,
+      "expected_chart": "bar",
+      "actual_chart": "bar",
+      "generated_sql": "SELECT column_1 AS region, column_8 AS total_population, column_10 AS urban_population_share\nFROM data\nORDER BY column_8 DESC\nLIMIT 10",
+      "expected_rows": [
+        [
+          "广东",
+          12780,
+          75.91
+        ],
+        [
+          "山东",
+          10080,
+          66.48
+        ],
+        [
+          "河南",
+          9785,
+          59.22
+        ],
+        [
+          "江苏",
+          8526,
+          75.53
+        ],
+        [
+          "四川",
+          8364,
+          60.1
+        ],
+        [
+          "河北",
+          7378,
+          63.42
+        ],
+        [
+          "浙江",
+          6670,
+          75.46
+        ],
+        [
+          "湖南",
+          6539,
+          62.07
+        ],
+        [
+          "安徽",
+          6123,
+          62.57
+        ],
+        [
+          "湖北",
+          5834,
+          66.35
+        ]
+      ],
+      "actual_rows": [
+        [
+          "广东",
+          12780,
+          75.91
+        ],
+        [
+          "山东",
+          10080,
+          66.48
+        ],
+        [
+          "河南",
+          9785,
+          59.22
+        ],
+        [
+          "江苏",
+          8526,
+          75.53
+        ],
+        [
+          "四川",
+          8364,
+          60.1
+        ],
+        [
+          "河北",
+          7378,
+          63.42
+        ],
+        [
+          "浙江",
+          6670,
+          75.46
+        ],
+        [
+          "湖南",
+          6539,
+          62.07
+        ],
+        [
+          "安徽",
+          6123,
+          62.57
+        ],
+        [
+          "湖北",
+          5834,
+          66.35
+        ]
+      ]
+    }
+  ]
+}

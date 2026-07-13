@@ -28,7 +28,7 @@ The default Mock mode needs no API key and demonstrates the complete workflow im
 | Observability | POST-SSE node events, full Trace, Query Logs, Lineage, and Dashboard metrics |
 | Data support | Four built-in business datasets, a five-table Commerce model, and bounded CSV ingestion |
 | Bilingual product | Chinese and English navigation, states, dates, numbers, dataset copy, and example questions |
-| Verification scale | 92 backend tests, 19 frontend tests, 43 built-in Eval cases, and 50 open-data cases |
+| Verification scale | 102 backend tests, 19 frontend tests, 43 built-in Eval cases, and 50 open-data cases |
 
 ## More than Text-to-SQL
 
@@ -107,13 +107,14 @@ The complete threat model, bypass tests, and production hardening notes are in [
 
 ## Real DeepSeek and open-data evaluation
 
-The table below is the reproducible snapshot from `2026-07-11`. Every open-data expected answer was computed by independent SQLite oracle SQL; DeepSeek did not generate the ground truth.
+The table below contains reproducible snapshots through `2026-07-13`. Every open-data expected answer was computed by independent SQLite oracle SQL; DeepSeek did not generate the ground truth.
 
 | Evaluation | All-metric passes | Result accuracy | Chart accuracy | SQL attacks blocked | Provider / fallback |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 43 built-in DeepSeek cases | 35 / 43 | 100% | 81.48% | 100% | DeepSeek / 0% |
 | 25 mixed Chinese/English open-data cases | 16 / 25 | 80.95% | 66.67% | 100% | 100% / 0% |
 | 25 Chinese-only open-data cases | 14 / 25 | 66.67% | 71.43% | 100% | 100% / 0% |
+| Optimized 20 Chinese + 20 English cases | 40 / 40 | 100% | 100% | N/A | DeepSeek / 0% |
 
 The real-data suite covers the USGS past-30-day earthquake feed, NOAA JFK daily weather for 2025, World Bank country indicators from 2015 through 2024, and 31 mainland provincial-level regions from the China Statistical Yearbook 2025. Reports preserve every question, generated SQL, oracle rows, actual rows, chart, fallback flag, latency, and failure reason. Missed targets are not replaced with Mock output.
 
@@ -122,6 +123,7 @@ The real-data suite covers the USGS past-30-day earthquake feed, NOAA JFK daily 
 - [25 mixed-language open-data results](docs/real-data-evaluation-results.md)
 - [25 Chinese-only open-data results](docs/real-data-evaluation-results.zh-CN.md)
 - [2026-07-12 real DeepSeek run: 20 Chinese and 20 English cases](docs/deepseek-bilingual-40-results.md) ([full JSON](docs/deepseek-bilingual-40-results.json): 39 succeeded, one remained processing after approval, fallback 0)
+- [2026-07-13 optimization report and per-metric gains](docs/deepseek-bilingual-40-optimization-report.en.md) ([full JSON](docs/deepseek-bilingual-40-optimized-results.json), [oracle score](docs/deepseek-bilingual-40-optimized-score.json): 40/40 correct results and charts, fallback 0)
 
 ## Run in five minutes
 
@@ -251,11 +253,12 @@ Coverage includes initialization, relational schemas, CSV limits, path traversal
 | [docs/demo-script.md](docs/demo-script.md) | Normal queries, multi-table JOINs, blocked attacks, approval resume, and CSV demo |
 | [docs/real-data-evaluation.md](docs/real-data-evaluation.md) | Official sources, transformations, oracles, and evaluation method |
 | [docs/deepseek-bilingual-40-results.md](docs/deepseek-bilingual-40-results.md) | 2026-07-12 real DeepSeek run with 20 Chinese and 20 English cases |
+| [docs/deepseek-bilingual-40-optimization-report.en.md](docs/deepseek-bilingual-40-optimization-report.en.md) | 2026-07-13 before/after accuracy, metric deltas, and complete evidence |
 | [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) | Implemented behavior, verification commands, dependencies, and known limits |
 
 ## Known limits and roadmap
 
-Current limits: the Mock planner is deterministic rather than general natural-language intelligence; the single-process SQLite checkpointer is not a high-concurrency production store; SSE does not yet replay events after a network disconnect; real-model result and chart metrics still contain explicitly reported misses.
+Current limits: the Mock planner is deterministic rather than general natural-language intelligence; the single-process SQLite checkpointer is not a high-concurrency production store; SSE does not yet replay events after a network disconnect; real-model output is nondeterministic, and this 40/40 result covers only the latest attempts for fixed snapshots and predefined questions.
 
 Next priorities: PostgreSQL metadata and checkpoints, multi-tenant identity and purpose-based authorization, a configurable semantic layer, SSE event replay, background Eval jobs, historical model comparison, and route-level frontend code splitting.
 
