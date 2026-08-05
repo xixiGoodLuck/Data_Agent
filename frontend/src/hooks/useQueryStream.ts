@@ -4,7 +4,7 @@ import { parseQueryResponse } from "../api/client";
 import { consumeSseResponse } from "../api/sse";
 import { useI18n } from "../i18n";
 import { deepseekRequestHeaders, useTemporaryCredentials } from "../temporaryCredentials";
-import type { QueryRequest, QueryResponse, TraceEvent } from "../types";
+import type { LocalModelConfig, QueryRequest, QueryResponse, TraceEvent } from "../types";
 
 export function dedupeTrace(events: TraceEvent[]): TraceEvent[] {
   const seen = new Set<string>();
@@ -16,9 +16,16 @@ export function dedupeTrace(events: TraceEvent[]): TraceEvent[] {
   });
 }
 
+export function withLocalModel(
+  payload: QueryRequest,
+  localModel: LocalModelConfig,
+): QueryRequest {
+  return localModel.enabled ? { ...payload, local_model: localModel } : payload;
+}
+
 export function useQueryStream() {
   const { t } = useI18n();
-  const { deepseekApiKey } = useTemporaryCredentials();
+  const { deepseekApiKey, localModel } = useTemporaryCredentials();
   const [result, setResult] = useState<QueryResponse | null>(null);
   const [trace, setTrace] = useState<TraceEvent[]>([]);
   const [status, setStatus] = useState<"idle" | "streaming" | "done" | "cancelled">("idle");
@@ -55,7 +62,7 @@ export function useQueryStream() {
             "Content-Type": "application/json",
             ...deepseekRequestHeaders(deepseekApiKey),
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(withLocalModel(payload, localModel)),
           signal: abortController.signal,
         });
         await consumeSseResponse(
@@ -93,7 +100,7 @@ export function useQueryStream() {
         if (controller.current === abortController) controller.current = null;
       }
     },
-    [cancel, deepseekApiKey, t],
+    [cancel, deepseekApiKey, localModel, t],
   );
 
   useEffect(() => cancel, [cancel]);

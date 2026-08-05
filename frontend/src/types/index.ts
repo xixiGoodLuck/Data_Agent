@@ -124,11 +124,18 @@ export interface QueryResponse {
   error: { type: string; message: string; repairable?: boolean } | null;
 }
 
+export interface LocalModelConfig {
+  enabled: boolean;
+  base_url: string;
+  model: string;
+}
+
 export interface QueryRequest {
   dataset_id: string;
   conversation_id?: string | null;
   question: string;
   request_id?: string;
+  local_model?: LocalModelConfig;
 }
 
 export interface ApprovalRequest {

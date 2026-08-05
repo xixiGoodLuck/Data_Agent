@@ -23,10 +23,17 @@ export function SettingsPage() {
     deepseekApiKey,
     hasDeepseekApiKey,
     setDeepseekApiKey,
+    localModel,
+    saveLocalModel,
+    restoreDefaultModel,
   } = useTemporaryCredentials();
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showKey, setShowKey] = useState(false);
+  const [localBaseUrl, setLocalBaseUrl] = useState(localModel.base_url);
+  const [localModelId, setLocalModelId] = useState(localModel.model);
+  const [localModelOpen, setLocalModelOpen] = useState(false);
+  const [localModelError, setLocalModelError] = useState<string | null>(null);
 
   useEffect(() => {
     void api.settings().then(setSettings).catch((caught: unknown) => {
@@ -37,9 +44,19 @@ export function SettingsPage() {
   if (error) return <ErrorState message={error} />;
   if (!settings) return <LoadingState />;
 
+  const effectiveProvider = localModel.enabled
+    ? "local"
+    : hasDeepseekApiKey
+      ? "deepseek"
+      : settings.provider;
+  const effectiveModel = localModel.enabled
+    ? localModel.model
+    : hasDeepseekApiKey
+      ? "deepseek-v4-flash"
+      : settings.model;
   const details = [
-    { label: t("settings.provider"), value: settings.provider, icon: Cpu },
-    { label: t("settings.model"), value: settings.model, icon: Server },
+    { label: t("settings.provider"), value: effectiveProvider, icon: Cpu },
+    { label: t("settings.model"), value: effectiveModel, icon: Server },
     {
       label: t("settings.resultLimit"),
       value: `${formatNumber(settings.max_result_rows)} ${t("common.rows")}`,
@@ -54,6 +71,24 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
+      <section className="panel p-5 lg:p-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-sm font-bold text-ink">本地模型</h2>
+          {localModel.enabled ? <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">✓ 本地模型：{localModel.model}</span> : null}
+          <button type="button" className="secondary-button" onClick={() => setLocalModelOpen((value) => !value)}>本地模型</button>
+        </div>
+        {localModelOpen ? <div className="mt-4 grid gap-3 border-t border-zinc-100 pt-4">
+          <label><span className="label mb-2 block">Base URL</span><input className="field" value={localBaseUrl} onChange={(event) => setLocalBaseUrl(event.target.value)} placeholder="http://127.0.0.1:1234" /></label>
+          <label><span className="label mb-2 block">Model ID</span><input className="field" value={localModelId} onChange={(event) => setLocalModelId(event.target.value)} placeholder="qwen3.5-4b" /></label>
+          {localModelError ? <p className="text-sm text-red-700">{localModelError}</p> : null}
+          <div className="flex flex-wrap gap-2"><button type="button" className="primary-button" onClick={() => {
+            const base_url = localBaseUrl.trim(); const model = localModelId.trim();
+            if (!base_url || !model || !/^https?:\/\//i.test(base_url)) { setLocalModelError("请输入以 http:// 或 https:// 开头的 Base URL 和 Model ID。"); return; }
+            saveLocalModel({ enabled: true, base_url, model }); setLocalModelError(null); setLocalModelOpen(false);
+          }}>保存并启用</button><button type="button" className="secondary-button" onClick={restoreDefaultModel}>恢复默认模型</button></div>
+        </div> : null}
+      </section>
+
       <section className="panel p-5 lg:p-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {details.map(({ label, value, icon: Icon }) => (

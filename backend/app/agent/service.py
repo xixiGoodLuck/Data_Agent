@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from collections.abc import Iterator
 from contextlib import nullcontext
@@ -12,7 +13,7 @@ from uuid import uuid4
 from langgraph.types import Command
 from sqlalchemy import select
 
-from app.agent.llm import LLMClientResolver, get_deepseek_client
+from app.agent.llm import LLMClientResolver, get_deepseek_client, get_local_model_client
 from app.agent.state import DataAnalysisState
 from app.core.config import Settings
 from app.core.db import MetadataDatabase
@@ -26,6 +27,9 @@ from app.models import (
     Dataset,
     QueryLog,
 )
+from app.schemas.query import LocalModelConfig
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -175,23 +179,47 @@ class QueryService:
             "recursion_limit": 50,
         }
 
-    def _temporary_llm(self, request_id: str, deepseek_api_key: str | None):
+    def _temporary_llm(
+        self,
+        request_id: str,
+        deepseek_api_key: str | None,
+        local_model: LocalModelConfig | None = None,
+    ):
+        if local_model and local_model.enabled:
+            return self.llm_resolver.temporary(
+                request_id,
+                get_local_model_client(self.settings, local_model.base_url, local_model.model),
+            )
         if not deepseek_api_key:
             return nullcontext()
         client = get_deepseek_client(self.settings, deepseek_api_key)
         return self.llm_resolver.temporary(request_id, client)
 
-    def run_query(self, *, deepseek_api_key: str | None = None, **kwargs: Any) -> dict[str, Any]:
+    def run_query(
+        self,
+        *,
+        deepseek_api_key: str | None = None,
+        local_model: LocalModelConfig | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         request_id = kwargs.get("request_id") or str(uuid4())
         kwargs["request_id"] = request_id
-        provider = "deepseek" if deepseek_api_key else self.settings.llm_provider
-        with self._temporary_llm(request_id, deepseek_api_key):
+        provider = (
+            "local"
+            if local_model and local_model.enabled
+            else "deepseek"
+            if deepseek_api_key
+            else self.settings.llm_provider
+        )
+        with self._temporary_llm(request_id, deepseek_api_key, local_model):
             prepared = self.prepare_query(**kwargs, llm_provider=provider)
             if prepared.cached_response is not None:
                 return prepared.cached_response
             try:
                 result = self.graph.invoke(prepared.state, prepared.config)
             except AppError as exc:
+                if local_model and local_model.enabled:
+                    logger.exception("Local model request failed", exc_info=exc)
                 self._mark_failed(prepared.state, exc.error_type, exc.message)
                 raise
             except Exception:
@@ -203,12 +231,22 @@ class QueryService:
             return self.pending_response_for_config(prepared.config, prepared.state)
 
     def stream_query(
-        self, *, deepseek_api_key: str | None = None, **kwargs: Any
+        self,
+        *,
+        deepseek_api_key: str | None = None,
+        local_model: LocalModelConfig | None = None,
+        **kwargs: Any,
     ) -> Iterator[dict[str, Any]]:
         request_id = kwargs.get("request_id") or str(uuid4())
         kwargs["request_id"] = request_id
-        provider = "deepseek" if deepseek_api_key else self.settings.llm_provider
-        with self._temporary_llm(request_id, deepseek_api_key):
+        provider = (
+            "local"
+            if local_model and local_model.enabled
+            else "deepseek"
+            if deepseek_api_key
+            else self.settings.llm_provider
+        )
+        with self._temporary_llm(request_id, deepseek_api_key, local_model):
             prepared = self.prepare_query(**kwargs, llm_provider=provider)
             if prepared.cached_response is not None:
                 yield {"event": "result", "data": prepared.cached_response}
@@ -248,6 +286,8 @@ class QueryService:
                 )
                 return
             except AppError as exc:
+                if local_model and local_model.enabled:
+                    logger.exception("Local model request failed", exc_info=exc)
                 self._mark_failed(prepared.state, exc.error_type, exc.message)
                 yield {
                     "event": "error",
@@ -354,6 +394,7 @@ class QueryService:
         approved: bool,
         note: str | None = None,
         deepseek_api_key: str | None = None,
+        local_model: LocalModelConfig | None = None,
     ) -> dict[str, Any]:
         with self.metadata.session() as session:
             approval = session.get(ApprovalRequest, approval_id)
@@ -375,11 +416,18 @@ class QueryService:
             if query_log.result_json:
                 return json.loads(query_log.result_json)
             uses_deepseek = query_log.llm_provider == "deepseek"
+            uses_local_model = query_log.llm_provider == "local"
             if approved and uses_deepseek and not deepseek_api_key:
                 raise AppError(
                     "llm_auth_error",
                     "Re-enter the temporary DeepSeek API key to approve this query.",
                     status_code=401,
+                )
+            if approved and uses_local_model and not (local_model and local_model.enabled):
+                raise AppError(
+                    "local_model_error",
+                    "Re-enable the local model to approve and resume this query.",
+                    status_code=400,
                 )
             approval.status = "approved" if approved else "rejected"
             approval.decision_note = note
@@ -389,7 +437,8 @@ class QueryService:
             request_id = query_log.request_id
         config = self._config(thread_id, request_id)
         temporary_key = deepseek_api_key if uses_deepseek else None
-        with self._temporary_llm(request_id, temporary_key):
+        temporary_local_model = local_model if uses_local_model else None
+        with self._temporary_llm(request_id, temporary_key, temporary_local_model):
             result = self.graph.invoke(Command(resume={"approved": approved, "note": note}), config)
         final = result.get("final_response") if isinstance(result, dict) else None
         if final:
@@ -404,15 +453,24 @@ class QueryService:
     ) -> None:
         if not state or not state.get("query_log_id"):
             return
+        started_at = state.get("started_at_epoch_ms")
+        elapsed = (
+            max(0.0, time.time() * 1000 - started_at)
+            if isinstance(started_at, int | float)
+            else 0.0
+        )
         with self.metadata.session() as session:
             query_log = session.get(QueryLog, state["query_log_id"])
             if query_log:
                 query_log.status = "failed"
                 query_log.error_type = error_type
                 query_log.error_message = error_message
+                query_log.execution_time_ms = elapsed
                 query_log.completed_at = datetime.now(UTC)
             if state.get("run_id"):
                 run = session.get(AgentRun, state["run_id"])
                 if run:
                     run.status = "failed"
+                    run.total_latency_ms = elapsed
+                    run.completed_at = datetime.now(UTC)
                     run.completed_at = datetime.now(UTC)

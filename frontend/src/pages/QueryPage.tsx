@@ -17,7 +17,7 @@ import type { DatasetDetail, DatasetSummary } from "../types";
 
 export function QueryPage() {
   const { datasetText, t } = useI18n();
-  const { deepseekApiKey } = useTemporaryCredentials();
+  const { deepseekApiKey, localModel } = useTemporaryCredentials();
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [datasetId, setDatasetId] = useState("commerce");
   const [dataset, setDataset] = useState<DatasetDetail | null>(null);
@@ -69,7 +69,7 @@ export function QueryPage() {
     if (!id) return;
     setApprovalBusy(true);
     try {
-      const result = await api.decideApproval(id, approved, note, deepseekApiKey);
+      const result = await api.decideApproval(id, approved, note, deepseekApiKey, localModel);
       stream.setResult(result);
       stream.setTrace((current) => {
         const seen = new Set<string>();

@@ -27,6 +27,7 @@ def query(
         request_id=payload.request_id,
         run_mode="interactive",
         deepseek_api_key=deepseek_api_key,
+        local_model=payload.local_model,
     )
 
 
@@ -40,6 +41,7 @@ def _sse(
         request_id=payload.request_id,
         run_mode="interactive",
         deepseek_api_key=deepseek_api_key,
+        local_model=payload.local_model,
     ):
         lines = []
         if item.get("id"):

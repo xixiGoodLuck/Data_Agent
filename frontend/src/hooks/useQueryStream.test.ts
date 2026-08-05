@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TraceEvent } from "../types";
-import { dedupeTrace } from "./useQueryStream";
+import { dedupeTrace, withLocalModel } from "./useQueryStream";
 
 describe("trace deduplication", () => {
   it("deduplicates live and final persisted events by id", () => {
@@ -25,5 +25,26 @@ describe("trace deduplication", () => {
       latency_ms: 1,
     };
     expect(dedupeTrace([event, { ...event, latency_ms: 2 }])).toHaveLength(1);
+  });
+});
+
+describe("local model query payload", () => {
+  const payload = { dataset_id: "commerce", question: "Which city leads revenue?" };
+
+  it("attaches enabled local model settings at the stream request boundary", () => {
+    const localModel = {
+      enabled: true,
+      base_url: "http://127.0.0.1:1234",
+      model: "qwen3.5-0.8b",
+    };
+
+    expect(withLocalModel(payload, localModel)).toEqual({
+      ...payload,
+      local_model: localModel,
+    });
+  });
+
+  it("leaves the original request unchanged when local mode is disabled", () => {
+    expect(withLocalModel(payload, { enabled: false, base_url: "", model: "" })).toBe(payload);
   });
 });

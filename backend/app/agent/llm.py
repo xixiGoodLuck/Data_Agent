@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from threading import RLock
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
@@ -610,6 +610,9 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         model: str | None = None,
         provider_name: str = "openai_compatible",
         extra_body: Mapping[str, Any] | None = None,
+        allow_mock_fallback: bool = True,
+        structured_output_method: Literal["function_calling", "json_schema"] = "function_calling",
+        max_tokens: int | None = None,
     ) -> None:
         resolved_key = api_key if api_key is not None else settings.openai_api_key
         if not resolved_key:
@@ -631,9 +634,13 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
             kwargs["base_url"] = resolved_base_url
         if extra_body:
             kwargs["extra_body"] = dict(extra_body)
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
         self.model = ChatOpenAI(**kwargs)
         self.fallback = MockLLMClient()
         self.last_used_fallback = False
+        self.allow_mock_fallback = allow_mock_fallback
+        self.structured_output_method = structured_output_method
 
     @staticmethod
     def _provider_status_code(error: Exception) -> int | None:
@@ -700,24 +707,38 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         schema: type[StructuredT],
         inputs: dict[str, Any],
         fallback: Callable[[], StructuredT],
+        *,
+        request_kwargs: Mapping[str, Any] | None = None,
     ) -> StructuredT:
         self.last_used_fallback = False
+        bound_kwargs = dict(request_kwargs or {})
         try:
-            chain = prompt | self.model.with_structured_output(schema, method="function_calling")
+            chain = prompt | self.model.with_structured_output(
+                schema, method=self.structured_output_method, **bound_kwargs
+            )
             result = chain.invoke(inputs)
             return result if isinstance(result, schema) else schema.model_validate(result)
         except Exception as first_error:
             self._raise_provider_error(first_error)
+            recovery_error: Exception | None = None
             try:
-                message = (prompt | self.model).invoke(inputs)
+                message = (prompt | self.model.bind(**bound_kwargs)).invoke(inputs)
                 content = (
                     message.content if isinstance(message.content, str) else str(message.content)
                 )
                 match = re.search(r"\{.*\}", content, flags=re.DOTALL)
                 if match:
                     return schema.model_validate(json.loads(match.group(0)))
-            except Exception as recovery_error:
-                self._raise_provider_error(recovery_error)
+            except Exception as caught_recovery_error:
+                recovery_error = caught_recovery_error
+                self._raise_provider_error(caught_recovery_error)
+            if not self.allow_mock_fallback:
+                raise AppError(
+                    "local_model_error",
+                    "The local model did not return compatible structured output. "
+                    "Check the Model ID and tool-calling support.",
+                    status_code=502,
+                ) from (recovery_error or first_error)
             try:
                 self.last_used_fallback = True
                 return fallback()
@@ -732,6 +753,14 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
             QuestionRewrite,
             {"history": json.dumps(history[-12:]), "question": question},
             lambda: self.fallback.rewrite_question(question, history),
+            request_kwargs=(
+                {
+                    "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},
+                    "reasoning_effort": "none",
+                }
+                if self.provider_name == "local"
+                else None
+            ),
         )
 
     def select_tables(
@@ -815,6 +844,7 @@ def get_llm_client(settings: Settings) -> BaseLLMClient:
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
 DEEPSEEK_MAX_TOKENS = 2048
+LOCAL_MODEL_MAX_TOKENS = 2048
 
 
 def get_deepseek_client(settings: Settings, api_key: str) -> BaseLLMClient:
@@ -828,6 +858,19 @@ def get_deepseek_client(settings: Settings, api_key: str) -> BaseLLMClient:
             "thinking": {"type": "disabled"},
             "max_tokens": DEEPSEEK_MAX_TOKENS,
         },
+    )
+
+
+def get_local_model_client(settings: Settings, base_url: str, model: str) -> BaseLLMClient:
+    return OpenAICompatibleLLMClient(
+        settings,
+        api_key=settings.openai_api_key or "local",
+        base_url=base_url,
+        model=model,
+        provider_name="local",
+        allow_mock_fallback=False,
+        structured_output_method="json_schema",
+        max_tokens=LOCAL_MODEL_MAX_TOKENS,
     )
 
 

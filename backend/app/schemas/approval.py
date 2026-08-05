@@ -4,9 +4,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.query import LocalModelConfig
+
 
 class ApprovalDecision(BaseModel):
     note: str | None = Field(default=None, max_length=500)
+    local_model: LocalModelConfig | None = None
 
 
 class ApprovalResponse(BaseModel):

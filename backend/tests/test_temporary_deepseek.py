@@ -215,6 +215,7 @@ def test_structured_output_uses_provider_compatible_function_calling() -> None:
     llm = object.__new__(OpenAICompatibleLLMClient)
     llm.model = FakeModel()
     llm.last_used_fallback = False
+    llm.structured_output_method = "function_calling"
 
     result = llm._invoke_structured(FakePrompt(), DummyOutput, {}, DummyOutput)
 
