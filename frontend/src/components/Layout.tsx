@@ -15,6 +15,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useI18n } from "../i18n";
+import { useTemporaryCredentials } from "../temporaryCredentials";
 
 const navigation = [
   { to: "/", label: "nav.dashboard", icon: LayoutDashboard },
@@ -29,6 +30,12 @@ const navigation = [
 
 function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
+  const { hasDeepseekApiKey, localModel } = useTemporaryCredentials();
+  const modelStatus = localModel.enabled
+    ? t("layout.localReady", { model: localModel.model })
+    : hasDeepseekApiKey
+      ? t("layout.deepseekReady")
+      : t("layout.mockReady");
   return (
     <div className="flex h-full flex-col bg-ink text-white">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
@@ -62,7 +69,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
       <div className="border-t border-white/10 px-5 py-4 text-xs text-zinc-400">
         <span className="status-dot mr-2 bg-emerald-400" />
-        {t("layout.mockReady")}
+        {modelStatus}
       </div>
     </div>
   );

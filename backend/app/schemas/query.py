@@ -1,8 +1,41 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+def normalize_local_base_url(value: str) -> str:
+    cleaned = value.strip().rstrip("/")
+    parsed = urlparse(cleaned)
+    local_hosts = {"127.0.0.1", "localhost", "::1", "host.docker.internal"}
+    if parsed.scheme not in {"http", "https"} or parsed.hostname not in local_hosts:
+        raise ValueError("Base URL must use http(s) and point to the local machine")
+    if parsed.username or parsed.password or parsed.params or parsed.query or parsed.fragment:
+        raise ValueError("Base URL cannot contain credentials, parameters, a query, or a fragment")
+    if parsed.path not in {"", "/", "/v1", "/v1/"}:
+        raise ValueError("Base URL path must be empty or /v1")
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    return f"{origin}/v1"
+
+
+class LocalModelConfig(BaseModel):
+    enabled: bool = False
+    base_url: str = Field(default="", max_length=512)
+    model: str = Field(default="", max_length=256)
+
+    @model_validator(mode="after")
+    def validate_enabled_config(self) -> LocalModelConfig:
+        self.base_url = self.base_url.strip()
+        self.model = self.model.strip()
+        if self.enabled:
+            if not self.base_url or not self.model:
+                raise ValueError(
+                    "Base URL and Model ID are required when the local model is enabled"
+                )
+            self.base_url = normalize_local_base_url(self.base_url)
+        return self
 
 
 class QueryRequest(BaseModel):
@@ -10,6 +43,7 @@ class QueryRequest(BaseModel):
     conversation_id: str | None = None
     question: str = Field(min_length=2, max_length=2000)
     request_id: str | None = Field(default=None, max_length=64)
+    local_model: LocalModelConfig | None = None
 
     @field_validator("question")
     @classmethod

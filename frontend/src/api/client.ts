@@ -5,6 +5,7 @@ import type {
   DatasetDetail,
   DatasetSummary,
   EvalRun,
+  LocalModelConfig,
   PaginatedLogs,
   PublicSettings,
   QueryLog,
@@ -86,11 +87,11 @@ export const api = {
     request<{ status: string }>(`/api/conversations/${id}`, { method: "DELETE" }),
   approvals: (status?: string) =>
     request<ApprovalRequest[]>(`/api/approvals${status ? `?status=${encodeURIComponent(status)}` : ""}`),
-  decideApproval: (id: string, approved: boolean, note?: string, deepseekApiKey = "") =>
+  decideApproval: (id: string, approved: boolean, note?: string, deepseekApiKey = "", localModel?: LocalModelConfig) =>
     request<QueryResponse>(`/api/approvals/${id}/${approved ? "approve" : "reject"}`, {
       method: "POST",
       headers: deepseekRequestHeaders(deepseekApiKey),
-      body: JSON.stringify({ note: note || null }),
+      body: JSON.stringify(localModel?.enabled ? { note: note || null, local_model: localModel } : { note: note || null }),
     }),
   logs: (params: URLSearchParams) => request<PaginatedLogs>(`/api/logs?${params.toString()}`),
   log: (id: string) => request<QueryLog>(`/api/logs/${id}`),

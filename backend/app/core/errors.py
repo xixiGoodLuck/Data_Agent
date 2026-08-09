@@ -32,6 +32,7 @@ ERROR_MESSAGES = {
     "llm_request_error": "The model provider rejected the request format.",
     "llm_provider_error": "The model provider returned a service error.",
     "llm_invalid_output": "The model response could not be validated.",
+    "local_model_error": "The local model could not complete the request.",
     "sql_parse_error": "The generated SQL could not be parsed safely.",
     "sql_safety_block": "The generated SQL did not pass the safety gate.",
     "approval_required": "This query requires explicit approval.",

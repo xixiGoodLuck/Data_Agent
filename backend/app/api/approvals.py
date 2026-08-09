@@ -78,6 +78,7 @@ def approve(
         approved=True,
         note=payload.note,
         deepseek_api_key=deepseek_api_key,
+        local_model=payload.local_model,
     )
 
 
@@ -93,4 +94,5 @@ def reject(
         approved=False,
         note=payload.note,
         deepseek_api_key=deepseek_api_key,
+        local_model=payload.local_model,
     )
