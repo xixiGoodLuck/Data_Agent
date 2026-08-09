@@ -30,7 +30,9 @@ export interface DatasetSummary {
   id: string;
   name: string;
   description: string;
-  source_type: "sample" | "csv_upload";
+  source_type: "sample" | "csv_upload" | "excel_upload";
+  source_filename: string | null;
+  sheet_name: string | null;
   tables: string[];
   table_count: number;
   column_count: number;

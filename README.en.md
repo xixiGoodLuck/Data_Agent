@@ -26,11 +26,15 @@ The default Mock mode needs no API key and demonstrates the complete workflow im
 | Real agent workflow | LangGraph `StateGraph`, SQLite checkpoints, `interrupt()`, and `Command(resume=...)` |
 | Deterministic security boundary | `sqlglot` AST validation, table and column allowlists, read-only SQLite, timeout, and a 100-row cap |
 | Observability | POST-SSE node events, full Trace, Query Logs, Lineage, and Dashboard metrics |
-| Data support | Four built-in business datasets, a five-table Commerce model, and bounded CSV ingestion |
+| Data support | Four built-in business datasets, a five-table Commerce model, and bounded CSV / Excel (`.xlsx`) ingestion |
 | Bilingual product | Chinese and English navigation, states, dates, numbers, dataset copy, and example questions |
 | Verification scale | 102 backend tests, 19 frontend tests, 43 built-in Eval cases, and 50 open-data cases |
 
 ## More than Text-to-SQL
+
+### CSV and Excel uploads
+
+`POST /api/datasets/upload` accepts one `.csv` or standard `.xlsx` file. Excel uploads import the first non-empty worksheet in workbook order and report the selected sheet name. `.xls`, `.xlsm`, multiple-file uploads, and merging multiple worksheets are not supported. Both formats enter the same column sanitization, type inference, row/column limits, isolated SQLite dataset, schema inspection, SQL safety, and Agent query pipeline.
 
 | Typical demo | InsightOps Agent |
 | --- | --- |
@@ -242,7 +246,7 @@ npm run test -- --run
 npm run build
 ```
 
-Coverage includes initialization, relational schemas, CSV limits, path traversal, SQL attacks, graph branches, follow-up context, approval resume, SSE ordering, logs and statistics, one-time key lifecycle, and the real Eval service path.
+Coverage includes initialization, relational schemas, CSV/XLSX limits, Excel parsing and worksheet selection, path traversal, SQL attacks, graph branches, follow-up context, approval resume, SSE ordering, logs and statistics, one-time key lifecycle, and the real Eval service path.
 
 ## Read deeper
 

@@ -7,7 +7,7 @@ from app.api.dependencies import get_metadata, get_settings
 from app.core.config import Settings
 from app.core.db import MetadataDatabase
 from app.core.errors import AppError
-from app.data.csv_loader import delete_uploaded_dataset, ingest_csv
+from app.data.csv_loader import delete_uploaded_dataset, ingest_tabular_file
 from app.data.registry import dataset_detail, dataset_summary, list_datasets
 from app.models import Conversation, Dataset, QueryLog
 from app.schemas.dataset import DatasetDetail, DatasetSummary
@@ -42,17 +42,18 @@ async def upload_dataset(
     metadata: MetadataDatabase = Depends(get_metadata),
     settings: Settings = Depends(get_settings),
 ) -> dict:
-    content = await file.read(settings.max_upload_bytes + 1)
-    with metadata.session() as session:
-        dataset = ingest_csv(
-            session=session,
-            settings=settings,
-            filename=file.filename or "upload.csv",
-            content=content,
-        )
-        response = dataset_detail(dataset, settings)
-    await file.close()
-    return response
+    try:
+        content = await file.read(settings.max_upload_bytes + 1)
+        with metadata.session() as session:
+            dataset = ingest_tabular_file(
+                session=session,
+                settings=settings,
+                filename=file.filename or "upload",
+                content=content,
+            )
+            return dataset_detail(dataset, settings)
+    finally:
+        await file.close()
 
 
 @router.delete("/{dataset_id}")
