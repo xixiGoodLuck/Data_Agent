@@ -89,6 +89,21 @@ export function QueryPage() {
     }
   }
 
+  async function removeConversation(id: string) {
+    if (!window.confirm(t("conversations.deleteConfirm"))) return;
+    try {
+      const deletingActive = conversations.active?.id === id;
+      await conversations.deleteConversation(id);
+      if (deletingActive) {
+        setPendingQuestion(null);
+        setLastQuestion(null);
+        stream.clear();
+      }
+    } catch (caught) {
+      setPageError(caught instanceof Error ? caught.message : t("conversations.deleteError"));
+    }
+  }
+
   if (loading) return <LoadingState label={t("query.loading")} />;
   if (pageError && !datasets.length) return <ErrorState message={pageError} />;
 
@@ -117,6 +132,8 @@ export function QueryPage() {
               setLastQuestion(null);
               stream.clear();
             }}
+            onDelete={(id) => void removeConversation(id)}
+            deletingId={conversations.deletingId}
           />
           <div className="flex min-h-[500px] min-w-0 flex-col border-b border-zinc-200 lg:border-b-0 lg:border-r">
             <div className="flex-1 space-y-4 overflow-y-auto p-4 lg:p-6">

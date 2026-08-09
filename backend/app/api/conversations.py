@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from app.api.dependencies import get_metadata
 from app.core.db import MetadataDatabase
 from app.core.errors import AppError
-from app.models import Conversation, ConversationMessage, Dataset
+from app.models import AgentRun, Conversation, ConversationMessage, Dataset, QueryLog
 from app.schemas.conversation import (
     ConversationCreate,
     ConversationDetail,
@@ -100,8 +100,19 @@ def delete_conversation(
         conversation = session.get(Conversation, conversation_id)
         if conversation is None:
             raise AppError("dataset_not_found", "The conversation does not exist.", status_code=404)
+        thread_ids = set(
+            session.scalars(
+                select(AgentRun.thread_id)
+                .join(QueryLog, QueryLog.id == AgentRun.query_log_id)
+                .where(QueryLog.conversation_id == conversation_id)
+            )
+        )
+        thread_ids.add(conversation_id)
+        session.execute(delete(QueryLog).where(QueryLog.conversation_id == conversation_id))
         session.delete(conversation)
-    saver = request.app.state.checkpoint.saver
-    if hasattr(saver, "delete_thread"):
-        saver.delete_thread(conversation_id)
+        session.flush()
+        saver = request.app.state.checkpoint.saver
+        if hasattr(saver, "delete_thread"):
+            for thread_id in thread_ids:
+                saver.delete_thread(thread_id)
     return {"status": "deleted", "conversation_id": conversation_id}

@@ -115,3 +115,15 @@ def log_events(
         if session.get(QueryLog, query_log_id) is None:
             raise AppError("dataset_not_found", "The query log does not exist.", status_code=404)
         return QueryService._trace(session, query_log_id)
+
+
+@router.delete("/{query_log_id}")
+def delete_log(
+    query_log_id: str, metadata: MetadataDatabase = Depends(get_metadata)
+) -> dict[str, str]:
+    with metadata.session() as session:
+        query_log = session.get(QueryLog, query_log_id)
+        if query_log is None:
+            raise AppError("query_log_not_found", "The query log does not exist.", status_code=404)
+        session.delete(query_log)
+    return {"status": "deleted", "query_log_id": query_log_id}

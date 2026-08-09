@@ -76,6 +76,8 @@ export const api = {
   datasets: () => request<DatasetSummary[]>("/api/datasets"),
   dataset: (id: string) => request<DatasetDetail>(`/api/datasets/${id}`),
   deleteDataset: (id: string) => request<{ status: string }>(`/api/datasets/${id}`, { method: "DELETE" }),
+  restoreBuiltinDatasets: () =>
+    request<{ status: string; dataset_ids: string[] }>("/api/datasets/builtins/restore", { method: "POST" }),
   conversations: () => request<ConversationSummary[]>("/api/conversations"),
   conversation: (id: string) => request<ConversationDetail>(`/api/conversations/${id}`),
   createConversation: (datasetId: string, title?: string) =>
@@ -95,6 +97,8 @@ export const api = {
     }),
   logs: (params: URLSearchParams) => request<PaginatedLogs>(`/api/logs?${params.toString()}`),
   log: (id: string) => request<QueryLog>(`/api/logs/${id}`),
+  deleteLog: (id: string) =>
+    request<{ status: string }>(`/api/logs/${id}`, { method: "DELETE" }),
   events: (id: string) => request<TraceEvent[]>(`/api/logs/${id}/events`),
   stats: () => request<StatsOverview>("/api/stats/overview"),
   runEval: (deepseekApiKey = "") =>

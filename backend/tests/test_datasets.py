@@ -102,8 +102,15 @@ def test_csv_upload_enforces_byte_and_column_limits(tmp_path: Path) -> None:
         assert too_wide.status_code == 400
 
 
-def test_only_uploaded_datasets_can_be_deleted(client: TestClient) -> None:
-    assert client.delete("/api/datasets/sales").status_code == 409
+def test_builtin_datasets_can_be_disabled_and_uploaded_datasets_deleted(
+    client: TestClient,
+) -> None:
+    disabled = client.delete("/api/datasets/sales")
+    assert disabled.status_code == 200
+    assert disabled.json()["status"] == "disabled"
+    assert client.get("/api/datasets/sales").status_code == 404
+    assert client.post("/api/datasets/builtins/restore").status_code == 200
+    assert client.get("/api/datasets/sales").status_code == 200
     uploaded = client.post(
         "/api/datasets/upload",
         files={"file": ("delete.csv", b"name,value\na,1\n", "text/csv")},
