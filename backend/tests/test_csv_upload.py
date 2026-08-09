@@ -44,9 +44,9 @@ def test_uploaded_chinese_headers_reach_model_as_escaped_aliases(
     original_select = llm.select_tables
     original = llm.generate_sql
 
-    def capture_select(dataset_id, question, catalog):
+    def capture_select(dataset_id, question, catalog, response_language="en"):
         catalogs.append(catalog)
-        return original_select(dataset_id, question, catalog)
+        return original_select(dataset_id, question, catalog, response_language)
 
     def capture(*args):
         contexts.append(args[-1])

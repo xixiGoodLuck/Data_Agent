@@ -13,6 +13,7 @@ from uuid import uuid4
 from langgraph.types import Command
 from sqlalchemy import select
 
+from app.agent.language import detect_response_language
 from app.agent.llm import LLMClientResolver, get_deepseek_client, get_local_model_client
 from app.agent.state import DataAnalysisState
 from app.core.config import Settings
@@ -79,7 +80,9 @@ class QueryService:
                     return PreparedRun(
                         state=None,
                         config=config,
-                        cached_response=self._pending_response(session, existing),
+                        cached_response=self._pending_response(
+                            session, existing, self._checkpoint_state(config)
+                        ),
                     )
                 raise AppError(
                     "internal_error",
@@ -150,6 +153,21 @@ class QueryService:
                 "thread_id": thread_id,
                 "dataset_id": dataset_id,
                 "question": question,
+                "response_language": detect_response_language(question),
+                "active_analysis_question": question,
+                "analysis_mode": "simple_query",
+                "analysis_intent": None,
+                "analysis_plan": None,
+                "current_analysis_step_id": None,
+                "evidence_by_step": {},
+                "critic_result": None,
+                "next_analysis_decision": None,
+                "analysis_step_count": 0,
+                "evidence_insufficient": False,
+                "final_analysis": None,
+                "supporting_charts": [],
+                "tool_failures": 0,
+                "decision_retries": 0,
                 "conversation_history": [],
                 "available_tables": [],
                 "selected_tables": [],
@@ -176,7 +194,7 @@ class QueryService:
     def _config(thread_id: str, checkpoint_ns: str) -> dict[str, Any]:
         return {
             "configurable": {"thread_id": thread_id, "checkpoint_ns": checkpoint_ns},
-            "recursion_limit": 50,
+            "recursion_limit": 100,
         }
 
     def _temporary_llm(
@@ -265,7 +283,20 @@ class QueryService:
                     if mode == "custom" and isinstance(data, dict) and data.get("kind") == "trace":
                         event = data["event"]
                         event_name = event.get("event_type", "node")
-                        if event_name not in {"run_started", "approval_required"}:
+                        if event_name not in {
+                            "run_started",
+                            "approval_required",
+                            "analysis_step_started",
+                            "query_tool_called",
+                            "evidence_created",
+                            "critic_completed",
+                            "analysis_decision",
+                            "analysis_finished",
+                            "final_synthesis_started",
+                            "final_synthesis_completed",
+                            "final_grounding_validated",
+                            "supporting_charts_selected",
+                        }:
                             event_name = "node"
                         yield {"event": event_name, "id": event.get("id"), "data": event}
                     elif mode == "updates" and isinstance(data, dict):
@@ -319,11 +350,33 @@ class QueryService:
                 )
             if query_log is None:
                 raise AppError("internal_error", "The interrupted query could not be recovered.")
-            return self._pending_response(session, query_log)
+            return self._pending_response(session, query_log, self._checkpoint_state(config))
 
-    def _pending_response(self, session: Any, query_log: QueryLog) -> dict[str, Any]:
+    def _checkpoint_state(self, config: dict[str, Any]) -> DataAnalysisState | None:
+        root_config = {
+            **config,
+            "configurable": {**config.get("configurable", {}), "checkpoint_ns": ""},
+        }
+        checkpoint = self.graph.checkpointer.get(root_config)
+        values = checkpoint.get("channel_values") if checkpoint else None
+        return values if isinstance(values, dict) else None
+
+    def _pending_response(
+        self,
+        session: Any,
+        query_log: QueryLog,
+        checkpoint_state: DataAnalysisState | None = None,
+    ) -> dict[str, Any]:
         approval = (
             session.get(ApprovalRequest, query_log.approval_id) if query_log.approval_id else None
+        )
+        trace = self._trace(session, query_log.id)
+        analysis_intent_summary = self._event_payload(trace, "analysis_intent_created")
+        checkpoint_state = checkpoint_state or {}
+        analysis_mode = (
+            "investigative_analysis"
+            if analysis_intent_summary and analysis_intent_summary.get("needs_multi_step")
+            else "simple_query"
         )
         return {
             "request_id": query_log.request_id,
@@ -331,7 +384,18 @@ class QueryService:
             "query_log_id": query_log.id,
             "status": "pending_approval",
             "question": query_log.question,
+            "response_language": checkpoint_state.get("response_language")
+            or detect_response_language(query_log.question),
             "rewritten_question": query_log.rewritten_question,
+            "analysis_mode": checkpoint_state.get("analysis_mode", analysis_mode),
+            "analysis_intent": checkpoint_state.get("analysis_intent"),
+            "analysis_plan": checkpoint_state.get("analysis_plan"),
+            "evidence": list(checkpoint_state.get("evidence_by_step", {}).values()),
+            "critic_result": checkpoint_state.get("critic_result"),
+            "analysis_step_count": checkpoint_state.get("analysis_step_count", 0),
+            "evidence_insufficient": checkpoint_state.get("evidence_insufficient", False),
+            "final_analysis": checkpoint_state.get("final_analysis"),
+            "supporting_charts": checkpoint_state.get("supporting_charts", []),
             "clarification_question": None,
             "selected_tables": json.loads(query_log.selected_tables_json or "[]"),
             "selected_columns": json.loads(query_log.selected_columns_json or "[]"),
@@ -358,10 +422,23 @@ class QueryService:
                 "schema_hash": query_log.schema_hash,
             },
             "execution_time_ms": query_log.execution_time_ms,
-            "trace": self._trace(session, query_log.id),
+            "trace": trace,
             "used_fallback": query_log.used_fallback,
             "error": None,
         }
+
+    @staticmethod
+    def _event_payload(trace: list[dict[str, Any]], event_type: str) -> dict[str, Any] | None:
+        for event in trace:
+            if event.get("event_type") != event_type or not event.get("output_summary"):
+                continue
+            try:
+                payload = json.loads(event["output_summary"])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if isinstance(payload, dict):
+                return payload
+        return None
 
     @staticmethod
     def _trace(session: Any, query_log_id: str) -> list[dict[str, Any]]:

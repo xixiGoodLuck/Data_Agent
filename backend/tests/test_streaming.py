@@ -33,6 +33,25 @@ def test_sse_contains_persisted_step_ids_without_duplicates(client: TestClient) 
     assert len(ids) == len(set(ids))
 
 
+def test_sse_streams_structured_investigation_progress(client: TestClient) -> None:
+    response = client.post(
+        "/api/query/stream",
+        json={"dataset_id": "sales", "question": "Why did revenue decline?"},
+    )
+    names = event_names(response.text)
+    for expected in (
+        "analysis_step_started",
+        "evidence_created",
+        "analysis_decision",
+        "final_synthesis_started",
+        "final_synthesis_completed",
+        "final_grounding_validated",
+        "supporting_charts_selected",
+    ):
+        assert expected in names
+    assert names.index("evidence_created") < names.index("final_synthesis_started")
+
+
 def test_sse_emits_approval_interruption(client: TestClient) -> None:
     response = client.post(
         "/api/query/stream",

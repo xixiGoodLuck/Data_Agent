@@ -52,6 +52,10 @@ def route_table_selection(state: DataAnalysisState) -> str:
     return "clarify" if state.get("status") == "needs_clarification" else "continue"
 
 
+def route_analysis_mode(state: DataAnalysisState) -> str:
+    return "investigative" if state.get("analysis_mode") == "investigative_analysis" else "simple"
+
+
 def route_validation(state: DataAnalysisState) -> str:
     return "safe" if state.get("safe_sql") else "blocked"
 
@@ -68,7 +72,17 @@ def route_approval(state: DataAnalysisState) -> str:
 def route_execution(state: DataAnalysisState) -> str:
     outcome = state.get("execution_outcome")
     if outcome == "success":
-        return "success"
+        return "evidence" if state.get("analysis_mode") == "investigative_analysis" else "success"
     if outcome == "repair":
         return "repair"
     return "failed"
+
+
+def route_analysis_decision(state: DataAnalysisState) -> str:
+    decision = state.get("next_analysis_decision") or {}
+    action = decision.get("action")
+    if action == "continue":
+        return "continue"
+    if action == "clarify":
+        return "clarify"
+    return "finish"

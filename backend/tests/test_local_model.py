@@ -167,7 +167,8 @@ def test_local_model_failure_is_streamed_and_records_elapsed_time(
     client: TestClient, metadata, monkeypatch
 ) -> None:
     class FailingLocalModel(LocalModelStub):
-        def rewrite_question(self, question, history):
+        def rewrite_question(self, question, history, response_language="en"):
+            del response_language
             time.sleep(0.01)
             raise AppError("local_model_error", "Local model capability error.", status_code=502)
 

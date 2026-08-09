@@ -7,12 +7,13 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.data.sample_data import commerce_rows, employee_rows, sales_rows, subscription_rows
 from app.data.schema_reader import inspect_database
-from app.models import Dataset
+from app.models import Dataset, DisabledBuiltinDataset
 
 
 @dataclass(frozen=True)
@@ -218,7 +219,10 @@ SEEDERS = {
 
 def seed_builtin_datasets(session: Session, settings: Settings) -> None:
     settings.ensure_runtime_dirs()
+    disabled_ids = set(session.scalars(select(DisabledBuiltinDataset.dataset_id)))
     for dataset_id, definition in BUILTINS.items():
+        if dataset_id in disabled_ids:
+            continue
         path = (settings.datasets_dir / definition.filename).resolve()
         SEEDERS[dataset_id](path)
         schema = inspect_database(path, sensitive_columns=set(definition.sensitive_columns))

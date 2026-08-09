@@ -31,7 +31,7 @@ export function CsvUpload({ onUploaded }: { onUploaded: (dataset: DatasetDetail)
       <input
         ref={input}
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,.xlsx"
         className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0];

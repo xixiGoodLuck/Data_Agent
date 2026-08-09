@@ -69,7 +69,7 @@ export function useQueryStream() {
           response,
           (message) => {
             if (message.malformed) return;
-            if (["run_started", "node", "approval_required"].includes(message.event)) {
+            if (!["result", "error", "done"].includes(message.event)) {
               const event = message.data as TraceEvent;
               if (event && typeof event.step_index === "number") {
                 setTrace((current) => dedupeTrace([...current, event]));

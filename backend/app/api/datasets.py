@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, UploadFile
-from sqlalchemy import delete
+from fastapi import APIRouter, Depends, File, Request, UploadFile
+from sqlalchemy import delete, select
 
 from app.api.dependencies import get_metadata, get_settings
 from app.core.config import Settings
 from app.core.db import MetadataDatabase
 from app.core.errors import AppError
-from app.data.csv_loader import delete_uploaded_dataset, ingest_csv
+from app.data.csv_loader import delete_uploaded_dataset, ingest_tabular_file
 from app.data.registry import dataset_detail, dataset_summary, list_datasets
-from app.models import Conversation, Dataset, QueryLog
+from app.data.seed import seed_builtin_datasets
+from app.models import AgentRun, Conversation, Dataset, DisabledBuiltinDataset, QueryLog
 from app.schemas.dataset import DatasetDetail, DatasetSummary
 
 router = APIRouter(prefix="/api/datasets", tags=["datasets"])
@@ -42,22 +43,24 @@ async def upload_dataset(
     metadata: MetadataDatabase = Depends(get_metadata),
     settings: Settings = Depends(get_settings),
 ) -> dict:
-    content = await file.read(settings.max_upload_bytes + 1)
-    with metadata.session() as session:
-        dataset = ingest_csv(
-            session=session,
-            settings=settings,
-            filename=file.filename or "upload.csv",
-            content=content,
-        )
-        response = dataset_detail(dataset, settings)
-    await file.close()
-    return response
+    try:
+        content = await file.read(settings.max_upload_bytes + 1)
+        with metadata.session() as session:
+            dataset = ingest_tabular_file(
+                session=session,
+                settings=settings,
+                filename=file.filename or "upload",
+                content=content,
+            )
+            return dataset_detail(dataset, settings)
+    finally:
+        await file.close()
 
 
 @router.delete("/{dataset_id}")
 def delete_dataset(
     dataset_id: str,
+    request: Request,
     metadata: MetadataDatabase = Depends(get_metadata),
     settings: Settings = Depends(get_settings),
 ) -> dict[str, str]:
@@ -67,8 +70,40 @@ def delete_dataset(
             raise AppError(
                 "dataset_not_found", "The selected dataset does not exist.", status_code=404
             )
-        delete_uploaded_dataset(dataset, settings)
+        thread_ids = set(
+            session.scalars(
+                select(AgentRun.thread_id)
+                .join(QueryLog, QueryLog.id == AgentRun.query_log_id)
+                .where(QueryLog.dataset_id == dataset_id)
+            )
+        )
+        thread_ids.update(
+            session.scalars(select(Conversation.id).where(Conversation.dataset_id == dataset_id))
+        )
+        if dataset.is_builtin:
+            session.merge(DisabledBuiltinDataset(dataset_id=dataset_id))
+            status = "disabled"
+        else:
+            delete_uploaded_dataset(dataset, settings)
+            status = "deleted"
         session.execute(delete(QueryLog).where(QueryLog.dataset_id == dataset_id))
         session.execute(delete(Conversation).where(Conversation.dataset_id == dataset_id))
         session.delete(dataset)
-    return {"status": "deleted", "dataset_id": dataset_id}
+        session.flush()
+        saver = request.app.state.checkpoint.saver
+        if hasattr(saver, "delete_thread"):
+            for thread_id in thread_ids:
+                saver.delete_thread(thread_id)
+    return {"status": status, "dataset_id": dataset_id}
+
+
+@router.post("/builtins/restore")
+def restore_builtin_datasets(
+    metadata: MetadataDatabase = Depends(get_metadata),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, object]:
+    with metadata.session() as session:
+        disabled_ids = list(session.scalars(select(DisabledBuiltinDataset.dataset_id)))
+        session.execute(delete(DisabledBuiltinDataset))
+        seed_builtin_datasets(session, settings)
+    return {"status": "restored", "dataset_ids": disabled_ids}

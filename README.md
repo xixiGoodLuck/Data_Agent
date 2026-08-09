@@ -13,6 +13,10 @@
 
 </div>
 
+## CSV / Excel 上传
+
+`POST /api/datasets/upload` 现在支持单个 `.csv` 或标准 `.xlsx` 文件。Excel 会按工作簿原始顺序导入第一个非空工作表，并在数据集详情中显示实际导入的 Sheet 名称。当前不支持 `.xls`、`.xlsm`、多文件上传或合并多个工作表。CSV 与 XLSX 解析后统一进入列名清洗、类型推断、行列限制、独立只读 SQLite Dataset、Schema 检查、SQL Safety Gate 和 Agent 查询链路。
+
 ![InsightOps Agent 中文仪表盘](docs/assets/readme/dashboard-zh.png)
 
 InsightOps Agent 覆盖从自然语言问题到可信分析结果的完整链路：理解关系型 Schema、选择最小必要表、生成 SQL、执行确定性安全校验、评估敏感风险、只读查询、规划图表、生成有数据依据的洞察，并把每一步作为实时 Agent Trace 呈现。
@@ -26,7 +30,7 @@ InsightOps Agent 覆盖从自然语言问题到可信分析结果的完整链路
 | 真实 Agent 工作流 | LangGraph `StateGraph`、SQLite checkpoint、`interrupt()` 与 `Command(resume=...)` |
 | 确定性安全边界 | `sqlglot` AST、表列白名单、只读 SQLite、超时和最大 100 行 |
 | 可观测性 | POST-SSE 节点事件、完整 Trace、Query Logs、Lineage、Dashboard |
-| 数据能力 | 四个内置业务数据集、Commerce 五表关系模型、受限 CSV 上传 |
+| 数据能力 | 四个内置业务数据集、Commerce 五表关系模型、受限 CSV / Excel (`.xlsx`) 上传 |
 | 双语体验 | 中文/英文界面、状态、日期、数字、数据集说明与示例问题 |
 | 验证规模 | 102 项后端测试、19 项前端测试、43 条内置 Eval、50 条开放数据评测 |
 
@@ -242,7 +246,7 @@ npm run test -- --run
 npm run build
 ```
 
-测试覆盖初始化、关系型 Schema、CSV 边界、路径穿越、SQL 攻击、图分支、会话追问、审批恢复、SSE 顺序、日志统计、临时密钥生命周期和真实 Eval 服务层。
+测试覆盖初始化、关系型 Schema、CSV/XLSX 边界、Excel 解析和工作表选择、路径穿越、SQL 攻击、图分支、会话追问、审批恢复、SSE 顺序、日志统计、临时密钥生命周期和真实 Eval 服务层。
 
 ## 深入阅读
 

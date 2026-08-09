@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.query import QueryResponse
+
 
 class ConversationCreate(BaseModel):
     dataset_id: str
@@ -18,6 +20,7 @@ class ConversationMessageResponse(BaseModel):
     content: str
     query_log_id: str | None
     created_at: datetime
+    result: QueryResponse | None = None
 
 
 class ConversationSummary(BaseModel):

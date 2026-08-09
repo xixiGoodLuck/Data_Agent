@@ -32,11 +32,25 @@ def resolve_dataset_path(dataset: Dataset, settings: Settings) -> Path:
 def dataset_summary(dataset: Dataset) -> dict[str, Any]:
     tables = json.loads(dataset.tables_json)
     schema = json.loads(dataset.schema_json)
+    description = dataset.description
+    source_filename: str | None = None
+    sheet_name: str | None = None
+    if dataset.source_type in {"csv_upload", "excel_upload"}:
+        try:
+            upload_metadata = json.loads(description)
+        except (json.JSONDecodeError, TypeError):
+            upload_metadata = None
+        if isinstance(upload_metadata, dict) and upload_metadata.get("kind") == "upload":
+            description = str(upload_metadata.get("summary") or "Uploaded dataset.")
+            source_filename = upload_metadata.get("source_filename")
+            sheet_name = upload_metadata.get("sheet_name")
     return {
         "id": dataset.id,
         "name": dataset.name,
-        "description": dataset.description,
+        "description": description,
         "source_type": dataset.source_type,
+        "source_filename": source_filename,
+        "sheet_name": sheet_name,
         "tables": tables,
         "table_count": len(tables),
         "column_count": sum(len(value.get("columns", [])) for value in schema.values()),

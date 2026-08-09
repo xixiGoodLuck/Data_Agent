@@ -25,3 +25,10 @@ class Dataset(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
+
+
+class DisabledBuiltinDataset(Base):
+    __tablename__ = "disabled_builtin_datasets"
+
+    dataset_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    disabled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

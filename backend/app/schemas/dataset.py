@@ -24,6 +24,8 @@ class DatasetSummary(BaseModel):
     created_at: datetime
     updated_at: datetime
     suggested_questions: list[str] = Field(default_factory=list)
+    source_filename: str | None = None
+    sheet_name: str | None = None
 
 
 class DatasetDetail(DatasetSummary):
