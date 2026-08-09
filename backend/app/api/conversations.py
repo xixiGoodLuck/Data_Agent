@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy import delete, func, select
 
@@ -83,9 +85,19 @@ def conversation_detail(
                 .order_by(ConversationMessage.created_at)
             )
         )
+        query_log_ids = [message.query_log_id for message in messages if message.query_log_id]
+        query_results = {
+            query_log.id: json.loads(query_log.result_json)
+            for query_log in session.scalars(select(QueryLog).where(QueryLog.id.in_(query_log_ids)))
+            if query_log.result_json
+        }
         response = _summary(conversation, dataset.name if dataset else None, len(messages))
         response["messages"] = [
-            ConversationMessageResponse.model_validate(message).model_dump() for message in messages
+            {
+                **ConversationMessageResponse.model_validate(message).model_dump(),
+                "result": query_results.get(message.query_log_id),
+            }
+            for message in messages
         ]
         return response
 

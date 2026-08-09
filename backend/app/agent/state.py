@@ -3,6 +3,8 @@ from __future__ import annotations
 import operator
 from typing import Annotated, Any, Literal, TypedDict
 
+from app.agent.language import ResponseLanguage
+
 
 class DataAnalysisState(TypedDict, total=False):
     request_id: str
@@ -14,7 +16,22 @@ class DataAnalysisState(TypedDict, total=False):
     dataset_db_path: str | None
 
     question: str
+    response_language: ResponseLanguage
     rewritten_question: str | None
+    active_analysis_question: str | None
+    analysis_mode: Literal["simple_query", "investigative_analysis"]
+    analysis_intent: dict[str, Any] | None
+    analysis_plan: dict[str, Any] | None
+    current_analysis_step_id: str | None
+    evidence_by_step: dict[str, dict[str, Any]]
+    critic_result: dict[str, Any] | None
+    next_analysis_decision: dict[str, Any] | None
+    analysis_step_count: int
+    evidence_insufficient: bool
+    final_analysis: dict[str, Any] | None
+    supporting_charts: list[dict[str, Any]]
+    tool_failures: int
+    decision_retries: int
     conversation_history: list[dict[str, Any]]
 
     available_tables: list[str]

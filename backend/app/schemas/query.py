@@ -1,9 +1,149 @@
 from __future__ import annotations
 
+import re
+from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+MAX_ANALYSIS_STEPS = 5
+AnalysisType = Literal["lookup", "comparison", "ranking", "trend", "diagnostic", "exploratory"]
+AnalysisMode = Literal["simple_query", "investigative_analysis"]
+AnalysisStepStatus = Literal["pending", "running", "completed", "skipped"]
+
+
+class AnalysisIntent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    objective: str = Field(min_length=1, max_length=500)
+    analysis_type: AnalysisType
+    metrics: list[str] = Field(default_factory=list, max_length=20)
+    dimensions: list[str] = Field(default_factory=list, max_length=20)
+    filters: list[str] = Field(default_factory=list, max_length=20)
+    time_range: str | None = Field(default=None, max_length=200)
+    comparison: str | None = Field(default=None, max_length=200)
+    desired_grain: str | None = Field(default=None, max_length=100)
+    needs_multi_step: bool
+    reason: str = Field(min_length=1, max_length=240)
+
+    @model_validator(mode="after")
+    def align_route_with_analysis_type(self) -> AnalysisIntent:
+        self.needs_multi_step = self.analysis_type in {"diagnostic", "exploratory"}
+        return self
+
+
+class AnalysisStep(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1, max_length=32)
+    question: str = Field(min_length=2, max_length=500)
+    purpose: str = Field(min_length=2, max_length=500)
+    status: AnalysisStepStatus = "pending"
+
+    @field_validator("question", "purpose")
+    @classmethod
+    def reject_sql_statements(cls, value: str) -> str:
+        if re.search(
+            r"\b(?:select\s+.+\s+from|insert\s+into|update\s+.+\s+set|delete\s+from|drop\s+table)\b",
+            value,
+            re.IGNORECASE | re.DOTALL,
+        ):
+            raise ValueError("Analysis steps must describe analytical questions, not SQL")
+        return value.strip()
+
+
+class AnalysisPlan(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    objective: str = Field(min_length=1, max_length=500)
+    steps: list[AnalysisStep] = Field(min_length=1, max_length=MAX_ANALYSIS_STEPS)
+    max_steps: int = Field(default=MAX_ANALYSIS_STEPS, ge=1, le=MAX_ANALYSIS_STEPS)
+    status: Literal["pending", "running", "completed"] = "pending"
+
+    @model_validator(mode="after")
+    def enforce_step_limit(self) -> AnalysisPlan:
+        if len(self.steps) > self.max_steps:
+            raise ValueError("Analysis plan exceeds max_steps")
+        return self
+
+
+class Evidence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(min_length=1, max_length=64)
+    step_id: str = Field(min_length=1, max_length=32)
+    question: str = Field(min_length=2, max_length=500)
+    sql: str = Field(min_length=1, max_length=10_000)
+    result_summary: str = Field(min_length=1, max_length=2_000)
+    key_values: dict[str, Any] = Field(default_factory=dict)
+    row_count: int = Field(ge=0)
+    lineage: dict[str, Any] | None = None
+    limitations: list[str] = Field(default_factory=list, max_length=20)
+    created_at: datetime
+
+
+class CriticResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sufficient: bool
+    answered_objective: bool
+    missing_evidence: list[str] = Field(default_factory=list, max_length=20)
+    conflicts: list[str] = Field(default_factory=list, max_length=20)
+    limitations: list[str] = Field(default_factory=list, max_length=20)
+    recommended_next_step: str | None = Field(default=None, max_length=500)
+
+
+class NextAnalysisDecision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["continue", "finish", "clarify"]
+    next_step: AnalysisStep | None = None
+    reason: str = Field(min_length=1, max_length=240)
+    plan_patch: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def validate_next_step(self) -> NextAnalysisDecision:
+        if self.action == "continue" and self.next_step is None:
+            raise ValueError("A continue decision requires next_step")
+        if self.action != "continue":
+            self.next_step = None
+        return self
+
+
+class AnalysisEvaluation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    critic: CriticResult
+    decision: NextAnalysisDecision
+
+
+class Finding(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    statement: str = Field(min_length=1, max_length=1_000)
+    evidence_ids: list[str] = Field(min_length=1, max_length=20)
+    facts: dict[str, float] = Field(default_factory=dict)
+
+
+class FinalAnalysis(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    executive_summary: str = Field(min_length=1, max_length=2_000)
+    key_findings: list[Finding] = Field(default_factory=list, max_length=20)
+    limitations: list[str] = Field(default_factory=list, max_length=20)
+    recommended_actions: list[str] = Field(default_factory=list, max_length=20)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+    evidence_insufficient: bool = False
+
+
+class SupportingChart(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    evidence_ids: list[str] = Field(min_length=1, max_length=3)
+    config: dict[str, Any]
+    columns: list[str] = Field(default_factory=list, max_length=20)
+    rows: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
 
 
 def normalize_local_base_url(value: str) -> str:
@@ -79,7 +219,17 @@ class QueryResponse(BaseModel):
     query_log_id: str
     status: str
     question: str
+    response_language: Literal["zh-CN", "en"] = "en"
     rewritten_question: str | None = None
+    analysis_mode: AnalysisMode = "simple_query"
+    analysis_intent: AnalysisIntent | None = None
+    analysis_plan: AnalysisPlan | None = None
+    evidence: list[Evidence] = Field(default_factory=list)
+    critic_result: CriticResult | None = None
+    analysis_step_count: int = 0
+    evidence_insufficient: bool = False
+    final_analysis: FinalAnalysis | None = None
+    supporting_charts: list[SupportingChart] = Field(default_factory=list)
     clarification_question: str | None = None
     selected_tables: list[str] = Field(default_factory=list)
     selected_columns: list[str] = Field(default_factory=list)

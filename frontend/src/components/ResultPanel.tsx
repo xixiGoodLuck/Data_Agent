@@ -5,6 +5,7 @@ import type { QueryResponse } from "../types";
 import { ApprovalCard } from "./ApprovalCard";
 import { DataTable } from "./DataTable";
 import { DynamicChart } from "./DynamicChart";
+import { InvestigativeResult } from "./InvestigativeResult";
 import { LineagePanel } from "./LineagePanel";
 import { SqlBlock } from "./SqlBlock";
 
@@ -18,6 +19,9 @@ export function ResultPanel({
   approvalBusy?: boolean;
 }) {
   const { label, t } = useI18n();
+  if (result.analysis_mode === "investigative_analysis") {
+    return <InvestigativeResult result={result} onApproval={onApproval} approvalBusy={approvalBusy} />;
+  }
   if (result.status === "pending_approval" && result.approval) {
     return <ApprovalCard approval={result.approval} onDecision={onApproval} busy={approvalBusy} />;
   }

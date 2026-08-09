@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../api/client";
 import { AgentTrace } from "../components/AgentTrace";
+import { AnalysisProgress } from "../components/AnalysisProgress";
 import { ConversationSidebar } from "../components/ConversationSidebar";
 import { DatasetSelector } from "../components/DatasetSelector";
 import { ErrorState } from "../components/ErrorState";
@@ -50,6 +51,15 @@ export function QueryPage() {
     setPendingQuestion(null);
     void conversations.refresh().then(() => conversations.select(stream.result?.conversation_id ?? null));
   }, [stream.result?.conversation_id]);
+
+  useEffect(() => {
+    const restored = [...(conversations.active?.messages ?? [])]
+      .reverse()
+      .find((message) => message.result)?.result;
+    if (!restored) return;
+    stream.setResult(restored);
+    stream.setTrace(restored.trace);
+  }, [conversations.active?.id]);
 
   const schemaColumns = useMemo(() => dataset ? Object.values(dataset.schema).reduce((sum, table) => sum + table.columns.length, 0) : 0, [dataset]);
 
@@ -157,7 +167,7 @@ export function QueryPage() {
         </div>
       </section>
       {(stream.result || stream.trace.length || stream.error) ? <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="panel p-5 lg:p-6">{stream.error ? <ErrorState message={stream.error} onRetry={lastQuestion ? () => ask(lastQuestion) : undefined} /> : stream.result ? <ResultPanel result={stream.result} onApproval={(approved, note) => void decide(approved, note)} approvalBusy={approvalBusy} /> : <LoadingState label={t("query.waiting")} />}</section>
+        <section className="panel p-5 lg:p-6">{stream.error ? <ErrorState message={stream.error} onRetry={lastQuestion ? () => ask(lastQuestion) : undefined} /> : stream.result ? <ResultPanel result={stream.result} onApproval={(approved, note) => void decide(approved, note)} approvalBusy={approvalBusy} /> : stream.trace.length ? <AnalysisProgress events={stream.trace} live={stream.status === "streaming"} /> : <LoadingState label={t("query.waiting")} />}</section>
         <section className="panel self-start p-5"><div className="mb-4 flex items-center justify-between"><h2 className="text-sm font-bold text-ink">{t("query.agentTrace")}</h2>{stream.status === "done" && lastQuestion ? <button className="icon-button" title={t("query.retry")} aria-label={t("query.retry")} onClick={() => ask(lastQuestion)}><RotateCcw size={16} /></button> : null}</div><AgentTrace events={stream.trace} live={stream.status === "streaming"} /></section>
       </div> : null}
     </div>

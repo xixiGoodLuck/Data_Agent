@@ -8,9 +8,96 @@ REWRITE_PROMPT = ChatPromptTemplate.from_messages(
             "self-contained, preserve it verbatim and set used_history=false. Use recent history only "
             "to resolve explicit references such as pronouns or phrases like 'same group'; never copy "
             "prior filters, time windows, rankings, tables, or metrics into an independent question. "
-            "Never add facts not present in the latest question or required to resolve a reference.",
+            "Never add facts not present in the latest question or required to resolve a reference."
+            " Return the rewritten question in the language specified by response_language: use "
+            "Simplified Chinese for zh-CN and English for en.",
         ),
-        ("human", "History:\n{history}\n\nLatest question:\n{question}"),
+        (
+            "human",
+            "Response language: {response_language}\nHistory:\n{history}\n\n"
+            "Latest question:\n{question}",
+        ),
+    ]
+)
+
+ANALYSIS_INTENT_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Classify the user's analytical intent. Mark needs_multi_step=false for a direct "
+            "lookup, comparison, ranking, or trend that one grouped query can answer. Mark it true "
+            "only for diagnostic or exploratory work that requires evidence from one result to "
+            "choose the next question. Keep reason brief and auditable; do not reveal hidden "
+            "reasoning. Extract only explicit metrics, dimensions, filters, time range, comparison, "
+            "and desired grain. All user-facing natural-language fields must be Simplified Chinese "
+            "when response_language is zh-CN and English when it is en.",
+        ),
+        ("human", "Response language: {response_language}\nQuestion: {question}"),
+    ]
+)
+
+ANALYSIS_PLAN_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Create a bounded analysis plan containing analytical questions only. Never output SQL, "
+            "SQL fragments, tool calls, or database commands. Start by verifying the reported "
+            "phenomenon, then decompose the core metric, and let later directions depend on evidence "
+            "from earlier steps. Do not mechanically enumerate every available dimension. Return no "
+            "more than {max_steps} steps. All user-facing natural-language fields must be Simplified "
+            "Chinese when response_language is zh-CN and English when it is en.",
+        ),
+        (
+            "human",
+            "Response language: {response_language}\nObjective: {objective}\n"
+            "Analysis type: {analysis_type}\nMetrics: {metrics}\n"
+            "Dimensions: {dimensions}\nOriginal question: {question}",
+        ),
+    ]
+)
+
+ANALYSIS_EVALUATION_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Evaluate the structured evidence against the original objective and return a critic "
+            "plus one next decision. Use only evidence summaries, deterministic key values, lineage, "
+            "and limitations. Continue only when a specific evidence gap can be addressed by one "
+            "analytical question. The next step must be dynamically chosen from observed evidence, "
+            "not copied mechanically from the initial plan. Finish when the objective is answered or "
+            "the reported phenomenon is disproved. Clarify only when safe continuation requires a "
+            "missing user definition. Never output SQL or hidden reasoning; keep reasons brief and "
+            "auditable. All user-facing natural-language fields must be Simplified Chinese when "
+            "response_language is zh-CN and English when it is en.",
+        ),
+        (
+            "human",
+            "Response language: {response_language}\nObjective: {objective}\n"
+            "Current plan: {plan}\nEvidence summaries: {evidence}\n"
+            "Completed steps: {step_count}\nMaximum steps: {max_steps}",
+        ),
+    ]
+)
+
+FINAL_ANALYSIS_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Produce a concise final analysis using only the supplied structured evidence. Every "
+            "finding must cite existing evidence IDs. Put numeric claims in both the statement and "
+            "facts using the exact key and value from cited evidence. Never invent causes, numbers, "
+            "external factors, or hidden reasoning. Treat recommended actions as proposals, not as "
+            "verified facts. Put citations only in evidence_ids, not as numbers in statement text. "
+            "Preserve evidence_insufficient when it is true. All user-facing natural-language fields "
+            "must be Simplified Chinese when response_language is zh-CN and English when it is en.",
+        ),
+        (
+            "human",
+            "Response language: {response_language}\nOriginal question: {question}\n"
+            "Intent: {intent}\nFinal plan: {plan}\n"
+            "Evidence: {evidence}\nCritic: {critic}\n"
+            "Evidence insufficient: {evidence_insufficient}",
+        ),
     ]
 )
 
@@ -19,9 +106,15 @@ TABLE_SELECTION_PROMPT = ChatPromptTemplate.from_messages(
         (
             "system",
             "Select the minimum relevant dataset tables from the lightweight catalog. Return a "
-            "clarification when the request cannot be mapped safely.",
+            "clarification when the request cannot be mapped safely. User-facing reasons and "
+            "clarifications must be Simplified Chinese when response_language is zh-CN and English "
+            "when it is en.",
         ),
-        ("human", "Question: {question}\nAvailable tables: {table_catalog}"),
+        (
+            "human",
+            "Response language: {response_language}\nQuestion: {question}\n"
+            "Available tables: {table_catalog}",
+        ),
     ]
 )
 
@@ -77,11 +170,14 @@ INSIGHT_PROMPT = ChatPromptTemplate.from_messages(
         (
             "system",
             "Write a concise grounded insight using only the question, validated SQL, columns, and "
-            "rows. Separate observation from cautious interpretation and state causal limitations.",
+            "rows. Separate observation from cautious interpretation and state causal limitations. "
+            "Write all natural language in Simplified Chinese when response_language is zh-CN and "
+            "English when it is en. Do not translate SQL identifiers.",
         ),
         (
             "human",
-            "Question: {question}\nSQL: {sql}\nColumns: {columns}\nRows: {rows}",
+            "Response language: {response_language}\nQuestion: {question}\nSQL: {sql}\n"
+            "Columns: {columns}\nRows: {rows}",
         ),
     ]
 )

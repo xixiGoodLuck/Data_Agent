@@ -55,6 +55,7 @@ export interface ConversationMessage {
   content: string;
   query_log_id: string | null;
   created_at: string;
+  result?: QueryResponse | null;
 }
 
 export interface ConversationSummary {
@@ -105,7 +106,17 @@ export interface QueryResponse {
   query_log_id: string;
   status: QueryStatus;
   question: string;
+  response_language: "zh-CN" | "en";
   rewritten_question: string | null;
+  analysis_mode: "simple_query" | "investigative_analysis";
+  analysis_intent: AnalysisIntent | null;
+  analysis_plan: AnalysisPlan | null;
+  evidence: Evidence[];
+  critic_result: CriticResult | null;
+  analysis_step_count: number;
+  evidence_insufficient: boolean;
+  final_analysis: FinalAnalysis | null;
+  supporting_charts: SupportingChart[];
   clarification_question: string | null;
   selected_tables: string[];
   selected_columns: string[];
@@ -124,6 +135,85 @@ export interface QueryResponse {
   trace: TraceEvent[];
   used_fallback: boolean;
   error: { type: string; message: string; repairable?: boolean } | null;
+}
+
+export type AnalysisType =
+  | "lookup"
+  | "comparison"
+  | "ranking"
+  | "trend"
+  | "diagnostic"
+  | "exploratory";
+
+export interface AnalysisIntent {
+  objective: string;
+  analysis_type: AnalysisType;
+  metrics: string[];
+  dimensions: string[];
+  filters: string[];
+  time_range: string | null;
+  comparison: string | null;
+  desired_grain: string | null;
+  needs_multi_step: boolean;
+  reason: string;
+}
+
+export interface AnalysisStep {
+  id: string;
+  question: string;
+  purpose: string;
+  status: "pending" | "running" | "completed" | "skipped";
+}
+
+export interface AnalysisPlan {
+  objective: string;
+  steps: AnalysisStep[];
+  max_steps: number;
+  status: "pending" | "running" | "completed";
+}
+
+export interface Evidence {
+  id: string;
+  step_id: string;
+  question: string;
+  sql: string;
+  result_summary: string;
+  key_values: Record<string, unknown>;
+  row_count: number;
+  lineage: QueryResponse["lineage"];
+  limitations: string[];
+  created_at: string;
+}
+
+export interface CriticResult {
+  sufficient: boolean;
+  answered_objective: boolean;
+  missing_evidence: string[];
+  conflicts: string[];
+  limitations: string[];
+  recommended_next_step: string | null;
+}
+
+export interface Finding {
+  statement: string;
+  evidence_ids: string[];
+  facts: Record<string, number>;
+}
+
+export interface FinalAnalysis {
+  executive_summary: string;
+  key_findings: Finding[];
+  limitations: string[];
+  recommended_actions: string[];
+  evidence_ids: string[];
+  evidence_insufficient: boolean;
+}
+
+export interface SupportingChart {
+  evidence_ids: string[];
+  config: ChartConfig;
+  columns: string[];
+  rows: Record<string, unknown>[];
 }
 
 export interface LocalModelConfig {

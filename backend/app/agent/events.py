@@ -19,7 +19,7 @@ def _sanitize_summary(value: Any, max_length: int = 500) -> str | None:
     if isinstance(value, str):
         text = value
     else:
-        text = json.dumps(value, ensure_ascii=True, default=str, separators=(",", ":"))
+        text = json.dumps(value, ensure_ascii=False, default=str, separators=(",", ":"))
     text = " ".join(text.split())
     return text[:max_length]
 

@@ -7,7 +7,7 @@ import { useConversation } from "../hooks/useConversation";
 import { useQueryStream } from "../hooks/useQueryStream";
 import { I18nProvider } from "../i18n";
 import { TemporaryCredentialsProvider } from "../temporaryCredentials";
-import type { ConversationDetail, DatasetDetail, TraceEvent } from "../types";
+import type { ConversationDetail, DatasetDetail, QueryResponse, TraceEvent } from "../types";
 import { QueryPage } from "./QueryPage";
 
 vi.mock("../hooks/useConversation", () => ({ useConversation: vi.fn() }));
@@ -134,5 +134,42 @@ describe("QueryPage conversation deletion", () => {
     expect(clear).toHaveBeenCalled();
     expect(screen.queryByText("Existing message")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Agent Trace" })).not.toBeInTheDocument();
+  });
+
+  it("restores the persisted analysis result and trace when reopening a conversation", async () => {
+    const restoredResult = {
+      query_log_id: "log-restored",
+      conversation_id: "conversation-1",
+      analysis_mode: "investigative_analysis",
+      trace: [{
+        id: "restored-event", step_index: 1, node_name: "finalize_node",
+        event_type: "run_completed", status: "success", latency_ms: 1,
+      }],
+    } as unknown as QueryResponse;
+    const restoredConversation: ConversationDetail = {
+      ...conversation,
+      messages: [{
+        id: "message-restored", role: "assistant", content: "Restored analysis",
+        query_log_id: "log-restored", created_at: "2026-01-01T00:00:00Z", result: restoredResult,
+      }],
+    };
+    const setResult = vi.fn();
+    const setTrace = vi.fn();
+    vi.mocked(useConversation).mockReturnValue({
+      conversations: [restoredConversation], active: restoredConversation, loading: false,
+      error: null, deletingId: null, refresh: vi.fn().mockResolvedValue(undefined),
+      select: vi.fn().mockResolvedValue(undefined), deleteConversation: vi.fn(), setActive: vi.fn(),
+    });
+    vi.mocked(useQueryStream).mockReturnValue({
+      result: null, setResult, trace: [], setTrace, status: "idle", error: null,
+      run: vi.fn(), cancel: vi.fn(), clear: vi.fn(),
+    });
+    vi.spyOn(api, "datasets").mockResolvedValue([dataset]);
+    vi.spyOn(api, "dataset").mockResolvedValue(dataset);
+
+    render(<I18nProvider><TemporaryCredentialsProvider><QueryPage /></TemporaryCredentialsProvider></I18nProvider>);
+
+    await waitFor(() => expect(setResult).toHaveBeenCalledWith(restoredResult));
+    expect(setTrace).toHaveBeenCalledWith(restoredResult.trace);
   });
 });
