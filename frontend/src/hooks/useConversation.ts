@@ -9,6 +9,7 @@ export function useConversation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -37,6 +38,17 @@ export function useConversation() {
     }
   }, []);
 
+  const clearConversations = useCallback(async () => {
+    setClearing(true);
+    try {
+      await api.clearConversations();
+      setConversations([]);
+      setActive(null);
+    } finally {
+      setClearing(false);
+    }
+  }, []);
+
   useEffect(() => {
     void refresh().catch(() => undefined);
   }, [refresh]);
@@ -47,9 +59,11 @@ export function useConversation() {
     loading,
     error,
     deletingId,
+    clearing,
     refresh,
     select,
     deleteConversation,
+    clearConversations,
     setActive,
   };
 }

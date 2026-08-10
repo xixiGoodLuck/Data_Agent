@@ -107,6 +107,54 @@ def test_delete_conversation_removes_only_its_complete_history(
     )
 
 
+def test_clear_conversations_removes_all_history_and_keeps_datasets(
+    client: TestClient, metadata
+) -> None:
+    conversations = [
+        client.post("/api/conversations", json={"dataset_id": "sales", "title": title}).json()
+        for title in ("First", "Second")
+    ]
+    results = [
+        _create_query(client, conversation["id"], "What is total revenue?")
+        for conversation in conversations
+    ]
+    approval_ids = [
+        _add_approval(metadata, result["query_log_id"], conversation["id"])
+        for conversation, result in zip(conversations, results, strict=True)
+    ]
+    checkpoint = client.app.state.checkpoint.connection
+    assert all(
+        checkpoint.execute(
+            "SELECT COUNT(*) FROM checkpoints WHERE thread_id = ?", (conversation["id"],)
+        ).fetchone()[0]
+        > 0
+        for conversation in conversations
+    )
+
+    response = client.delete("/api/conversations")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "deleted", "deleted_count": 2}
+    with metadata.session() as session:
+        assert session.scalar(select(func.count(Conversation.id))) == 0
+        assert session.scalar(select(func.count(ConversationMessage.id))) == 0
+        assert session.scalar(select(func.count(QueryLog.id))) == 0
+        assert session.scalar(select(func.count(AgentRun.id))) == 0
+        assert session.scalar(select(func.count(AgentEvent.id))) == 0
+        assert session.scalar(select(func.count(ApprovalRequest.id))) == 0
+        assert all(
+            session.get(ApprovalRequest, approval_id) is None for approval_id in approval_ids
+        )
+        assert session.get(Dataset, "sales") is not None
+    assert all(
+        checkpoint.execute(
+            "SELECT COUNT(*) FROM checkpoints WHERE thread_id = ?", (conversation["id"],)
+        ).fetchone()[0]
+        == 0
+        for conversation in conversations
+    )
+
+
 def test_delete_query_log_removes_trace_but_keeps_conversation_and_dataset(
     client: TestClient, metadata
 ) -> None:

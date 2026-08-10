@@ -77,12 +77,14 @@ describe("QueryPage conversation deletion", () => {
         loading: false,
         error: null,
         deletingId: null,
+        clearing: false,
         refresh,
         select: vi.fn().mockResolvedValue(undefined),
         deleteConversation: async (id: string) => {
           await api.deleteConversation(id);
           setActive((current) => (current?.id === id ? null : current));
         },
+        clearConversations: vi.fn().mockResolvedValue(undefined),
         setActive,
       };
     });
@@ -157,8 +159,9 @@ describe("QueryPage conversation deletion", () => {
     const setTrace = vi.fn();
     vi.mocked(useConversation).mockReturnValue({
       conversations: [restoredConversation], active: restoredConversation, loading: false,
-      error: null, deletingId: null, refresh: vi.fn().mockResolvedValue(undefined),
-      select: vi.fn().mockResolvedValue(undefined), deleteConversation: vi.fn(), setActive: vi.fn(),
+      error: null, deletingId: null, clearing: false, refresh: vi.fn().mockResolvedValue(undefined),
+      select: vi.fn().mockResolvedValue(undefined), deleteConversation: vi.fn(),
+      clearConversations: vi.fn().mockResolvedValue(undefined), setActive: vi.fn(),
     });
     vi.mocked(useQueryStream).mockReturnValue({
       result: null, setResult, trace: [], setTrace, status: "idle", error: null,
@@ -171,5 +174,77 @@ describe("QueryPage conversation deletion", () => {
 
     await waitFor(() => expect(setResult).toHaveBeenCalledWith(restoredResult));
     expect(setTrace).toHaveBeenCalledWith(restoredResult.trace);
+  });
+
+  it("confirms clearing all conversations and resets the query page", async () => {
+    localStorage.setItem("insightops-language", "en");
+    const clearStream = vi.fn();
+    const run = vi.fn();
+    vi.mocked(useConversation).mockImplementation(() => {
+      const [active, setActive] = useState<ConversationDetail | null>(conversation);
+      const [items, setItems] = useState([conversation]);
+      return {
+        conversations: items,
+        active,
+        loading: false,
+        error: null,
+        deletingId: null,
+        clearing: false,
+        refresh: vi.fn().mockResolvedValue(undefined),
+        select: vi.fn().mockResolvedValue(undefined),
+        deleteConversation: vi.fn().mockResolvedValue(undefined),
+        clearConversations: async () => {
+          await api.clearConversations();
+          setItems([]);
+          setActive(null);
+        },
+        setActive,
+      };
+    });
+    vi.mocked(useQueryStream).mockImplementation(() => {
+      const [trace, setTrace] = useState<TraceEvent[]>([{
+        id: "event-1", step_index: 1, node_name: "intake", event_type: "node_completed",
+        status: "completed", latency_ms: 1,
+      }]);
+      return {
+        result: null,
+        setResult: vi.fn(),
+        trace,
+        setTrace,
+        status: "done",
+        error: null,
+        run,
+        cancel: vi.fn(),
+        clear: () => {
+          clearStream();
+          setTrace([]);
+        },
+      };
+    });
+    vi.spyOn(api, "datasets").mockResolvedValue([dataset]);
+    vi.spyOn(api, "dataset").mockResolvedValue(dataset);
+    const clearConversations = vi.spyOn(api, "clearConversations").mockResolvedValue({
+      status: "deleted",
+      deleted_count: 1,
+    });
+
+    render(<I18nProvider><TemporaryCredentialsProvider><QueryPage /></TemporaryCredentialsProvider></I18nProvider>);
+
+    fireEvent.change(await screen.findByPlaceholderText("Ask a business question..."), {
+      target: { value: "What is total revenue?" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send question" }));
+    expect(await screen.findByRole("button", { name: "Retry query" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear all conversations" }));
+    expect(screen.getByRole("dialog", { name: "Clear all conversations" })).toBeInTheDocument();
+    expect(screen.getByText("Clear all conversation records? This action cannot be undone.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+
+    await waitFor(() => expect(clearConversations).toHaveBeenCalledTimes(1));
+    expect(clearStream).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Existing message")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Agent Trace" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retry query" })).not.toBeInTheDocument();
+    expect(screen.getByText("No conversations yet.")).toBeInTheDocument();
   });
 });

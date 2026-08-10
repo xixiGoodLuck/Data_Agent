@@ -1,4 +1,4 @@
-import { MessageSquarePlus, Trash2 } from "lucide-react";
+import { LoaderCircle, MessageSquarePlus, Trash2 } from "lucide-react";
 
 import { useI18n } from "../i18n";
 import type { ConversationSummary } from "../types";
@@ -9,23 +9,32 @@ export function ConversationSidebar({
   onSelect,
   onNew,
   onDelete,
+  onClear,
   deletingId,
+  clearing = false,
 }: {
   conversations: ConversationSummary[];
   activeId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete?: (id: string) => void;
+  onClear?: () => void;
   deletingId?: string | null;
+  clearing?: boolean;
 }) {
   const { datasetText, t } = useI18n();
   return (
     <aside className="flex h-[300px] min-h-0 min-w-0 flex-col border-r border-zinc-200 bg-zinc-50 lg:h-full lg:min-h-[420px]">
       <div className="flex h-14 items-center justify-between border-b border-zinc-200 px-3">
         <span className="text-sm font-semibold text-ink">{t("conversations.title")}</span>
-        <button type="button" className="icon-button" title={t("conversations.new")} aria-label={t("conversations.new")} onClick={onNew}>
-          <MessageSquarePlus size={17} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button type="button" className="icon-button" title={t("conversations.clear")} aria-label={t("conversations.clear")} onClick={onClear} disabled={!conversations.length || clearing}>
+            {clearing ? <LoaderCircle size={17} className="animate-spin" /> : <Trash2 size={17} />}
+          </button>
+          <button type="button" className="icon-button" title={t("conversations.new")} aria-label={t("conversations.new")} onClick={onNew} disabled={clearing}>
+            <MessageSquarePlus size={17} />
+          </button>
+        </div>
       </div>
       <div className="min-w-0 flex-1 space-y-1 overflow-y-auto p-2">
         {conversations.map((conversation) => (
@@ -47,7 +56,7 @@ export function ConversationSidebar({
                 className="mt-1 hidden h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-700 group-hover:flex"
                 aria-label={t("conversations.deleteNamed", { name: conversation.title })}
                 title={t("conversations.delete")}
-                disabled={deletingId === conversation.id}
+                disabled={deletingId === conversation.id || clearing}
                 onClick={(event) => {
                   event.stopPropagation();
                   onDelete(conversation.id);

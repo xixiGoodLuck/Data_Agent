@@ -27,6 +27,7 @@ export function QueryPage() {
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
   const [approvalBusy, setApprovalBusy] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const conversations = useConversation();
   const stream = useQueryStream();
 
@@ -114,6 +115,19 @@ export function QueryPage() {
     }
   }
 
+  async function clearConversations() {
+    stream.cancel();
+    try {
+      await conversations.clearConversations();
+      setPendingQuestion(null);
+      setLastQuestion(null);
+      stream.clear();
+      setClearConfirmOpen(false);
+    } catch (caught) {
+      setPageError(caught instanceof Error ? caught.message : t("conversations.clearError"));
+    }
+  }
+
   if (loading) return <LoadingState label={t("query.loading")} />;
   if (pageError && !datasets.length) return <ErrorState message={pageError} />;
 
@@ -143,7 +157,9 @@ export function QueryPage() {
               stream.clear();
             }}
             onDelete={(id) => void removeConversation(id)}
+            onClear={() => setClearConfirmOpen(true)}
             deletingId={conversations.deletingId}
+            clearing={conversations.clearing}
           />
           <div className="flex min-h-[500px] min-w-0 flex-col border-b border-zinc-200 lg:border-b-0 lg:border-r">
             <div className="flex-1 space-y-4 overflow-y-auto p-4 lg:p-6">
@@ -166,6 +182,20 @@ export function QueryPage() {
           </aside>
         </div>
       </section>
+      {clearConfirmOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="presentation">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="clear-conversations-title">
+            <h2 id="clear-conversations-title" className="text-base font-bold text-ink">{t("conversations.clear")}</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-600">{t("conversations.clearConfirm")}</p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" className="secondary-button" disabled={conversations.clearing} onClick={() => setClearConfirmOpen(false)}>{t("conversations.clearCancel")}</button>
+              <button type="button" className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={conversations.clearing} onClick={() => void clearConversations()}>
+                {conversations.clearing ? t("conversations.clearing") : t("conversations.clearAction")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {(stream.result || stream.trace.length || stream.error) ? <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="panel p-5 lg:p-6">{stream.error ? <ErrorState message={stream.error} onRetry={lastQuestion ? () => ask(lastQuestion) : undefined} /> : stream.result ? <ResultPanel result={stream.result} onApproval={(approved, note) => void decide(approved, note)} approvalBusy={approvalBusy} /> : stream.trace.length ? <AnalysisProgress events={stream.trace} live={stream.status === "streaming"} /> : <LoadingState label={t("query.waiting")} />}</section>
         <section className="panel self-start p-5"><div className="mb-4 flex items-center justify-between"><h2 className="text-sm font-bold text-ink">{t("query.agentTrace")}</h2>{stream.status === "done" && lastQuestion ? <button className="icon-button" title={t("query.retry")} aria-label={t("query.retry")} onClick={() => ask(lastQuestion)}><RotateCcw size={16} /></button> : null}</div><AgentTrace events={stream.trace} live={stream.status === "streaming"} /></section>

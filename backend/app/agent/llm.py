@@ -1016,10 +1016,16 @@ class MockLLMClient(BaseLLMClient):
         if "refund" in q and "category" in q:
             return SqlGeneration(
                 sql=(
-                    "SELECT p.category, ROUND(100.0 * COALESCE(SUM(r.refund_amount), 0) / "
-                    "NULLIF(SUM(oi.line_revenue), 0), 2) AS refund_rate FROM products p "
-                    "JOIN order_items oi ON oi.product_id = p.id JOIN orders o ON o.id = oi.order_id "
-                    "LEFT JOIN refunds r ON r.order_id = o.id GROUP BY p.category ORDER BY refund_rate DESC"
+                    "WITH order_category_revenue AS (SELECT oi.order_id, p.category, "
+                    "SUM(oi.line_revenue) AS revenue FROM order_items oi JOIN products p "
+                    "ON p.id = oi.product_id GROUP BY oi.order_id, p.category), "
+                    "order_refunds AS (SELECT order_id, SUM(refund_amount) AS refund_amount "
+                    "FROM refunds GROUP BY order_id), allocated AS (SELECT c.category, c.revenue, "
+                    "COALESCE(r.refund_amount, 0) * c.revenue / "
+                    "NULLIF(SUM(c.revenue) OVER (PARTITION BY c.order_id), 0) AS refund_amount "
+                    "FROM order_category_revenue c LEFT JOIN order_refunds r ON r.order_id = c.order_id) "
+                    "SELECT category, ROUND(100.0 * SUM(refund_amount) / NULLIF(SUM(revenue), 0), 2) "
+                    "AS refund_rate FROM allocated GROUP BY category ORDER BY refund_rate DESC"
                 ),
                 explanation="Compare refunded amount with line revenue by product category.",
                 selected_columns=[

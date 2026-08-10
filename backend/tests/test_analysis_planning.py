@@ -9,7 +9,13 @@ from pydantic import ValidationError
 from app.agent.analysis import build_evidence
 from app.agent.llm import MockLLMClient
 from app.agent.nodes import AnalysisNodes
-from app.agent.prompts import ANALYSIS_PLAN_PROMPT, SQL_GENERATION_PROMPT, TABLE_SELECTION_PROMPT
+from app.agent.prompts import (
+    ANALYSIS_INTENT_PROMPT,
+    ANALYSIS_PLAN_PROMPT,
+    SQL_GENERATION_PROMPT,
+    SQL_REPAIR_PROMPT,
+    TABLE_SELECTION_PROMPT,
+)
 from app.schemas.query import (
     MAX_ANALYSIS_STEPS,
     AnalysisEvaluation,
@@ -152,6 +158,31 @@ def test_table_selection_accepts_safely_derived_metrics() -> None:
 def test_sql_generation_prefers_aggregates_for_investigations() -> None:
     system_text = str(SQL_GENERATION_PROMPT.messages[0].prompt.template)
     assert "instead of returning broad row-level data" in system_text
+
+
+def test_sql_generation_preserves_metric_grain_and_prevents_join_fanout() -> None:
+    system_text = str(SQL_GENERATION_PROMPT.messages[0].prompt.template)
+    assert "compute a parent-entity metric at the parent grain" in system_text
+    assert "summing line values per order and then averaging those order totals" in system_text
+    assert "aggregate each child to the parent key before joining" in system_text
+    assert "allocated totals reconcile to the parent total" in system_text
+    assert "never join allocated child rows back" in system_text
+    assert "do not use MEDIAN, PERCENTILE_CONT, STDDEV, STDEV" in system_text
+    assert "derive the maximum stored date" in system_text
+    assert "Never invent or hardcode a calendar date" in system_text
+    repair_text = str(SQL_REPAIR_PROMPT.messages[0].prompt.template)
+    assert "sibling_total * child_measure" in repair_text
+    assert "aggregate them directly" in repair_text
+    assert "first sum the child values by parent key" in repair_text
+    assert "distinct child group still duplicates it" in repair_text
+    assert "the repair is valid only when" in repair_text
+
+
+def test_analysis_intent_keeps_single_query_factor_and_group_comparisons_simple() -> None:
+    system_text = str(ANALYSIS_INTENT_PROMPT.messages[0].prompt.template)
+
+    assert "bounded period comparison" in system_text
+    assert "multiple aggregates alone do not" in system_text
 
 
 def test_analysis_plan_has_a_hard_step_limit() -> None:

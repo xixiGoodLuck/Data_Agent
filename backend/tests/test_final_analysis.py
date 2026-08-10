@@ -141,6 +141,56 @@ def test_grounding_accepts_percentage_rate_conversion() -> None:
     assert validate_final_analysis(converted, [rate_evidence], evidence_insufficient=False)
 
 
+def test_grounding_accepts_percentage_threshold_executed_in_sql() -> None:
+    threshold_evidence = evidence().model_copy(
+        update={
+            "sql": "SELECT CASE WHEN discount < 0.3 THEN 'under' ELSE 'high' END FROM items",
+            "key_values": {"discount_max": 0.15},
+            "row_count": 4,
+        }
+    )
+    threshold_analysis = analysis("No observed group reached the 30% threshold.")
+    threshold_analysis.key_findings[0].facts = {}
+
+    assert validate_final_analysis(
+        threshold_analysis, [threshold_evidence], evidence_insufficient=False
+    )
+
+
+def test_grounding_still_rejects_unexecuted_percentage_threshold() -> None:
+    threshold_evidence = evidence().model_copy(
+        update={
+            "sql": "SELECT CASE WHEN discount < 0.3 THEN 'under' ELSE 'high' END FROM items",
+            "key_values": {"discount_max": 0.15},
+            "row_count": 4,
+        }
+    )
+    threshold_analysis = analysis("No observed group reached the 45% threshold.")
+    threshold_analysis.key_findings[0].facts = {}
+
+    with pytest.raises(AppError, match="numeric finding"):
+        validate_final_analysis(
+            threshold_analysis, [threshold_evidence], evidence_insufficient=False
+        )
+
+
+def test_grounding_accepts_threshold_from_cited_evidence_question() -> None:
+    threshold_evidence = evidence().model_copy(
+        update={
+            "question": "Check whether values reach 0.2 or 0.3.",
+            "sql": "SELECT discount FROM items ORDER BY discount",
+            "key_values": {"discount_max": 0.15},
+            "row_count": 4,
+        }
+    )
+    threshold_analysis = analysis("The observed values do not reach 0.3.")
+    threshold_analysis.key_findings[0].facts = {}
+
+    assert validate_final_analysis(
+        threshold_analysis, [threshold_evidence], evidence_insufficient=False
+    )
+
+
 def test_grounding_accepts_simple_calculation_from_cited_values() -> None:
     calculated_evidence = evidence().model_copy(
         update={"key_values": {"orders": 68, "average_order_value": 1260.67}}

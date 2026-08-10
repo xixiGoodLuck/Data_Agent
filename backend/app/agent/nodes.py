@@ -52,6 +52,7 @@ from app.sql.validator import validate_sql
 
 class AnalysisNodes:
     MAX_TOOL_FAILURES = 2
+    MAX_VALIDATION_REPAIR_ATTEMPTS = 2
     MAX_DECISION_RETRIES = 2
 
     def __init__(
@@ -564,6 +565,35 @@ class AnalysisNodes:
         )
         if not validation.safe:
             reason = validation.reason or "The SQL did not pass validation."
+            repair = (
+                validation.repairable
+                and state.get("repair_attempts", 0) < self.MAX_VALIDATION_REPAIR_ATTEMPTS
+            )
+            if repair:
+                return {
+                    "safe_sql": False,
+                    "safety_reason": reason,
+                    "normalized_sql": validation.normalized_sql,
+                    "execution_outcome": "repair",
+                    "execution_error": {
+                        "type": validation.reason_code or "sql_semantic_error",
+                        "message": reason,
+                        "repairable": True,
+                    },
+                    "status": "repair_needed",
+                    "events": self._complete(
+                        state,
+                        node,
+                        started_at,
+                        started,
+                        output_summary={
+                            "reason_code": validation.reason_code,
+                            "repairable": True,
+                        },
+                        event_type="sql_repair_required",
+                        status="repairing",
+                    ),
+                }
             return {
                 "safe_sql": False,
                 "safety_reason": reason,

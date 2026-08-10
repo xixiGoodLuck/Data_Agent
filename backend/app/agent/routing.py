@@ -57,6 +57,8 @@ def route_analysis_mode(state: DataAnalysisState) -> str:
 
 
 def route_validation(state: DataAnalysisState) -> str:
+    if state.get("status") == "repair_needed":
+        return "repair"
     return "safe" if state.get("safe_sql") else "blocked"
 
 

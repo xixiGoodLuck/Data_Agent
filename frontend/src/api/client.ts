@@ -87,6 +87,8 @@ export const api = {
     }),
   deleteConversation: (id: string) =>
     request<{ status: string }>(`/api/conversations/${id}`, { method: "DELETE" }),
+  clearConversations: () =>
+    request<{ status: string; deleted_count: number }>("/api/conversations", { method: "DELETE" }),
   approvals: (status?: string) =>
     request<ApprovalRequest[]>(`/api/approvals${status ? `?status=${encodeURIComponent(status)}` : ""}`),
   decideApproval: (id: string, approved: boolean, note?: string, deepseekApiKey = "", localModel?: LocalModelConfig) =>

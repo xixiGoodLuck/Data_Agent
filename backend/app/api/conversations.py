@@ -31,6 +31,25 @@ def _summary(conversation: Conversation, dataset_name: str | None, message_count
     }
 
 
+def _delete_conversation_records(session, conversation_ids: list[str], saver) -> None:
+    if not conversation_ids:
+        return
+    thread_ids = set(
+        session.scalars(
+            select(AgentRun.thread_id)
+            .join(QueryLog, QueryLog.id == AgentRun.query_log_id)
+            .where(QueryLog.conversation_id.in_(conversation_ids))
+        )
+    )
+    thread_ids.update(conversation_ids)
+    session.execute(delete(QueryLog).where(QueryLog.conversation_id.in_(conversation_ids)))
+    session.execute(delete(Conversation).where(Conversation.id.in_(conversation_ids)))
+    session.flush()
+    if hasattr(saver, "delete_thread"):
+        for thread_id in thread_ids:
+            saver.delete_thread(thread_id)
+
+
 @router.post("", response_model=ConversationSummary, status_code=201)
 def create_conversation(
     payload: ConversationCreate, metadata: MetadataDatabase = Depends(get_metadata)
@@ -102,6 +121,17 @@ def conversation_detail(
         return response
 
 
+@router.delete("")
+def clear_conversations(
+    request: Request,
+    metadata: MetadataDatabase = Depends(get_metadata),
+) -> dict[str, int | str]:
+    with metadata.session() as session:
+        conversation_ids = list(session.scalars(select(Conversation.id)))
+        _delete_conversation_records(session, conversation_ids, request.app.state.checkpoint.saver)
+    return {"status": "deleted", "deleted_count": len(conversation_ids)}
+
+
 @router.delete("/{conversation_id}")
 def delete_conversation(
     conversation_id: str,
@@ -112,19 +142,5 @@ def delete_conversation(
         conversation = session.get(Conversation, conversation_id)
         if conversation is None:
             raise AppError("dataset_not_found", "The conversation does not exist.", status_code=404)
-        thread_ids = set(
-            session.scalars(
-                select(AgentRun.thread_id)
-                .join(QueryLog, QueryLog.id == AgentRun.query_log_id)
-                .where(QueryLog.conversation_id == conversation_id)
-            )
-        )
-        thread_ids.add(conversation_id)
-        session.execute(delete(QueryLog).where(QueryLog.conversation_id == conversation_id))
-        session.delete(conversation)
-        session.flush()
-        saver = request.app.state.checkpoint.saver
-        if hasattr(saver, "delete_thread"):
-            for thread_id in thread_ids:
-                saver.delete_thread(thread_id)
+        _delete_conversation_records(session, [conversation_id], request.app.state.checkpoint.saver)
     return {"status": "deleted", "conversation_id": conversation_id}

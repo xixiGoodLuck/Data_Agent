@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
+from app.agent.llm import SqlGeneration
 from app.models import AgentEvent, QueryLog
 
 
@@ -66,6 +68,44 @@ def test_execution_error_repairs_once_and_clears_intermediate_error(client: Test
     ]
     assert len(repairs) == 1
     assert "strftime" in body["sql"].lower()
+
+
+def test_validation_can_repair_a_repair_with_an_unknown_alias(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    llm = client.app.state.llm_resolver.default_client
+    repairs = 0
+
+    def invalid_sql(*args, **kwargs):
+        return SqlGeneration(
+            sql="SELECT imaginary FROM sales",
+            explanation="Initial invalid column",
+            selected_columns=["sales.imaginary"],
+        )
+
+    def repair_twice(*args, **kwargs):
+        nonlocal repairs
+        repairs += 1
+        sql = (
+            "SELECT still_imaginary FROM sales"
+            if repairs == 1
+            else "SELECT SUM(revenue) AS total_revenue FROM sales"
+        )
+        return SqlGeneration(
+            sql=sql,
+            explanation="Bounded validation repair",
+            selected_columns=["sales.revenue"],
+        )
+
+    monkeypatch.setattr(llm, "generate_sql", invalid_sql)
+    monkeypatch.setattr(llm, "repair_sql", repair_twice)
+
+    body = ask(client, "sales", "What is total revenue?").json()
+
+    assert body["status"] == "success"
+    assert repairs == 2
+    assert body["row_count"] == 1
+    assert len([event for event in body["trace"] if event["node_name"] == "repair_sql_node"]) == 4
 
 
 def test_trace_steps_are_ordered_and_all_nodes_emit_events(client: TestClient) -> None:

@@ -7,6 +7,7 @@ from app.schemas.query import Evidence, FinalAnalysis, SupportingChart
 
 _NUMBER = re.compile(r"(?<![A-Za-z0-9_#.])-?\d+(?:\.\d+)?%?")
 _SQL_DATE_LITERAL = re.compile(r"'\d{4}-\d{2}(?:-\d{2})?'")
+_SQL_RATIO_LITERAL = re.compile(r"(?<![A-Za-z0-9_.])0(?:\.\d+)?(?![A-Za-z0-9_.])")
 _UNSUPPORTED_CONCEPTS = {
     "marketing": ("marketing", "advertising", "ad spend", "营销", "广告", "投放"),
     "competition": ("competition", "competitor", "竞争", "竞品"),
@@ -51,6 +52,10 @@ _UNCERTAINTY_MARKERS = (
 
 def _numeric_values(evidence: Evidence) -> list[float]:
     values = [float(evidence.row_count)]
+    values.extend(float(token.rstrip("%")) for token in _NUMBER.findall(evidence.question))
+    for literal in _SQL_RATIO_LITERAL.findall(evidence.sql):
+        value = float(literal)
+        values.extend((value, value * 100))
     date_literals = _SQL_DATE_LITERAL.findall(evidence.sql)
     for literal in date_literals:
         values.extend(float(token) for token in re.findall(r"\d+", literal))

@@ -82,7 +82,11 @@ def build_analysis_graph(nodes: AnalysisNodes, checkpointer: Any) -> Any:
     builder.add_conditional_edges(
         "validate_sql_node",
         route_validation,
-        {"blocked": "persist_result_node", "safe": "assess_risk_node"},
+        {
+            "blocked": "persist_result_node",
+            "repair": "repair_sql_node",
+            "safe": "assess_risk_node",
+        },
     )
     builder.add_conditional_edges(
         "assess_risk_node",

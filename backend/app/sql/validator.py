@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from itertools import combinations
 from typing import Any
 
 import sqlglot
 from pydantic import BaseModel, Field
 from sqlglot import exp
+from sqlglot.optimizer.scope import Scope, traverse_scope
 
 
 class SqlValidationResult(BaseModel):
     safe: bool
+    repairable: bool = False
     normalized_sql: str | None = None
     reason_code: str | None = None
     reason: str | None = None
@@ -85,6 +88,213 @@ def _column_catalog(schema: dict[str, Any]) -> dict[str, set[str]]:
     }
 
 
+def _has_nonunique_derived_self_join(
+    expression: exp.Expression,
+    *,
+    schema: dict[str, Any],
+) -> bool:
+    target_select = (
+        expression if isinstance(expression, exp.Select) else expression.find(exp.Select)
+    )
+    if target_select is None or not any(
+        aggregate.find_ancestor(exp.Select) is target_select
+        for aggregate in target_select.find_all(exp.AggFunc)
+    ):
+        return False
+    outer_aliases = {
+        table.alias_or_name.lower(): table.name.lower()
+        for table in target_select.find_all(exp.Table)
+        if table.find_ancestor(exp.Select) is target_select
+    }
+    for join in target_select.args.get("joins") or []:
+        subquery = join.this
+        if not isinstance(subquery, exp.Subquery):
+            continue
+        derived_alias = subquery.alias_or_name.lower()
+        source_tables = {table.name.lower() for table in subquery.this.find_all(exp.Table)}
+        on_expression = join.args.get("on")
+        if not derived_alias or not source_tables or on_expression is None:
+            continue
+        derived_join_columns = {
+            column.name.lower()
+            for column in on_expression.find_all(exp.Column)
+            if column.table.lower() == derived_alias
+        }
+        grouped_columns = {
+            column.name.lower()
+            for column in (subquery.this.args.get("group") or exp.Group()).find_all(exp.Column)
+        }
+        selected_names = {
+            projection.alias_or_name.lower()
+            for projection in subquery.this.expressions
+            if projection.alias_or_name
+        }
+        unique_on_join = bool(grouped_columns) and grouped_columns.issubset(derived_join_columns)
+        if subquery.this.args.get("distinct") and selected_names.issubset(derived_join_columns):
+            unique_on_join = True
+        for outer_alias, outer_table in outer_aliases.items():
+            if outer_table not in source_tables:
+                continue
+            outer_join_columns = {
+                column.name.lower()
+                for column in on_expression.find_all(exp.Column)
+                if column.table.lower() == outer_alias
+            }
+            primary_keys = {
+                column["name"].lower()
+                for column in schema.get(outer_table, {}).get("columns", [])
+                if column.get("primary_key")
+            }
+            if primary_keys and primary_keys.issubset(outer_join_columns):
+                unique_on_join = True
+            if outer_join_columns and not unique_on_join:
+                return True
+    return False
+
+
+def _has_flat_sibling_aggregate_fanout(
+    expression: exp.Expression,
+    *,
+    schema: dict[str, Any],
+    table_aliases: dict[str, str],
+    referenced_tables: list[str],
+) -> bool:
+    catalog = _column_catalog(schema)
+    derived_grains: dict[str, str] = {}
+    for subquery in expression.find_all(exp.Subquery):
+        alias = subquery.alias_or_name.lower()
+        source_tables = {table.name.lower() for table in subquery.this.find_all(exp.Table)}
+        if not alias or len(source_tables) != 1:
+            continue
+        source_table = next(iter(source_tables))
+        grain = source_table
+        group = subquery.this.args.get("group")
+        grouped_columns = (
+            {column.name.lower() for column in group.find_all(exp.Column)} if group else set()
+        )
+        for foreign_key in schema.get(source_table, {}).get("foreign_keys", []):
+            if foreign_key.get("from_column", "").lower() in grouped_columns:
+                grain = foreign_key.get("to_table", source_table).lower()
+                break
+        derived_grains[alias] = grain
+    target_select = (
+        expression if isinstance(expression, exp.Select) else expression.find(exp.Select)
+    )
+    aggregate_source_sets: list[set[str]] = []
+    for aggregate in expression.find_all(exp.AggFunc):
+        if aggregate.find_ancestor(exp.Select) is not target_select:
+            continue
+        if isinstance(aggregate, exp.Count) and aggregate.find(exp.Distinct) is not None:
+            continue
+        aggregate_tables: set[str] = set()
+        for column in aggregate.find_all(exp.Column):
+            qualifier = column.table.lower() if column.table else ""
+            if qualifier:
+                table_name = table_aliases.get(qualifier)
+                if table_name == "__derived__":
+                    table_name = derived_grains.get(qualifier)
+            else:
+                matching = [
+                    table
+                    for table in referenced_tables
+                    if column.name.lower() in catalog.get(table, set())
+                ]
+                table_name = matching[0] if len(matching) == 1 else None
+            if table_name and table_name != "__cte__":
+                aggregate_tables.add(table_name)
+        if aggregate_tables:
+            aggregate_source_sets.append(aggregate_tables)
+    all_aggregate_tables = set().union(*aggregate_source_sets) if aggregate_source_sets else set()
+    parents_by_child = {
+        table: {
+            foreign_key.get("to_table", "").lower()
+            for foreign_key in details.get("foreign_keys", [])
+            if foreign_key.get("to_table")
+        }
+        for table, details in schema.items()
+    }
+    for left, right in combinations(sorted(all_aggregate_tables), 2):
+        related = bool(
+            parents_by_child.get(left, set()) & parents_by_child.get(right, set())
+            or left in parents_by_child.get(right, set())
+            or right in parents_by_child.get(left, set())
+        )
+        allocated_together = any(
+            {left, right}.issubset(aggregate_tables) for aggregate_tables in aggregate_source_sets
+        )
+        if related and not allocated_together:
+            return True
+    return False
+
+
+def _scope_unique_on(
+    source: Scope | exp.Table,
+    columns: set[str],
+    *,
+    schema: dict[str, Any],
+) -> bool:
+    if not columns:
+        return False
+    if isinstance(source, Scope):
+        group = source.expression.args.get("group")
+        group_keys = {
+            item.alias_or_name.lower()
+            for item in (group.expressions if group else [])
+            if item.alias_or_name
+        }
+        return bool(group_keys) and group_keys.issubset(columns)
+    primary_keys = {
+        column["name"].lower()
+        for column in schema.get(source.name.lower(), {}).get("columns", [])
+        if column.get("primary_key")
+    }
+    return bool(primary_keys) and primary_keys.issubset(columns)
+
+
+def _has_repeated_joined_measure(expression: exp.Expression, *, schema: dict[str, Any]) -> bool:
+    for scope in traverse_scope(expression):
+        selected_sources = {
+            alias.lower(): source
+            for alias, (_, source) in scope.selected_sources.items()
+            if isinstance(source, Scope | exp.Table)
+        }
+        if len(selected_sources) < 2:
+            continue
+        join_columns: dict[str, set[str]] = {alias: set() for alias in selected_sources}
+        for join in scope.expression.args.get("joins") or []:
+            on_expression = join.args.get("on")
+            if on_expression is None:
+                continue
+            for equality in on_expression.find_all(exp.EQ):
+                for column in equality.find_all(exp.Column):
+                    alias = column.table.lower()
+                    if alias in join_columns:
+                        join_columns[alias].add(column.name.lower())
+        unique = {
+            alias: _scope_unique_on(source, join_columns[alias], schema=schema)
+            for alias, source in selected_sources.items()
+        }
+        if not any(unique.values()) or all(unique.values()):
+            continue
+        target_select = scope.expression
+        for aggregate in target_select.find_all(exp.AggFunc):
+            if aggregate.find_ancestor(exp.Select) is not target_select:
+                continue
+            if isinstance(aggregate, exp.Count) and aggregate.find(exp.Distinct) is not None:
+                continue
+            aliases = {
+                column.table.lower() for column in aggregate.find_all(exp.Column) if column.table
+            }
+            if len(aliases) != 1:
+                continue
+            measure_alias = next(iter(aliases))
+            if unique.get(measure_alias) and any(
+                not is_unique for alias, is_unique in unique.items() if alias != measure_alias
+            ):
+                return True
+    return False
+
+
 def validate_sql(
     sql: str | None,
     *,
@@ -131,6 +341,15 @@ def validate_sql(
             return _blocked("forbidden_function", "The SQL uses a forbidden SQLite function.")
 
     cte_names = {cte.alias_or_name.lower() for cte in expression.find_all(exp.CTE)}
+    derived_columns: dict[str, set[str]] = {
+        cte.alias_or_name.lower(): {
+            projection.alias_or_name.lower()
+            for projection in cte.this.expressions
+            if projection.alias_or_name
+        }
+        for cte in expression.find_all(exp.CTE)
+        if cte.alias_or_name and isinstance(cte.this, exp.Select)
+    }
     table_nodes = list(expression.find_all(exp.Table))
     table_aliases: dict[str, str] = {}
     referenced_tables: list[str] = []
@@ -139,6 +358,9 @@ def validate_sql(
         if table_name in cte_names:
             table_aliases[table_node.alias_or_name.lower()] = "__cte__"
             table_aliases[table_name] = "__cte__"
+            derived_columns[table_node.alias_or_name.lower()] = derived_columns.get(
+                table_name, set()
+            )
             continue
         if table_name.startswith(INTERNAL_TABLE_PREFIXES):
             return _blocked("internal_table", "SQLite internal tables are not accessible.")
@@ -148,6 +370,16 @@ def validate_sql(
             referenced_tables.append(table_name)
         table_aliases[table_node.alias_or_name.lower()] = table_name
         table_aliases[table_name] = table_name
+    for subquery in expression.find_all(exp.Subquery):
+        alias = subquery.alias_or_name.lower()
+        if alias:
+            table_aliases[alias] = "__derived__"
+            if isinstance(subquery.this, exp.Select):
+                derived_columns[alias] = {
+                    projection.alias_or_name.lower()
+                    for projection in subquery.this.expressions
+                    if projection.alias_or_name
+                }
 
     allowed = {table.lower() for table in allowed_tables}
     if not referenced_tables:
@@ -163,22 +395,72 @@ def validate_sql(
         if name == "*":
             continue
         qualifier = column.table.lower() if column.table else ""
-        if qualifier in cte_names:
-            continue
         if qualifier:
             table_name = table_aliases.get(qualifier)
-            if table_name == "__cte__":
+            if table_name in {"__cte__", "__derived__"}:
+                if name not in derived_columns.get(qualifier, set()):
+                    return SqlValidationResult(
+                        safe=False,
+                        repairable=True,
+                        normalized_sql=expression.sql(dialect="sqlite"),
+                        reason_code="unknown_column",
+                        reason="The SQL references an unknown derived column.",
+                        referenced_tables=referenced_tables,
+                        referenced_columns=referenced_columns,
+                    )
                 continue
             if table_name is None or name not in catalog.get(table_name, set()):
-                return _blocked("unknown_column", "The SQL references an unknown column.")
+                return SqlValidationResult(
+                    safe=False,
+                    repairable=True,
+                    normalized_sql=expression.sql(dialect="sqlite"),
+                    reason_code="unknown_column",
+                    reason="The SQL references an unknown column.",
+                    referenced_tables=referenced_tables,
+                    referenced_columns=referenced_columns,
+                )
             qualified = f"{table_name}.{name}"
         else:
             matching = [table for table in referenced_tables if name in catalog.get(table, set())]
             if not matching and name not in select_aliases:
-                return _blocked("unknown_column", "The SQL references an unknown column.")
+                return SqlValidationResult(
+                    safe=False,
+                    repairable=True,
+                    normalized_sql=expression.sql(dialect="sqlite"),
+                    reason_code="unknown_column",
+                    reason="The SQL references an unknown column.",
+                    referenced_tables=referenced_tables,
+                    referenced_columns=referenced_columns,
+                )
             qualified = f"{matching[0]}.{name}" if len(matching) == 1 else name
         if qualified not in referenced_columns:
             referenced_columns.append(qualified)
+
+    if (
+        _has_nonunique_derived_self_join(expression, schema=schema)
+        or _has_flat_sibling_aggregate_fanout(
+            expression,
+            schema=schema,
+            table_aliases=table_aliases,
+            referenced_tables=referenced_tables,
+        )
+        or _has_repeated_joined_measure(
+            expression,
+            schema=schema,
+        )
+    ):
+        return SqlValidationResult(
+            safe=False,
+            repairable=True,
+            normalized_sql=expression.sql(dialect="sqlite"),
+            reason_code="aggregate_fanout",
+            reason=(
+                "Aggregates from sibling one-to-many tables must be computed at the parent "
+                "grain before joining."
+            ),
+            referenced_tables=referenced_tables,
+            referenced_columns=referenced_columns,
+        )
 
     normalized = expression.copy()
     limit = normalized.args.get("limit")
