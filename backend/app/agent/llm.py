@@ -1322,6 +1322,9 @@ class MockLLMClient(BaseLLMClient):
 
 
 StructuredT = TypeVar("StructuredT", bound=BaseModel)
+LOCAL_NON_THINKING_EXTRA_BODY = {
+    "chat_template_kwargs": {"enable_thinking": False},
+}
 
 
 class OpenAICompatibleLLMClient(BaseLLMClient):
@@ -1358,8 +1361,14 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         resolved_base_url = base_url if base_url is not None else settings.openai_base_url
         if resolved_base_url:
             kwargs["base_url"] = resolved_base_url
-        if extra_body:
-            kwargs["extra_body"] = dict(extra_body)
+        resolved_extra_body = dict(extra_body or {})
+        if provider_name == "local":
+            chat_template_kwargs = dict(resolved_extra_body.get("chat_template_kwargs", {}))
+            chat_template_kwargs.update(LOCAL_NON_THINKING_EXTRA_BODY["chat_template_kwargs"])
+            resolved_extra_body["chat_template_kwargs"] = chat_template_kwargs
+            kwargs["reasoning_effort"] = "none"
+        if resolved_extra_body:
+            kwargs["extra_body"] = resolved_extra_body
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
         self.model = ChatOpenAI(**kwargs)
@@ -1459,10 +1468,15 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
                 recovery_error = caught_recovery_error
                 self._raise_provider_error(caught_recovery_error)
             if not self.allow_mock_fallback:
+                is_local = self.provider_name == "local"
                 raise AppError(
-                    "local_model_error",
-                    "The local model did not return compatible structured output. "
-                    "Check the Model ID and tool-calling support.",
+                    "local_model_error" if is_local else "llm_invalid_output",
+                    (
+                        "The local model did not return compatible structured output. "
+                        "Check the Model ID and tool-calling support."
+                        if is_local
+                        else "The model did not return compatible structured output."
+                    ),
                     status_code=502,
                 ) from (recovery_error or first_error)
             try:
@@ -1488,14 +1502,6 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
                 "response_language": response_language,
             },
             lambda: self.fallback.rewrite_question(question, history, response_language),
-            request_kwargs=(
-                {
-                    "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},
-                    "reasoning_effort": "none",
-                }
-                if self.provider_name == "local"
-                else None
-            ),
         )
 
     def understand_analysis_intent(
@@ -1702,6 +1708,7 @@ def get_deepseek_client(settings: Settings, api_key: str) -> BaseLLMClient:
         base_url=DEEPSEEK_BASE_URL,
         model=DEEPSEEK_MODEL,
         provider_name="deepseek",
+        allow_mock_fallback=False,
         extra_body={
             "thinking": {"type": "disabled"},
             "max_tokens": DEEPSEEK_MAX_TOKENS,

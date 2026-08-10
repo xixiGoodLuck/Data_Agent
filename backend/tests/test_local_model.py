@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from app.agent.llm import (
     LOCAL_MODEL_MAX_TOKENS,
+    LOCAL_NON_THINKING_EXTRA_BODY,
     MockLLMClient,
     OpenAICompatibleLLMClient,
     get_local_model_client,
@@ -124,8 +125,55 @@ def test_local_client_uses_existing_key_or_placeholder(
     assert captured["base_url"] == "http://127.0.0.1:1234/v1"
     assert captured["model"] == "qwen3.5-0.8b"
     assert captured["max_tokens"] == LOCAL_MODEL_MAX_TOKENS
+    assert captured["extra_body"] == LOCAL_NON_THINKING_EXTRA_BODY
+    assert captured["reasoning_effort"] == "none"
     assert isinstance(client, OpenAICompatibleLLMClient)
     assert client.structured_output_method == "json_schema"
+
+
+def test_all_local_model_calls_inherit_non_thinking_client_options(
+    test_settings, monkeypatch
+) -> None:
+    calls: list[tuple[str, dict[str, object], dict[str, object]]] = []
+
+    class FakeChatOpenAI:
+        def __init__(self, **kwargs):
+            self.request_options = kwargs
+
+        def with_structured_output(self, schema, **kwargs):
+            calls.append((schema.__name__, self.request_options, kwargs))
+            return lambda _inputs: schema.model_construct()
+
+    monkeypatch.setattr("app.agent.llm.ChatOpenAI", FakeChatOpenAI)
+    client = get_local_model_client(test_settings, "http://127.0.0.1:1234/v1", "qwen3.5-0.8b")
+    intent = client.fallback.understand_analysis_intent("Compare revenue", "en")
+    plan = client.fallback.create_analysis_plan("Compare revenue", intent, "en")
+
+    client.rewrite_question("Compare revenue", [], "en")
+    client.understand_analysis_intent("Compare revenue", "en")
+    client.create_analysis_plan("Compare revenue", intent, "en")
+    client.select_tables("sales", "Compare revenue", {}, "en")
+    client.generate_sql("sales", "Compare revenue", [], {}, "schema")
+    client.repair_sql("sales", "Compare revenue", "SELECT 1", "syntax", "schema")
+    client.evaluate_analysis(intent, plan, [], "en")
+    client.synthesize_analysis("Compare revenue", intent, plan, [], None, False, "en")
+    client.write_insight("Compare revenue", "SELECT 1", [], [], "en")
+
+    assert [name for name, _options, _kwargs in calls] == [
+        "QuestionRewrite",
+        "AnalysisIntent",
+        "AnalysisPlan",
+        "TableSelection",
+        "SqlGeneration",
+        "SqlRepair",
+        "AnalysisEvaluation",
+        "FinalAnalysis",
+        "InsightOutput",
+    ]
+    for _name, request_options, call_kwargs in calls:
+        assert request_options["extra_body"] == LOCAL_NON_THINKING_EXTRA_BODY
+        assert request_options["reasoning_effort"] == "none"
+        assert call_kwargs == {"method": "json_schema"}
 
 
 def test_local_model_invalid_structured_output_never_uses_mock_fallback() -> None:
@@ -152,6 +200,7 @@ def test_local_model_invalid_structured_output_never_uses_mock_fallback() -> Non
     llm.model = FakeModel()
     llm.last_used_fallback = False
     llm.allow_mock_fallback = False
+    llm.provider_name = "local"
     llm.structured_output_method = "json_schema"
 
     with pytest.raises(AppError) as caught:

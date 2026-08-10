@@ -106,7 +106,12 @@ TABLE_SELECTION_PROMPT = ChatPromptTemplate.from_messages(
         (
             "system",
             "Select the minimum relevant dataset tables from the lightweight catalog. Return a "
-            "clarification when the request cannot be mapped safely. User-facing reasons and "
+            "clarification only when the request cannot be mapped safely. Treat metrics that can "
+            "be derived from available columns as mapped (for example, revenue divided by orders "
+            "for average order value); do not require a precomputed column. For an investigation "
+            "step that names unavailable optional dimensions, use the available time, metric, and "
+            "breakdown columns when they can still answer the core question; do not request "
+            "clarification solely because an optional example dimension is absent. User-facing reasons and "
             "clarifications must be Simplified Chinese when response_language is zh-CN and English "
             "when it is en.",
         ),
@@ -123,7 +128,9 @@ SQL_GENERATION_PROMPT = ChatPromptTemplate.from_messages(
         (
             "system",
             "Generate one SQLite SELECT query using only the supplied schema. Do not add comments, "
-            "database qualifiers, PRAGMA statements, or write operations. Use explicit joins. Treat "
+            "database qualifiers, PRAGMA statements, or write operations. Use explicit joins. For "
+            "investigative metric analysis, prefer a bounded aggregate grouped by the relevant time "
+            "or business dimensions instead of returning broad row-level data. Treat "
             "a time window or year embedded in the dataset identifier as the scope of a fixed snapshot: "
             "query the full snapshot unless the question explicitly requests a narrower interval, and "
             "never reinterpret it with SQLite now/current-date functions. When the question repeats the "

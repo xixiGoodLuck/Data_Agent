@@ -5,7 +5,8 @@ import re
 from app.core.errors import AppError
 from app.schemas.query import Evidence, FinalAnalysis, SupportingChart
 
-_NUMBER = re.compile(r"(?<![\w#])-?\d+(?:\.\d+)?%?")
+_NUMBER = re.compile(r"(?<![A-Za-z0-9_#.])-?\d+(?:\.\d+)?%?")
+_SQL_DATE_LITERAL = re.compile(r"'\d{4}-\d{2}(?:-\d{2})?'")
 _UNSUPPORTED_CONCEPTS = {
     "marketing": ("marketing", "advertising", "ad spend", "营销", "广告", "投放"),
     "competition": ("competition", "competitor", "竞争", "竞品"),
@@ -14,21 +15,100 @@ _UNSUPPORTED_CONCEPTS = {
 }
 _ASSERTIVE_ACTIONS = ("caused", "proves", "demonstrates that", "导致了", "证明", "表明")
 _CAUSAL_MARKERS = ("caused", "due to", "driver", "because", "导致", "因为", "驱动")
+_DECLINE_MARKERS = (
+    "decline",
+    "declined",
+    "decrease",
+    "decreased",
+    "drop",
+    "dropped",
+    "fell",
+    "down",
+    "下降",
+    "减少",
+    "降低",
+    "下滑",
+    "降幅",
+    "微降",
+)
+_UNCERTAINTY_MARKERS = (
+    "cannot",
+    "unable",
+    "unknown",
+    "insufficient",
+    "lack",
+    "missing",
+    "not available",
+    "无法",
+    "不能",
+    "不足",
+    "缺少",
+    "缺乏",
+    "未知",
+    "未提供",
+)
 
 
 def _numeric_values(evidence: Evidence) -> list[float]:
     values = [float(evidence.row_count)]
+    date_literals = _SQL_DATE_LITERAL.findall(evidence.sql)
+    for literal in date_literals:
+        values.extend(float(token) for token in re.findall(r"\d+", literal))
+    month_indexes = []
+    for literal in date_literals:
+        year, month = (int(part) for part in literal.strip("'").split("-")[:2])
+        month_indexes.append(year * 12 + month)
+        values.extend([float(month - 1 or 12), float(month % 12 + 1)])
     values.extend(
-        float(value)
-        for value in evidence.key_values.values()
-        if isinstance(value, int | float) and not isinstance(value, bool)
+        float(abs(right - left))
+        for index, left in enumerate(month_indexes)
+        for right in month_indexes[index + 1 :]
     )
+    for key, value in evidence.key_values.items():
+        values.extend(float(token) for token in re.findall(r"\d+(?:\.\d+)?", key))
+        if isinstance(value, int | float) and not isinstance(value, bool):
+            values.append(float(value))
+            if "rate" in key and abs(float(value)) <= 1:
+                values.append(float(value) * 100)
+        elif isinstance(value, str):
+            values.extend(float(token.rstrip("%")) for token in _NUMBER.findall(value))
     return values
 
 
 def _matches(value: float, candidates: list[float]) -> bool:
     return any(
         abs(value - candidate) <= max(0.01, abs(candidate) * 0.0001) for candidate in candidates
+    )
+
+
+def _matches_derived(value: float, candidates: list[float]) -> bool:
+    if _matches(value, candidates):
+        return True
+    for index, left in enumerate(candidates):
+        for right in candidates[index + 1 :]:
+            if _matches(value, [left * right]):
+                return True
+            if right and _matches(value, [left / right]):
+                return True
+            if left and _matches(value, [right / left]):
+                return True
+            if right and _matches(value, [(left - right) / abs(right) * 100]):
+                return True
+            if left and _matches(value, [(right - left) / abs(left) * 100]):
+                return True
+    return False
+
+
+def _matches_text_number(match: re.Match[str], text: str, candidates: list[float]) -> bool:
+    token = match.group()
+    value = float(token.rstrip("%"))
+    if _matches_derived(value, candidates):
+        return True
+    if token.startswith("-"):
+        return False
+    context = text[max(0, match.start() - 24) : match.start()].lower()
+    return any(marker in context for marker in _DECLINE_MARKERS) and _matches_derived(
+        -value, candidates
     )
 
 
@@ -61,24 +141,27 @@ def validate_final_analysis(
     ).lower()
 
     def validate_text(text: str, allowed_numbers: list[float]) -> None:
-        for token in _NUMBER.findall(text):
-            value = float(token.rstrip("%"))
-            if not _matches(value, allowed_numbers):
+        for match in _NUMBER.finditer(text):
+            if not _matches_text_number(match, text, allowed_numbers):
                 raise AppError(
                     "final_analysis_grounding_error",
                     "A numeric finding is not present in its cited evidence.",
                 )
         lowered = text.lower()
+        sentences = re.split(r"[.!?\u3002\uff01\uff1f]", lowered)
         for terms in _UNSUPPORTED_CONCEPTS.values():
-            if (
-                any(term in lowered for term in terms)
-                and any(marker in lowered for marker in _CAUSAL_MARKERS)
-                and not any(term in corpus for term in terms)
-            ):
-                raise AppError(
-                    "final_analysis_grounding_error",
-                    "A causal finding uses a factor that is absent from the evidence.",
-                )
+            if any(term in corpus for term in terms):
+                continue
+            for sentence in sentences:
+                if (
+                    any(term in sentence for term in terms)
+                    and any(marker in sentence for marker in _CAUSAL_MARKERS)
+                    and not any(marker in sentence for marker in _UNCERTAINTY_MARKERS)
+                ):
+                    raise AppError(
+                        "final_analysis_grounding_error",
+                        "A causal finding uses a factor that is absent from the evidence.",
+                    )
 
     validate_text(
         analysis.executive_summary,
@@ -89,10 +172,10 @@ def validate_final_analysis(
         allowed_numbers = [value for item in cited for value in _numeric_values(item)]
         for fact_name, fact_value in finding.facts.items():
             if not any(
-                fact_name in item.key_values
-                and _matches(float(fact_value), [float(item.key_values[fact_name])])
+                key == fact_name or key.startswith(f"{fact_name}_")
                 for item in cited
-                if isinstance(item.key_values.get(fact_name), int | float)
+                for key, value in item.key_values.items()
+                if isinstance(value, int | float) and _matches(float(fact_value), [float(value)])
             ):
                 raise AppError(
                     "final_analysis_grounding_error",

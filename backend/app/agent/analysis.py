@@ -110,13 +110,23 @@ def build_evidence(state: DataAnalysisState) -> Evidence:
 
     if rows:
         first = rows[0]
-        for column in columns:
-            if column in sensitive or column in numeric_columns:
-                continue
-            value = first.get(column)
+        last = rows[-1]
+        dimension_columns = [
+            column
+            for column in columns
+            if column not in sensitive and column not in numeric_columns
+        ]
+        for column in dimension_columns[:3]:
+            first_value = first.get(column)
+            last_value = last.get(column)
+            if isinstance(first_value, str | int | float | bool) and len(str(first_value)) <= 120:
+                key_values[f"first_{_key(column)}"] = first_value
+            if isinstance(last_value, str | int | float | bool) and len(str(last_value)) <= 120:
+                key_values[f"last_{_key(column)}"] = last_value
+        if dimension_columns:
+            value = first.get(dimension_columns[0])
             if isinstance(value, str | int | float | bool) and len(str(value)) <= 120:
-                key_values[f"top_{_key(column)}"] = value
-                break
+                key_values[f"top_{_key(dimension_columns[0])}"] = value
 
     if state.get("row_count", 0) > len(rows):
         limitations.append(

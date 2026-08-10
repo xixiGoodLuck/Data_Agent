@@ -337,7 +337,19 @@ class AnalysisNodes:
     def prepare_analysis_step_node(self, state: DataAnalysisState) -> dict[str, Any]:
         node = "prepare_analysis_step_node"
         plan = AnalysisPlan.model_validate(state["analysis_plan"]).model_copy(deep=True)
-        step = next((item for item in plan.steps if item.status == "pending"), None)
+        decision = state.get("next_analysis_decision") or {}
+        next_step = decision.get("next_step") or {}
+        requested_step_id = next_step.get("id") if decision.get("action") == "continue" else None
+        step = next(
+            (
+                item
+                for item in plan.steps
+                if item.status == "pending" and item.id == requested_step_id
+            ),
+            None,
+        )
+        if step is None:
+            step = next((item for item in plan.steps if item.status == "pending"), None)
         started_at, started = self._start(
             state,
             node,
@@ -890,6 +902,24 @@ class AnalysisNodes:
                 target.purpose = decision.next_step.purpose
             elif target is None and len(plan.steps) < plan.max_steps:
                 plan.steps.append(decision.next_step)
+            elif target is None:
+                replacement_index = next(
+                    (index for index, step in enumerate(plan.steps) if step.status == "pending"),
+                    None,
+                )
+                if replacement_index is not None:
+                    plan.steps[replacement_index] = decision.next_step
+                else:
+                    decision = NextAnalysisDecision(
+                        action="finish",
+                        reason=(
+                            "娌℃湁鍙帴鏀朵笅涓€鍐崇瓥鐨勬湁闄愬緟鎵ц姝ラ銆?"
+                            if is_chinese(self._response_language(state))
+                            else "No bounded pending step can accept the next decision."
+                        ),
+                        plan_patch=decision.plan_patch,
+                    )
+                    forced_limit = True
             else:
                 decision = NextAnalysisDecision(
                     action="finish",

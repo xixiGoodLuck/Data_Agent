@@ -180,7 +180,7 @@ def test_deepseek_client_disables_thinking_and_caps_output(test_settings, monkey
 
     from app.agent.llm import get_deepseek_client
 
-    get_deepseek_client(test_settings, "sk-settings-test")
+    client = get_deepseek_client(test_settings, "sk-settings-test")
 
     assert captured["model"] == "deepseek-v4-flash"
     assert captured["base_url"] == "https://api.deepseek.com"
@@ -188,6 +188,7 @@ def test_deepseek_client_disables_thinking_and_caps_output(test_settings, monkey
         "thinking": {"type": "disabled"},
         "max_tokens": DEEPSEEK_MAX_TOKENS,
     }
+    assert client.allow_mock_fallback is False
 
 
 def test_structured_output_uses_provider_compatible_function_calling() -> None:
