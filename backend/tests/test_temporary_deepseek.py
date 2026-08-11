@@ -4,6 +4,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.agent.llm import DEEPSEEK_MAX_TOKENS, MockLLMClient, OpenAICompatibleLLMClient
@@ -221,7 +222,235 @@ def test_structured_output_uses_provider_compatible_function_calling() -> None:
     result = llm._invoke_structured(FakePrompt(), DummyOutput, {}, DummyOutput)
 
     assert isinstance(result, DummyOutput)
-    assert captured == {"schema": DummyOutput, "method": "function_calling"}
+    assert captured == {
+        "schema": DummyOutput,
+        "method": "function_calling",
+        "include_raw": True,
+    }
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        '```json\n{"count": "3"}\n```',
+        'Result follows: {"count": 3} end.',
+        '{"count": 3}',
+    ],
+)
+def test_structured_output_recovers_plain_json_variants(content: str) -> None:
+    class Output(BaseModel):
+        count: int
+        optional_note: str | None = None
+
+    class Message:
+        def __init__(self, value: str):
+            self.content = value
+
+    class Chain:
+        def invoke(self, _inputs):
+            return {"raw": Message(content), "parsed": None, "parsing_error": ValueError()}
+
+    class Prompt:
+        def __or__(self, _other):
+            return Chain()
+
+    class Model:
+        def with_structured_output(self, _schema, **_kwargs):
+            return object()
+
+    llm = object.__new__(OpenAICompatibleLLMClient)
+    llm.model = Model()
+    llm.last_used_fallback = False
+    llm.allow_mock_fallback = False
+    llm.provider_name = "deepseek"
+    llm.structured_output_method = "function_calling"
+
+    assert llm._invoke_structured(Prompt(), Output, {}, Output).count == 3
+
+
+def test_structured_output_extracts_function_call_arguments_before_message_dump() -> None:
+    class Output(BaseModel):
+        count: int
+
+    class Message:
+        def __init__(self):
+            self.content = ""
+            self.tool_calls = [{"name": "Output", "args": {"count": "3"}}]
+            self.additional_kwargs = {}
+
+        def model_dump(self):
+            return {"content": "", "irrelevant": "x" * 10_000}
+
+    class Chain:
+        def invoke(self, _inputs):
+            return {"raw": Message(), "parsed": None, "parsing_error": ValueError("parse")}
+
+    class Prompt:
+        def __or__(self, _other):
+            return Chain()
+
+    class Model:
+        def with_structured_output(self, _schema, **_kwargs):
+            return object()
+
+    llm = object.__new__(OpenAICompatibleLLMClient)
+    llm.model = Model()
+    llm.last_used_fallback = False
+    llm.allow_mock_fallback = False
+    llm.provider_name = "deepseek"
+    llm.structured_output_method = "function_calling"
+
+    assert llm._invoke_structured(Prompt(), Output, {}, Output).count == 3
+    assert llm.last_structured_diagnostic["outcome"] == "json_recovery"
+
+
+def test_structured_output_uses_one_schema_repair_retry(monkeypatch) -> None:
+    class Output(BaseModel):
+        count: int
+
+    class Message:
+        def __init__(self, value: str):
+            self.content = value
+
+    class InitialChain:
+        def invoke(self, _inputs):
+            return {"raw": Message('{"count":'), "parsed": None, "parsing_error": ValueError()}
+
+    class RepairChain:
+        def invoke(self, inputs):
+            assert "Expected JSON schema" not in inputs["objective"]
+            return Message('{"count": 4}')
+
+    class InitialPrompt:
+        def __or__(self, _other):
+            return InitialChain()
+
+    class RepairPrompt:
+        def __or__(self, _other):
+            return RepairChain()
+
+    class Model:
+        def with_structured_output(self, _schema, **_kwargs):
+            return object()
+
+        def bind(self, **_kwargs):
+            return object()
+
+    monkeypatch.setattr("app.agent.llm.STRUCTURED_REPAIR_PROMPT", RepairPrompt())
+    llm = object.__new__(OpenAICompatibleLLMClient)
+    llm.model = Model()
+    llm.last_used_fallback = False
+    llm.allow_mock_fallback = False
+    llm.provider_name = "deepseek"
+    llm.structured_output_method = "function_calling"
+
+    assert llm._invoke_structured(InitialPrompt(), Output, {"goal": "format"}, Output).count == 4
+    assert llm.last_structured_diagnostic["structured_stage"] == "Output"
+    assert llm.last_structured_diagnostic["outcome"] == "schema_repair"
+
+
+@pytest.mark.parametrize("content", ["{'count': '3',}", "prefix {'count': 3,} suffix"])
+def test_structured_output_normalizes_minor_json_syntax_without_model_repair(content: str) -> None:
+    class Output(BaseModel):
+        count: int
+
+    class Message:
+        def __init__(self, value: str):
+            self.content = value
+
+    class Chain:
+        def invoke(self, _inputs):
+            return {"raw": Message(content), "parsed": None, "parsing_error": ValueError("parse")}
+
+    class Prompt:
+        def __or__(self, _other):
+            return Chain()
+
+    class Model:
+        def with_structured_output(self, _schema, **_kwargs):
+            return object()
+
+    llm = object.__new__(OpenAICompatibleLLMClient)
+    llm.model = Model()
+    llm.last_used_fallback = False
+    llm.allow_mock_fallback = False
+    llm.provider_name = "deepseek"
+    llm.structured_output_method = "function_calling"
+
+    assert llm._invoke_structured(Prompt(), Output, {}, Output).count == 3
+    assert llm.last_structured_diagnostic["outcome"] == "json_normalization"
+    assert llm.last_structured_diagnostic["first_parse_error"]
+    assert llm.last_structured_diagnostic["recovery_parse_error"]
+
+
+@pytest.mark.parametrize("content", ['[{"count": 3}]', '{"Output": {"count": 3}}'])
+def test_structured_output_normalizes_single_item_and_named_wrappers(content: str) -> None:
+    class Output(BaseModel):
+        count: int
+
+    class Message:
+        def __init__(self):
+            self.content = content
+
+    class Chain:
+        def invoke(self, _inputs):
+            return {"raw": Message(), "parsed": None, "parsing_error": ValueError("parse")}
+
+    class Prompt:
+        def __or__(self, _other):
+            return Chain()
+
+    class Model:
+        def with_structured_output(self, _schema, **_kwargs):
+            return object()
+
+    llm = object.__new__(OpenAICompatibleLLMClient)
+    llm.model = Model()
+    llm.last_used_fallback = False
+    llm.allow_mock_fallback = False
+    llm.provider_name = "deepseek"
+    llm.structured_output_method = "function_calling"
+
+    assert llm._invoke_structured(Prompt(), Output, {}, Output).count == 3
+    assert llm.last_structured_diagnostic["outcome"] == "json_recovery"
+
+
+def test_structured_failure_reports_schema_stage_without_prompt_data() -> None:
+    class Output(BaseModel):
+        count: int
+
+    class Message:
+        content = "not json"
+
+    class Chain:
+        def invoke(self, _inputs):
+            return {"raw": Message(), "parsed": None, "parsing_error": ValueError("parse")}
+
+    class Prompt:
+        def __or__(self, _other):
+            return Chain()
+
+    class Model:
+        def with_structured_output(self, _schema, **_kwargs):
+            return object()
+
+        def bind(self, **_kwargs):
+            return object()
+
+    llm = object.__new__(OpenAICompatibleLLMClient)
+    llm.model = Model()
+    llm.last_used_fallback = False
+    llm.allow_mock_fallback = False
+    llm.provider_name = "deepseek"
+    llm.structured_output_method = "function_calling"
+
+    with pytest.raises(AppError) as caught:
+        llm._invoke_structured(Prompt(), Output, {"secret": "must-not-appear"}, Output)
+
+    assert caught.value.error_type == "llm_invalid_output"
+    assert caught.value.details["structured_stage"] == "Output"
+    assert caught.value.details["first_parse_error"] == "ValueError"
+    assert "must-not-appear" not in caught.value.message
 
 
 @pytest.mark.parametrize(

@@ -1,0 +1,23 @@
+{
+  "id": "V2-EMP-05",
+  "status": null,
+  "mode": null,
+  "provider": "deepseek",
+  "used_fallback": null,
+  "sql_calls": 0,
+  "evidence_count": 0,
+  "structured_502": true,
+  "latency_ms": 66823.1,
+  "result": {
+    "error": {
+      "type": "llm_invalid_output",
+      "message": "The model returned invalid structured output for FinalAnalysis.",
+      "details": {
+        "structured_stage": "FinalAnalysis",
+        "first_parse_error": "OutputParserException",
+        "recovery_parse_error": "ValidationError: :model_type",
+        "schema_repair_error": "ValidationError: :model_type"
+      }
+    }
+  }
+}

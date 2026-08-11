@@ -1,0 +1,678 @@
+{
+  "version": 2,
+  "label": "Original 12 Round 2 regression",
+  "completed": 12,
+  "score": 9,
+  "results": [
+    {
+      "id": "R-01",
+      "dataset": "sales",
+      "question": "Enterprise 客户中，哪个产品贡献的总收入最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT product, SUM(revenue) AS total_revenue FROM sales WHERE customer_segment = 'Enterprise' GROUP BY product ORDER BY total_revenue DESC LIMIT 1",
+      "rows": [
+        {
+          "product": "Team Training",
+          "total_revenue": 62016.29
+        }
+      ],
+      "oracle_rows": [
+        {
+          "product": "Team Training",
+          "total_revenue": 62016.29
+        }
+      ],
+      "passed": true,
+      "latency_ms": 10182.3,
+      "error": null
+    },
+    {
+      "id": "R-02",
+      "dataset": "sales",
+      "question": "哪个客户分群的平均单笔收入最高？请按从高到低列出所有分群。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT customer_segment, AVG(revenue) AS avg_revenue_per_order FROM sales GROUP BY customer_segment ORDER BY avg_revenue_per_order DESC LIMIT 100",
+      "rows": [
+        {
+          "customer_segment": "Enterprise",
+          "avg_revenue_per_order": 1362.467591240876
+        },
+        {
+          "customer_segment": "Mid-Market",
+          "avg_revenue_per_order": 1242.7316666666666
+        },
+        {
+          "customer_segment": "SMB",
+          "avg_revenue_per_order": 1213.6786792452829
+        }
+      ],
+      "oracle_rows": [
+        {
+          "customer_segment": "Enterprise",
+          "avg_revenue_per_order": 1362.467591240876
+        },
+        {
+          "customer_segment": "Mid-Market",
+          "avg_revenue_per_order": 1242.7316666666666
+        },
+        {
+          "customer_segment": "SMB",
+          "avg_revenue_per_order": 1213.6786792452829
+        }
+      ],
+      "passed": true,
+      "latency_ms": 7344.8,
+      "error": null
+    },
+    {
+      "id": "R-03",
+      "dataset": "sales",
+      "question": "最近两个月的收入变化主要来自销售数量变化，还是平均单价变化？分别给出变化幅度。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "WITH monthly AS (SELECT SUBSTRING(order_date, 1, 7) AS month, SUM(quantity) AS total_quantity, SUM(revenue) AS total_revenue, SUM(revenue) / SUM(quantity) AS avg_unit_price FROM sales GROUP BY SUBSTRING(order_date, 1, 7)), ranked AS (SELECT month, total_quantity, total_revenue, avg_unit_price, ROW_NUMBER() OVER (ORDER BY month DESC) AS rn FROM monthly), current_month AS (SELECT * FROM ranked WHERE rn = 1), previous_month AS (SELECT * FROM ranked WHERE rn = 2) SELECT (c.total_revenue - p.total_revenue) AS revenue_change, (c.total_quantity - p.total_quantity) AS quantity_change, (c.avg_unit_price - p.avg_unit_price) AS unit_price_change, (c.total_quantity - p.total_quantity) * p.avg_unit_price AS revenue_change_from_quantity, (c.avg_unit_price - p.avg_unit_price) * c.total_quantity AS revenue_change_from_unit_price FROM current_month AS c CROSS JOIN previous_month AS p LIMIT 100",
+      "rows": [
+        {
+          "revenue_change": -379.8100000000013,
+          "quantity_change": -3,
+          "unit_price_change": 5.348670004885207,
+          "revenue_change_from_quantity": -855.8416304347827,
+          "revenue_change_from_unit_price": 476.03163043478344
+        }
+      ],
+      "oracle_rows": [
+        {
+          "current_month": "2025-12",
+          "previous_month": "2025-11",
+          "revenue_change": -379.8100000000013,
+          "quantity_effect": -855.8416304347827,
+          "price_effect": 476.03163043478344,
+          "quantity_effect_pct": 225.33,
+          "price_effect_pct": -125.33
+        }
+      ],
+      "passed": false,
+      "latency_ms": 10951.2,
+      "error": null
+    },
+    {
+      "id": "R-04",
+      "dataset": "employees",
+      "question": "哪个岗位的平均绩效分数最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT role, AVG(performance_score) AS avg_performance_score FROM employees GROUP BY role ORDER BY avg_performance_score DESC LIMIT 1",
+      "rows": [
+        {
+          "role": "Accountant",
+          "avg_performance_score": 4.3100000000000005
+        }
+      ],
+      "oracle_rows": [
+        {
+          "role": "Accountant",
+          "avg_performance_score": 4.3100000000000005
+        }
+      ],
+      "passed": true,
+      "latency_ms": 7018.0,
+      "error": null
+    },
+    {
+      "id": "R-05",
+      "dataset": "employees",
+      "question": "各工作地点的平均薪资和平均绩效分别是多少？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT location, AVG(salary) AS avg_salary, AVG(performance_score) AS avg_performance_score FROM employees GROUP BY location ORDER BY avg_salary DESC LIMIT 100",
+      "rows": [
+        {
+          "location": "Remote",
+          "avg_salary": 136584.07894736843,
+          "avg_performance_score": 3.7342105263157896
+        },
+        {
+          "location": "Beijing",
+          "avg_salary": 130853.09677419355,
+          "avg_performance_score": 3.664516129032258
+        },
+        {
+          "location": "Shanghai",
+          "avg_salary": 126728.12121212122,
+          "avg_performance_score": 3.8484848484848486
+        },
+        {
+          "location": "Shenzhen",
+          "avg_salary": 125908.52173913043,
+          "avg_performance_score": 3.8304347826086955
+        },
+        {
+          "location": "Singapore",
+          "avg_salary": 124425.25,
+          "avg_performance_score": 3.746875
+        }
+      ],
+      "oracle_rows": [
+        {
+          "location": "Remote",
+          "avg_salary": 136584.07894736843,
+          "avg_performance_score": 3.7342105263157896
+        },
+        {
+          "location": "Beijing",
+          "avg_salary": 130853.09677419355,
+          "avg_performance_score": 3.664516129032258
+        },
+        {
+          "location": "Shanghai",
+          "avg_salary": 126728.12121212122,
+          "avg_performance_score": 3.8484848484848486
+        },
+        {
+          "location": "Shenzhen",
+          "avg_salary": 125908.52173913043,
+          "avg_performance_score": 3.8304347826086955
+        },
+        {
+          "location": "Singapore",
+          "avg_salary": 124425.25,
+          "avg_performance_score": 3.746875
+        }
+      ],
+      "passed": true,
+      "latency_ms": 8348.7,
+      "error": null
+    },
+    {
+      "id": "R-06",
+      "dataset": "employees",
+      "question": "各部门中，高流失风险员工占比最高的是哪个部门？请给出完整排名。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT department, COUNT(*) AS total_employees, SUM(CASE WHEN attrition_risk = 'High' THEN 1 ELSE 0 END) AS high_risk_count, ROUND(100.0 * SUM(CASE WHEN attrition_risk = 'High' THEN 1 ELSE 0 END) / COUNT(*), 2) AS high_risk_pct FROM employees GROUP BY department ORDER BY high_risk_pct DESC, total_employees DESC LIMIT 100",
+      "rows": [
+        {
+          "department": "Finance",
+          "total_employees": 33,
+          "high_risk_count": 6,
+          "high_risk_pct": 18.18
+        },
+        {
+          "department": "Sales",
+          "total_employees": 39,
+          "high_risk_count": 6,
+          "high_risk_pct": 15.38
+        },
+        {
+          "department": "Marketing",
+          "total_employees": 32,
+          "high_risk_count": 3,
+          "high_risk_pct": 9.38
+        },
+        {
+          "department": "Engineering",
+          "total_employees": 45,
+          "high_risk_count": 4,
+          "high_risk_pct": 8.89
+        },
+        {
+          "department": "Operations",
+          "total_employees": 31,
+          "high_risk_count": 1,
+          "high_risk_pct": 3.23
+        }
+      ],
+      "oracle_rows": [
+        {
+          "department": "Finance",
+          "total_employees": 33,
+          "high_risk_employees": 6,
+          "high_risk_pct": 18.18
+        },
+        {
+          "department": "Sales",
+          "total_employees": 39,
+          "high_risk_employees": 6,
+          "high_risk_pct": 15.38
+        },
+        {
+          "department": "Marketing",
+          "total_employees": 32,
+          "high_risk_employees": 3,
+          "high_risk_pct": 9.38
+        },
+        {
+          "department": "Engineering",
+          "total_employees": 45,
+          "high_risk_employees": 4,
+          "high_risk_pct": 8.89
+        },
+        {
+          "department": "Operations",
+          "total_employees": 31,
+          "high_risk_employees": 1,
+          "high_risk_pct": 3.23
+        }
+      ],
+      "passed": false,
+      "latency_ms": 8563.0,
+      "error": null
+    },
+    {
+      "id": "R-07",
+      "dataset": "subscriptions",
+      "question": "哪个国家的客户流失率最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT country, COUNT(*) AS total_customers, SUM(churned) AS churned_customers, ROUND(SUM(churned) * 100.0 / COUNT(*), 2) AS churn_rate_pct FROM subscriptions GROUP BY country ORDER BY churn_rate_pct DESC LIMIT 100",
+      "rows": [
+        {
+          "country": "Australia",
+          "total_customers": 56,
+          "churned_customers": 15,
+          "churn_rate_pct": 26.79
+        },
+        {
+          "country": "Singapore",
+          "total_customers": 61,
+          "churned_customers": 16,
+          "churn_rate_pct": 26.23
+        },
+        {
+          "country": "Germany",
+          "total_customers": 59,
+          "churned_customers": 15,
+          "churn_rate_pct": 25.42
+        },
+        {
+          "country": "Japan",
+          "total_customers": 68,
+          "churned_customers": 17,
+          "churn_rate_pct": 25.0
+        },
+        {
+          "country": "United States",
+          "total_customers": 58,
+          "churned_customers": 13,
+          "churn_rate_pct": 22.41
+        },
+        {
+          "country": "China",
+          "total_customers": 58,
+          "churned_customers": 11,
+          "churn_rate_pct": 18.97
+        }
+      ],
+      "oracle_rows": [
+        {
+          "country": "Australia",
+          "total_customers": 56,
+          "churned_customers": 15,
+          "churn_rate_pct": 26.79
+        },
+        {
+          "country": "Singapore",
+          "total_customers": 61,
+          "churned_customers": 16,
+          "churn_rate_pct": 26.23
+        },
+        {
+          "country": "Germany",
+          "total_customers": 59,
+          "churned_customers": 15,
+          "churn_rate_pct": 25.42
+        },
+        {
+          "country": "Japan",
+          "total_customers": 68,
+          "churned_customers": 17,
+          "churn_rate_pct": 25.0
+        },
+        {
+          "country": "United States",
+          "total_customers": 58,
+          "churned_customers": 13,
+          "churn_rate_pct": 22.41
+        },
+        {
+          "country": "China",
+          "total_customers": 58,
+          "churned_customers": 11,
+          "churn_rate_pct": 18.97
+        }
+      ],
+      "passed": true,
+      "latency_ms": 7864.3,
+      "error": null
+    },
+    {
+      "id": "R-08",
+      "dataset": "subscriptions",
+      "question": "各套餐的平均 MRR 分别是多少？哪个最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT plan, AVG(mrr) AS avg_mrr FROM subscriptions GROUP BY plan ORDER BY avg_mrr DESC LIMIT 100",
+      "rows": [
+        {
+          "plan": "Enterprise",
+          "avg_mrr": 899.0
+        },
+        {
+          "plan": "Scale",
+          "avg_mrr": 399.0
+        },
+        {
+          "plan": "Growth",
+          "avg_mrr": 149.0
+        },
+        {
+          "plan": "Starter",
+          "avg_mrr": 49.0
+        }
+      ],
+      "oracle_rows": [
+        {
+          "plan": "Enterprise",
+          "avg_mrr": 899.0
+        },
+        {
+          "plan": "Scale",
+          "avg_mrr": 399.0
+        },
+        {
+          "plan": "Growth",
+          "avg_mrr": 149.0
+        },
+        {
+          "plan": "Starter",
+          "avg_mrr": 49.0
+        }
+      ],
+      "passed": true,
+      "latency_ms": 7690.2,
+      "error": null
+    },
+    {
+      "id": "R-09",
+      "dataset": "subscriptions",
+      "question": "不同获客渠道中，当前活跃客户的平均 MRR 哪个最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT acquisition_channel, AVG(mrr) AS avg_mrr FROM subscriptions WHERE status = 'Active' GROUP BY acquisition_channel ORDER BY avg_mrr DESC LIMIT 100",
+      "rows": [
+        {
+          "acquisition_channel": "Outbound",
+          "avg_mrr": 326.96610169491527
+        },
+        {
+          "acquisition_channel": "Organic",
+          "avg_mrr": 289.1515151515151
+        },
+        {
+          "acquisition_channel": "Referral",
+          "avg_mrr": 265.0377358490566
+        },
+        {
+          "acquisition_channel": "Partner",
+          "avg_mrr": 263.5833333333333
+        },
+        {
+          "acquisition_channel": "Paid Search",
+          "avg_mrr": 231.9787234042553
+        }
+      ],
+      "oracle_rows": [
+        {
+          "acquisition_channel": "Outbound",
+          "avg_mrr": 326.96610169491527
+        },
+        {
+          "acquisition_channel": "Organic",
+          "avg_mrr": 289.1515151515151
+        },
+        {
+          "acquisition_channel": "Referral",
+          "avg_mrr": 265.0377358490566
+        },
+        {
+          "acquisition_channel": "Partner",
+          "avg_mrr": 263.5833333333333
+        },
+        {
+          "acquisition_channel": "Paid Search",
+          "avg_mrr": 231.9787234042553
+        }
+      ],
+      "passed": true,
+      "latency_ms": 9078.5,
+      "error": null
+    },
+    {
+      "id": "R-10",
+      "dataset": "commerce",
+      "question": "哪种支付方式的平均订单金额最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT o.payment_method, AVG(ot.order_total) AS avg_order_value FROM (SELECT oi.order_id, SUM(oi.line_revenue) AS order_total FROM order_items AS oi GROUP BY oi.order_id) AS ot JOIN orders AS o ON o.id = ot.order_id GROUP BY o.payment_method ORDER BY avg_order_value DESC LIMIT 100",
+      "rows": [
+        {
+          "payment_method": "Bank Transfer",
+          "avg_order_value": 3258.8260112359553
+        },
+        {
+          "payment_method": "Wallet",
+          "avg_order_value": 3230.7121839080464
+        },
+        {
+          "payment_method": "Card",
+          "avg_order_value": 3196.298988095238
+        }
+      ],
+      "oracle_rows": [
+        {
+          "payment_method": "Bank Transfer",
+          "avg_order_value": 3258.8260112359553
+        },
+        {
+          "payment_method": "Wallet",
+          "avg_order_value": 3230.7121839080464
+        },
+        {
+          "payment_method": "Card",
+          "avg_order_value": 3196.298988095238
+        }
+      ],
+      "passed": true,
+      "latency_ms": 9730.2,
+      "error": null
+    },
+    {
+      "id": "R-11",
+      "dataset": "commerce",
+      "question": "各城市的订单数量和平均订单金额分别是多少？找出订单量高但平均订单金额最低的城市。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "WITH order_totals AS (SELECT oi.order_id, SUM(oi.line_revenue) AS order_revenue FROM order_items AS oi GROUP BY oi.order_id), city_orders AS (SELECT c.city, COUNT(DISTINCT o.id) AS order_count, SUM(ot.order_revenue) AS total_revenue FROM customers AS c JOIN orders AS o ON o.customer_id = c.id JOIN order_totals AS ot ON ot.order_id = o.id GROUP BY c.city) SELECT city, order_count, ROUND(total_revenue / order_count, 2) AS avg_order_value FROM city_orders ORDER BY order_count DESC, avg_order_value ASC LIMIT 100",
+      "rows": [
+        {
+          "city": "Shenzhen",
+          "order_count": 114,
+          "avg_order_value": 3290.07
+        },
+        {
+          "city": "Chengdu",
+          "order_count": 92,
+          "avg_order_value": 3345.19
+        },
+        {
+          "city": "Beijing",
+          "order_count": 89,
+          "avg_order_value": 2946.23
+        },
+        {
+          "city": "Shanghai",
+          "order_count": 89,
+          "avg_order_value": 3525.35
+        },
+        {
+          "city": "Tokyo",
+          "order_count": 73,
+          "avg_order_value": 2965.93
+        },
+        {
+          "city": "Singapore",
+          "order_count": 63,
+          "avg_order_value": 3236.27
+        }
+      ],
+      "oracle_rows": [
+        {
+          "city": "Shenzhen",
+          "order_count": 114,
+          "avg_order_value": 3290.07
+        },
+        {
+          "city": "Chengdu",
+          "order_count": 92,
+          "avg_order_value": 3345.19
+        },
+        {
+          "city": "Beijing",
+          "order_count": 89,
+          "avg_order_value": 2946.23
+        },
+        {
+          "city": "Shanghai",
+          "order_count": 89,
+          "avg_order_value": 3525.35
+        },
+        {
+          "city": "Tokyo",
+          "order_count": 73,
+          "avg_order_value": 2965.93
+        },
+        {
+          "city": "Singapore",
+          "order_count": 63,
+          "avg_order_value": 3236.27
+        }
+      ],
+      "passed": true,
+      "latency_ms": 9606.0,
+      "error": null
+    },
+    {
+      "id": "R-12",
+      "dataset": "commerce",
+      "question": "各产品类别的总收入、退款金额和退款金额占收入比例分别是多少？哪个类别退款比例最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "WITH refunds_by_order AS (SELECT order_id, SUM(refund_amount) AS order_refund_amount FROM refunds GROUP BY order_id), order_refunds AS (SELECT oi.order_id, oi.product_id, oi.line_revenue, COALESCE(ro.order_refund_amount, 0) AS order_refund_amount FROM order_items AS oi LEFT JOIN refunds_by_order AS ro ON ro.order_id = oi.order_id), allocated AS (SELECT p.category, oi.line_revenue, oi.order_refund_amount * oi.line_revenue / NULLIF(SUM(oi.line_revenue) OVER (PARTITION BY oi.order_id), 0) AS allocated_refund FROM order_refunds AS oi JOIN products AS p ON p.id = oi.product_id) SELECT category, SUM(line_revenue) AS total_revenue, COALESCE(SUM(allocated_refund), 0) AS total_refund_amount, ROUND(COALESCE(SUM(allocated_refund), 0) * 100.0 / NULLIF(SUM(line_revenue), 0), 2) AS refund_rate_pct FROM allocated GROUP BY category ORDER BY refund_rate_pct DESC LIMIT 100",
+      "rows": [
+        {
+          "category": "Networking",
+          "total_revenue": 133366.19,
+          "total_refund_amount": 15341.69069750295,
+          "refund_rate_pct": 11.5
+        },
+        {
+          "category": "Audio",
+          "total_revenue": 124868.29,
+          "total_refund_amount": 13861.337843226294,
+          "refund_rate_pct": 11.1
+        },
+        {
+          "category": "Accessories",
+          "total_revenue": 112258.16,
+          "total_refund_amount": 9847.760336735018,
+          "refund_rate_pct": 8.77
+        },
+        {
+          "category": "Video",
+          "total_revenue": 350132.22000000003,
+          "total_refund_amount": 29087.68306734786,
+          "refund_rate_pct": 8.31
+        },
+        {
+          "category": "Displays",
+          "total_revenue": 215882.2,
+          "total_refund_amount": 13539.331039673845,
+          "refund_rate_pct": 6.27
+        },
+        {
+          "category": "Computing",
+          "total_revenue": 742686.12,
+          "total_refund_amount": 45314.66701551403,
+          "refund_rate_pct": 6.1
+        }
+      ],
+      "oracle_rows": [
+        {
+          "category": "Networking",
+          "total_revenue": 133366.19,
+          "total_refund_amount": 15341.69069750295,
+          "refund_ratio_pct": 11.5
+        },
+        {
+          "category": "Audio",
+          "total_revenue": 124868.29,
+          "total_refund_amount": 13861.337843226294,
+          "refund_ratio_pct": 11.1
+        },
+        {
+          "category": "Accessories",
+          "total_revenue": 112258.16,
+          "total_refund_amount": 9847.760336735018,
+          "refund_ratio_pct": 8.77
+        },
+        {
+          "category": "Video",
+          "total_revenue": 350132.22000000003,
+          "total_refund_amount": 29087.683067347865,
+          "refund_ratio_pct": 8.31
+        },
+        {
+          "category": "Displays",
+          "total_revenue": 215882.2,
+          "total_refund_amount": 13539.331039673845,
+          "refund_ratio_pct": 6.27
+        },
+        {
+          "category": "Computing",
+          "total_revenue": 742686.12,
+          "total_refund_amount": 45314.66701551403,
+          "refund_ratio_pct": 6.1
+        }
+      ],
+      "passed": false,
+      "latency_ms": 13581.6,
+      "error": null
+    }
+  ]
+}

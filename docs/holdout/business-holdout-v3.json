@@ -1,0 +1,180 @@
+{
+  "version": 3,
+  "label": "Frozen Business Holdout V3",
+  "rules": {
+    "first_attempt_only": true,
+    "provider": "deepseek",
+    "used_fallback": false,
+    "production_code_frozen_after_sha": true
+  },
+  "cases": [
+    {
+      "id": "V3-SAL-01",
+      "dataset": "sales",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各地区的 Support Plus 收入占本地区总收入的比例是多少？按比例从高到低列出。",
+      "oracle_sql": "SELECT region, ROUND(SUM(CASE WHEN product = 'Support Plus' THEN revenue ELSE 0 END), 2) AS support_plus_revenue, ROUND(SUM(revenue), 2) AS region_revenue, ROUND(100.0 * SUM(CASE WHEN product = 'Support Plus' THEN revenue ELSE 0 END) / SUM(revenue), 2) AS revenue_share_pct FROM sales GROUP BY region ORDER BY revenue_share_pct DESC"
+    },
+    {
+      "id": "V3-SAL-02",
+      "dataset": "sales",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "南部地区在2024年每个月销售了多少种不同产品、总销量和总收入？按月份排列。",
+      "oracle_sql": "SELECT substr(order_date, 1, 7) AS month, COUNT(DISTINCT product) AS distinct_products, SUM(quantity) AS total_quantity, ROUND(SUM(revenue), 2) AS total_revenue FROM sales WHERE region = 'South' AND substr(order_date, 1, 4) = '2024' GROUP BY substr(order_date, 1, 7) ORDER BY month"
+    },
+    {
+      "id": "V3-EMP-01",
+      "dataset": "employees",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "哪些岗位分布在最多的不同工作地点？列出全部岗位的地点数和员工人数并按地点数降序。",
+      "oracle_sql": "SELECT role, COUNT(DISTINCT location) AS location_count, COUNT(*) AS employee_count FROM employees GROUP BY role ORDER BY location_count DESC, employee_count DESC, role"
+    },
+    {
+      "id": "V3-EMP-02",
+      "dataset": "employees",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各部门绩效不低于4.5的员工占比和这些员工的平均薪资分别是多少？按占比降序。",
+      "oracle_sql": "SELECT department, ROUND(100.0 * SUM(CASE WHEN performance_score >= 4.5 THEN 1 ELSE 0 END) / COUNT(*), 2) AS high_performer_pct, ROUND(AVG(CASE WHEN performance_score >= 4.5 THEN salary END), 2) AS high_performer_avg_salary FROM employees GROUP BY department ORDER BY high_performer_pct DESC, department"
+    },
+    {
+      "id": "V3-SUB-01",
+      "dataset": "subscriptions",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各套餐中暂停状态客户的数量、MRR总额及其占套餐总MRR的比例是多少？按比例降序。",
+      "oracle_sql": "SELECT plan, SUM(CASE WHEN status = 'Paused' THEN 1 ELSE 0 END) AS paused_customers, ROUND(SUM(CASE WHEN status = 'Paused' THEN mrr ELSE 0 END), 2) AS paused_mrr, ROUND(100.0 * SUM(CASE WHEN status = 'Paused' THEN mrr ELSE 0 END) / SUM(mrr), 2) AS paused_mrr_share_pct FROM subscriptions GROUP BY plan ORDER BY paused_mrr_share_pct DESC, plan"
+    },
+    {
+      "id": "V3-SUB-02",
+      "dataset": "subscriptions",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "哪个注册月份带来的新客户MRR总额最高？如果并列全部返回，并给出客户数。",
+      "oracle_sql": "WITH monthly AS (SELECT substr(signup_date, 1, 7) AS signup_month, COUNT(*) AS customer_count, SUM(mrr) AS total_mrr FROM subscriptions GROUP BY substr(signup_date, 1, 7)), ranked AS (SELECT *, DENSE_RANK() OVER (ORDER BY total_mrr DESC) AS rnk FROM monthly) SELECT signup_month, customer_count, ROUND(total_mrr, 2) AS total_mrr FROM ranked WHERE rnk = 1 ORDER BY signup_month"
+    },
+    {
+      "id": "V3-COM-01",
+      "dataset": "commerce",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "每个产品类别中销量最高的具体产品是什么？并列时全部返回，并给出销量。",
+      "oracle_sql": "WITH grouped AS (SELECT p.category, p.product_name, SUM(oi.quantity) AS total_quantity FROM products p JOIN order_items oi ON oi.product_id = p.id GROUP BY p.category, p.product_name), ranked AS (SELECT *, DENSE_RANK() OVER (PARTITION BY category ORDER BY total_quantity DESC) AS rnk FROM grouped) SELECT category, product_name, total_quantity FROM ranked WHERE rnk = 1 ORDER BY category, product_name"
+    },
+    {
+      "id": "V3-COM-02",
+      "dataset": "commerce",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "不同客户分群和销售渠道组合的订单数及每单平均收入是多少？按订单数降序列出。",
+      "oracle_sql": "WITH order_totals AS (SELECT o.id AS order_id, c.segment, o.sales_channel, SUM(oi.line_revenue) AS order_revenue FROM orders o JOIN customers c ON c.id = o.customer_id JOIN order_items oi ON oi.order_id = o.id GROUP BY o.id, c.segment, o.sales_channel) SELECT segment, sales_channel, COUNT(*) AS order_count, ROUND(AVG(order_revenue), 2) AS avg_order_revenue FROM order_totals GROUP BY segment, sales_channel ORDER BY order_count DESC, segment, sales_channel"
+    },
+    {
+      "id": "V3-SAL-03",
+      "dataset": "sales",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个产品对单一地区的收入依赖最强？确认产品后，继续调查客户分群和销售渠道是否加剧这种依赖。"
+    },
+    {
+      "id": "V3-SAL-04",
+      "dataset": "sales",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "找出收入最高的单个月份，并继续调查该月的客户分群与产品类别组合为何与其他月份不同。"
+    },
+    {
+      "id": "V3-EMP-03",
+      "dataset": "employees",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "不同入职时期的绩效差异是否集中在某些工作地点？先比较入职年份，再沿差异最大的年份调查地点和岗位。仅用聚合。"
+    },
+    {
+      "id": "V3-EMP-04",
+      "dataset": "employees",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "高流失风险是否集中在特定薪资区间？识别最突出的区间后，继续比较其中的岗位和部门。禁止个人明细。"
+    },
+    {
+      "id": "V3-SUB-03",
+      "dataset": "subscriptions",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "活跃客户MRR是否过度集中在少数国家？确认集中程度后，继续调查套餐和获客渠道构成。"
+    },
+    {
+      "id": "V3-SUB-04",
+      "dataset": "subscriptions",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "不同套餐从注册到流失的平均持续时间差异多大？找出持续时间最短的套餐后，继续调查国家和获客渠道。"
+    },
+    {
+      "id": "V3-COM-03",
+      "dataset": "commerce",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "订单状态是否与支付方式存在明显关联？先识别最异常的组合，再调查销售渠道和城市构成。"
+    },
+    {
+      "id": "V3-COM-04",
+      "dataset": "commerce",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "下单频次最高的客户群体是否也贡献最高的每客收入？先按客户聚合，再沿最突出分群调查城市和渠道。不得返回个人信息。"
+    },
+    {
+      "id": "V3-SAL-05",
+      "dataset": "sales",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "从销量与每件收入的组合关系出发，寻找最异常的业务分组，并根据证据选择地区、产品、渠道或客户分群继续调查。"
+    },
+    {
+      "id": "V3-EMP-05",
+      "dataset": "employees",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "探索部门与工作地点组合中的人员规模、薪资和绩效失衡，选择证据最强的组合继续按岗位或入职年份分析。仅用聚合。"
+    },
+    {
+      "id": "V3-SUB-05",
+      "dataset": "subscriptions",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "探索套餐与国家组合中的客户价值和状态结构异常，并依据第一步证据选择获客渠道或注册时间继续分析。"
+    },
+    {
+      "id": "V3-COM-05",
+      "dataset": "commerce",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "探索支付方式与销售渠道组合中的订单状态和收入异常，并依据证据选择城市、客户分群或产品类别继续调查。"
+    }
+  ]
+}

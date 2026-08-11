@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "question_file_sha256": "d6a6d31ad3e5461a085e434a2753f3cc3a1af81769e0492a681888a8ae2b2687",
+  "runs_per_case": 3,
+  "case_ids": [
+    "H-SAL-02",
+    "H-COM-02",
+    "H-SAL-03",
+    "H-SUB-03",
+    "H-COM-05"
+  ]
+}

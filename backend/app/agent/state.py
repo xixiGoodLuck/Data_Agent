@@ -21,6 +21,7 @@ class DataAnalysisState(TypedDict, total=False):
     active_analysis_question: str | None
     analysis_mode: Literal["simple_query", "investigative_analysis"]
     analysis_intent: dict[str, Any] | None
+    analysis_context: dict[str, Any] | None
     analysis_plan: dict[str, Any] | None
     current_analysis_step_id: str | None
     evidence_by_step: dict[str, dict[str, Any]]
@@ -35,6 +36,7 @@ class DataAnalysisState(TypedDict, total=False):
     conversation_history: list[dict[str, Any]]
 
     available_tables: list[str]
+    dataset_capability: dict[str, Any]
     selected_tables: list[str]
     selected_columns: list[str]
     dataset_schema: dict[str, Any]
@@ -56,12 +58,18 @@ class DataAnalysisState(TypedDict, total=False):
     columns: list[str]
     rows: list[dict[str, Any]]
     row_count: int
+    returned_row_count: int
+    is_truncated: bool
 
     chart: dict[str, Any] | None
     insight: str | None
     lineage: dict[str, Any] | None
 
     repair_attempts: int
+    validation_repair_attempts: int
+    execution_repair_attempts: int
+    repair_source: Literal["validation", "execution"] | None
+    grounding_repair_attempts: int
     used_fallback: bool
     llm_provider: str
     execution_outcome: str | None

@@ -11,6 +11,7 @@ from app.agent.routing import (
     route_approval,
     route_dataset,
     route_execution,
+    route_final_grounding,
     route_prompt_guard,
     route_risk,
     route_table_selection,
@@ -121,7 +122,11 @@ def build_analysis_graph(nodes: AnalysisNodes, checkpointer: Any) -> Any:
     )
     builder.add_edge("finish_analysis_node", "synthesize_final_analysis_node")
     builder.add_edge("synthesize_final_analysis_node", "validate_final_analysis_node")
-    builder.add_edge("validate_final_analysis_node", "select_supporting_charts_node")
+    builder.add_conditional_edges(
+        "validate_final_analysis_node",
+        route_final_grounding,
+        {"valid": "select_supporting_charts_node", "failed": "persist_result_node"},
+    )
     builder.add_edge("select_supporting_charts_node", "persist_result_node")
     builder.add_edge("plan_chart_node", "write_insight_node")
     builder.add_edge("write_insight_node", "persist_result_node")

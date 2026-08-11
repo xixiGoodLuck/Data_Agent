@@ -108,6 +108,38 @@ def test_validation_can_repair_a_repair_with_an_unknown_alias(
     assert len([event for event in body["trace"] if event["node_name"] == "repair_sql_node"]) == 4
 
 
+def test_validation_repair_has_a_hard_upper_bound(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    llm = client.app.state.llm_resolver.default_client
+    repairs = 0
+
+    def invalid_sql(*_args, **_kwargs):
+        return SqlGeneration(
+            sql="SELECT imaginary FROM sales",
+            explanation="Invalid column",
+            selected_columns=["sales.imaginary"],
+        )
+
+    def still_invalid(*_args, **_kwargs):
+        nonlocal repairs
+        repairs += 1
+        return SqlGeneration(
+            sql=f"SELECT imaginary_{repairs} FROM sales",
+            explanation="Still invalid",
+            selected_columns=[f"sales.imaginary_{repairs}"],
+        )
+
+    monkeypatch.setattr(llm, "generate_sql", invalid_sql)
+    monkeypatch.setattr(llm, "repair_sql", still_invalid)
+
+    body = ask(client, "sales", "What is total revenue?").json()
+
+    assert body["status"] == "blocked"
+    assert repairs == 2
+    assert body["error"]["type"] == "sql_safety_block"
+
+
 def test_trace_steps_are_ordered_and_all_nodes_emit_events(client: TestClient) -> None:
     trace = ask(client, "subscriptions", "What is total MRR by plan?").json()["trace"]
     assert [event["step_index"] for event in trace] == sorted(

@@ -15,6 +15,8 @@ class QueryExecutionResult(BaseModel):
     columns: list[str] = Field(default_factory=list)
     rows: list[dict[str, Any]] = Field(default_factory=list)
     row_count: int = 0
+    returned_row_count: int = 0
+    is_truncated: bool = False
     duration_ms: float = 0.0
     error_type: str | None = None
     error_message: str | None = None
@@ -61,6 +63,7 @@ def execute_read_only(
             )
             cursor = connection.execute(sql)
             fetched = cursor.fetchmany(max_rows + 1)
+            is_truncated = len(fetched) > max_rows
             rows = [
                 {key: _json_value(row[key]) for key in row.keys()} for row in fetched[:max_rows]
             ]
@@ -70,33 +73,36 @@ def execute_read_only(
             columns=columns,
             rows=rows,
             row_count=len(rows),
+            returned_row_count=len(rows),
+            is_truncated=is_truncated,
             duration_ms=round((time.perf_counter() - started) * 1000, 3),
         )
     except sqlite3.OperationalError as exc:
         message = str(exc).lower()
         timed_out = "interrupted" in message or time.perf_counter() > deadline
-        repairable = any(
-            marker in message
-            for marker in (
-                "no such function",
-                "ambiguous column",
-                "no such column",
-                "misuse of aggregate",
-            )
-        )
+        if "no such function" in message:
+            error_type = "unsupported_function"
+        elif "no such column" in message:
+            error_type = "unknown_column"
+        elif "ambiguous column" in message or "order by term does not match" in message:
+            error_type = "derived_scope_error"
+        elif "misuse of aggregate" in message:
+            error_type = "aggregate_fanout"
+        else:
+            error_type = "sqlite_execution_error"
         return QueryExecutionResult(
             success=False,
             duration_ms=round((time.perf_counter() - started) * 1000, 3),
-            error_type="query_timeout" if timed_out else "query_execution_error",
+            error_type="query_timeout" if timed_out else error_type,
             error_message="The query timed out."
             if timed_out
             else "SQLite could not execute the validated query.",
-            repairable=repairable and not timed_out,
+            repairable=not timed_out,
         )
     except sqlite3.DatabaseError:
         return QueryExecutionResult(
             success=False,
             duration_ms=round((time.perf_counter() - started) * 1000, 3),
-            error_type="query_execution_error",
+            error_type="sqlite_execution_error",
             error_message="SQLite could not execute the validated query.",
         )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from itertools import combinations
 from typing import Any
 
@@ -227,6 +228,49 @@ def _has_flat_sibling_aggregate_fanout(
     return False
 
 
+def _has_scoped_sibling_aggregate_fanout(
+    expression: exp.Expression, *, schema: dict[str, Any]
+) -> bool:
+    parents_by_child = {
+        table.lower(): {
+            foreign_key.get("to_table", "").lower()
+            for foreign_key in details.get("foreign_keys", [])
+            if foreign_key.get("to_table")
+        }
+        for table, details in schema.items()
+    }
+    for scope in traverse_scope(expression):
+        source_tables = {
+            alias.lower(): source.name.lower()
+            for alias, (_, source) in scope.selected_sources.items()
+            if isinstance(source, exp.Table)
+        }
+        aggregate_sources: list[set[str]] = []
+        for aggregate in scope.expression.find_all(exp.AggFunc):
+            if aggregate.find_ancestor(exp.Select) is not scope.expression:
+                continue
+            if isinstance(aggregate, exp.Count) and aggregate.find(exp.Distinct) is not None:
+                continue
+            tables = {
+                source_tables[column.table.lower()]
+                for column in aggregate.find_all(exp.Column)
+                if column.table and column.table.lower() in source_tables
+            }
+            if tables:
+                aggregate_sources.append(tables)
+        all_tables = set().union(*aggregate_sources) if aggregate_sources else set()
+        for left, right in combinations(sorted(all_tables), 2):
+            related = bool(
+                parents_by_child.get(left, set()) & parents_by_child.get(right, set())
+                or left in parents_by_child.get(right, set())
+                or right in parents_by_child.get(left, set())
+            )
+            combined_safely = any({left, right}.issubset(tables) for tables in aggregate_sources)
+            if related and not combined_safely:
+                return True
+    return False
+
+
 def _scope_unique_on(
     source: Scope | exp.Table,
     columns: set[str],
@@ -236,18 +280,63 @@ def _scope_unique_on(
     if not columns:
         return False
     if isinstance(source, Scope):
-        group = source.expression.args.get("group")
-        group_keys = {
-            item.alias_or_name.lower()
-            for item in (group.expressions if group else [])
-            if item.alias_or_name
+        projected_names = {
+            projection.alias_or_name.lower()
+            for projection in source.expression.selects
+            if projection.alias_or_name
         }
-        return bool(group_keys) and group_keys.issubset(columns)
+        if source.expression.args.get("distinct") and projected_names.issubset(columns):
+            return True
+        group = source.expression.args.get("group")
+        group_keys: set[str] = set()
+        for item in group.expressions if group else []:
+            if item.alias_or_name:
+                group_keys.add(item.alias_or_name.lower())
+            item_sql = item.sql(dialect="sqlite")
+            for projection in source.expression.selects:
+                projected = projection.this if isinstance(projection, exp.Alias) else projection
+                if projected.sql(dialect="sqlite") == item_sql and projection.alias_or_name:
+                    group_keys.add(projection.alias_or_name.lower())
+        if bool(group_keys) and group_keys.issubset(columns):
+            return True
+        if source.expression.args.get("limit") is not None:
+            return True
+        if group is None and any(
+            aggregate.find_ancestor(exp.Select) is source.expression
+            for aggregate in source.expression.find_all(exp.AggFunc)
+        ):
+            return True
+        for projection in source.expression.selects:
+            if projection.alias_or_name.lower() not in columns:
+                continue
+            projected = projection.this if isinstance(projection, exp.Alias) else projection
+            if not isinstance(projected, exp.Column) or not projected.table:
+                continue
+            selected = source.selected_sources.get(projected.table.lower())
+            selected_source = selected[1] if selected else None
+            if not isinstance(selected_source, exp.Table):
+                continue
+            primary_keys = {
+                column["name"].lower()
+                for column in schema.get(selected_source.name.lower(), {}).get("columns", [])
+                if column.get("primary_key")
+            }
+            if projected.name.lower() in primary_keys:
+                return True
+        return False
     primary_keys = {
         column["name"].lower()
         for column in schema.get(source.name.lower(), {}).get("columns", [])
         if column.get("primary_key")
     }
+    referenced_keys = {
+        foreign_key.get("to_column", "").lower()
+        for details in schema.values()
+        for foreign_key in details.get("foreign_keys", [])
+        if foreign_key.get("to_table", "").lower() == source.name.lower()
+        and foreign_key.get("to_column")
+    }
+    primary_keys.update(referenced_keys)
     return bool(primary_keys) and primary_keys.issubset(columns)
 
 
@@ -274,6 +363,9 @@ def _has_repeated_joined_measure(expression: exp.Expression, *, schema: dict[str
             alias: _scope_unique_on(source, join_columns[alias], schema=schema)
             for alias, source in selected_sources.items()
         }
+        joined_aliases = {alias for alias, columns in join_columns.items() if columns}
+        if len(joined_aliases) >= 2 and not any(unique[alias] for alias in joined_aliases):
+            return True
         if not any(unique.values()) or all(unique.values()):
             continue
         target_select = scope.expression
@@ -302,6 +394,7 @@ def validate_sql(
     schema: dict[str, Any],
     max_rows: int = 100,
     max_ast_nodes: int = 500,
+    question: str | None = None,
 ) -> SqlValidationResult:
     if not sql or not sql.strip():
         return _blocked("empty_sql", "No SQL statement was generated.")
@@ -314,18 +407,63 @@ def validate_sql(
         cleaned = cleaned[:-1].rstrip()
         outside = _outside_string_text(cleaned)
     if ";" in outside:
-        return _blocked("multiple_statements", "Only one SQL statement is allowed.")
+        try:
+            candidate_statements = sqlglot.parse(cleaned, read="sqlite")
+        except sqlglot.errors.ParseError:
+            candidate_statements = []
+        only_read_queries = len(candidate_statements) > 1 and all(
+            isinstance(statement, (exp.Select, exp.SetOperation))
+            for statement in candidate_statements
+        )
+        return SqlValidationResult(
+            safe=False,
+            repairable=only_read_queries,
+            reason_code="multiple_statements",
+            reason="Only one SQL statement is allowed.",
+        )
 
     try:
         parsed_statements = sqlglot.parse(cleaned, read="sqlite")
     except sqlglot.errors.ParseError:
         return _blocked("sql_parse_error", "The SQL could not be parsed in SQLite dialect.")
     if len(parsed_statements) != 1 or parsed_statements[0] is None:
-        return _blocked("multiple_statements", "Only one SQL statement is allowed.")
+        only_read_queries = len(parsed_statements) > 1 and all(
+            isinstance(statement, (exp.Select, exp.SetOperation)) for statement in parsed_statements
+        )
+        return SqlValidationResult(
+            safe=False,
+            repairable=only_read_queries,
+            reason_code="multiple_statements",
+            reason="Only one SQL statement is allowed.",
+        )
     expression = parsed_statements[0]
+    if (
+        question
+        and not re.search(r"\d{4}(?:年|\b)", question)
+        and re.search(r"'\d{4}-\d{2}(?:-\d{2})?'", cleaned)
+    ):
+        return SqlValidationResult(
+            safe=False,
+            repairable=True,
+            normalized_sql=expression.sql(dialect="sqlite"),
+            reason_code="invented_date_literal",
+            reason=(
+                "The SQL invented a calendar date that was not supplied by the analytical "
+                "question; relative periods must be derived from the maximum stored date."
+            ),
+        )
     nodes = list(expression.walk())
     if len(nodes) > max_ast_nodes:
-        return _blocked("query_too_complex", "The SQL exceeds the allowed complexity.")
+        return SqlValidationResult(
+            safe=False,
+            repairable=True,
+            normalized_sql=expression.sql(dialect="sqlite"),
+            reason_code="query_too_complex",
+            reason=(
+                "The SQL exceeds the allowed complexity and must be simplified while preserving "
+                "the analytical question."
+            ),
+        )
     if any(type(node).__name__ in FORBIDDEN_NODE_NAMES for node in nodes):
         return _blocked("write_operation", "Only read-only SELECT queries are allowed.")
     if not isinstance(expression, (exp.Select, exp.SetOperation)):
@@ -341,15 +479,6 @@ def validate_sql(
             return _blocked("forbidden_function", "The SQL uses a forbidden SQLite function.")
 
     cte_names = {cte.alias_or_name.lower() for cte in expression.find_all(exp.CTE)}
-    derived_columns: dict[str, set[str]] = {
-        cte.alias_or_name.lower(): {
-            projection.alias_or_name.lower()
-            for projection in cte.this.expressions
-            if projection.alias_or_name
-        }
-        for cte in expression.find_all(exp.CTE)
-        if cte.alias_or_name and isinstance(cte.this, exp.Select)
-    }
     table_nodes = list(expression.find_all(exp.Table))
     table_aliases: dict[str, str] = {}
     referenced_tables: list[str] = []
@@ -357,10 +486,6 @@ def validate_sql(
         table_name = table_node.name.lower()
         if table_name in cte_names:
             table_aliases[table_node.alias_or_name.lower()] = "__cte__"
-            table_aliases[table_name] = "__cte__"
-            derived_columns[table_node.alias_or_name.lower()] = derived_columns.get(
-                table_name, set()
-            )
             continue
         if table_name.startswith(INTERNAL_TABLE_PREFIXES):
             return _blocked("internal_table", "SQLite internal tables are not accessible.")
@@ -369,17 +494,6 @@ def validate_sql(
         if table_name not in referenced_tables:
             referenced_tables.append(table_name)
         table_aliases[table_node.alias_or_name.lower()] = table_name
-        table_aliases[table_name] = table_name
-    for subquery in expression.find_all(exp.Subquery):
-        alias = subquery.alias_or_name.lower()
-        if alias:
-            table_aliases[alias] = "__derived__"
-            if isinstance(subquery.this, exp.Select):
-                derived_columns[alias] = {
-                    projection.alias_or_name.lower()
-                    for projection in subquery.this.expressions
-                    if projection.alias_or_name
-                }
 
     allowed = {table.lower() for table in allowed_tables}
     if not referenced_tables:
@@ -388,53 +502,101 @@ def validate_sql(
         return _blocked("unknown_table", "The SQL references a table outside the selected schema.")
 
     catalog = _column_catalog(schema)
-    select_aliases = {item.alias.lower() for item in expression.find_all(exp.Alias) if item.alias}
     referenced_columns: list[str] = []
-    for column in expression.find_all(exp.Column):
-        name = column.name.lower()
-        if name == "*":
-            continue
-        qualifier = column.table.lower() if column.table else ""
-        if qualifier:
-            table_name = table_aliases.get(qualifier)
-            if table_name in {"__cte__", "__derived__"}:
-                if name not in derived_columns.get(qualifier, set()):
+
+    def selected_source(scope: Scope, qualifier: str) -> exp.Table | Scope | None:
+        current: Scope | None = scope
+        while current is not None:
+            selected = current.selected_sources.get(qualifier)
+            if selected is not None:
+                return selected[1]
+            current = current.parent
+        return None
+
+    def source_columns(source: exp.Table | Scope, seen: set[int] | None = None) -> set[str]:
+        if isinstance(source, Scope):
+            seen = set(seen or ())
+            identity = id(source)
+            if identity in seen:
+                return set()
+            seen.add(identity)
+            projected = {
+                projection.alias_or_name.lower()
+                for projection in source.expression.selects
+                if projection.alias_or_name and projection.alias_or_name != "*"
+            }
+            if any(
+                isinstance(projection, exp.Star)
+                or (isinstance(projection, exp.Column) and projection.is_star)
+                for projection in source.expression.selects
+            ):
+                for _, nested_source in source.selected_sources.values():
+                    projected.update(source_columns(nested_source, seen))
+            return projected
+        return catalog.get(source.name.lower(), set())
+
+    for scope in traverse_scope(expression):
+        select_aliases = {
+            projection.alias.lower()
+            for projection in scope.expression.selects
+            if isinstance(projection, exp.Alias) and projection.alias
+        }
+        local_sources = [source for _, source in scope.selected_sources.values()]
+        for column in scope.columns:
+            if column.find_ancestor(exp.Select) is not scope.expression:
+                continue
+            name = column.name.lower()
+            if name == "*":
+                continue
+            qualifier = column.table.lower() if column.table else ""
+            if qualifier:
+                source = selected_source(scope, qualifier)
+                if isinstance(source, Scope):
+                    if name not in source_columns(source):
+                        return SqlValidationResult(
+                            safe=False,
+                            repairable=True,
+                            normalized_sql=expression.sql(dialect="sqlite"),
+                            reason_code="unknown_column",
+                            reason="The SQL references an unknown derived column.",
+                            referenced_tables=referenced_tables,
+                            referenced_columns=referenced_columns,
+                        )
+                    continue
+                table_name = source.name.lower() if isinstance(source, exp.Table) else None
+                if table_name is None or name not in catalog.get(table_name, set()):
                     return SqlValidationResult(
                         safe=False,
                         repairable=True,
                         normalized_sql=expression.sql(dialect="sqlite"),
                         reason_code="unknown_column",
-                        reason="The SQL references an unknown derived column.",
+                        reason="The SQL references an unknown column.",
                         referenced_tables=referenced_tables,
                         referenced_columns=referenced_columns,
                     )
-                continue
-            if table_name is None or name not in catalog.get(table_name, set()):
-                return SqlValidationResult(
-                    safe=False,
-                    repairable=True,
-                    normalized_sql=expression.sql(dialect="sqlite"),
-                    reason_code="unknown_column",
-                    reason="The SQL references an unknown column.",
-                    referenced_tables=referenced_tables,
-                    referenced_columns=referenced_columns,
-                )
-            qualified = f"{table_name}.{name}"
-        else:
-            matching = [table for table in referenced_tables if name in catalog.get(table, set())]
-            if not matching and name not in select_aliases:
-                return SqlValidationResult(
-                    safe=False,
-                    repairable=True,
-                    normalized_sql=expression.sql(dialect="sqlite"),
-                    reason_code="unknown_column",
-                    reason="The SQL references an unknown column.",
-                    referenced_tables=referenced_tables,
-                    referenced_columns=referenced_columns,
-                )
-            qualified = f"{matching[0]}.{name}" if len(matching) == 1 else name
-        if qualified not in referenced_columns:
-            referenced_columns.append(qualified)
+                qualified = f"{table_name}.{name}"
+            else:
+                matching_sources = [
+                    source for source in local_sources if name in source_columns(source)
+                ]
+                if not matching_sources and name not in select_aliases:
+                    return SqlValidationResult(
+                        safe=False,
+                        repairable=True,
+                        normalized_sql=expression.sql(dialect="sqlite"),
+                        reason_code="unknown_column",
+                        reason="The SQL references an unknown column.",
+                        referenced_tables=referenced_tables,
+                        referenced_columns=referenced_columns,
+                    )
+                base_matches = [
+                    source.name.lower()
+                    for source in matching_sources
+                    if isinstance(source, exp.Table)
+                ]
+                qualified = f"{base_matches[0]}.{name}" if len(base_matches) == 1 else name
+            if qualified not in referenced_columns:
+                referenced_columns.append(qualified)
 
     if (
         _has_nonunique_derived_self_join(expression, schema=schema)
@@ -444,6 +606,7 @@ def validate_sql(
             table_aliases=table_aliases,
             referenced_tables=referenced_tables,
         )
+        or _has_scoped_sibling_aggregate_fanout(expression, schema=schema)
         or _has_repeated_joined_measure(
             expression,
             schema=schema,

@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "frozen_baseline": {
+    "git_head": "0df88ed7bf5bb2af6a0e86e3163ba0d1a46233fe",
+    "production_diff_hash": "1fbdbb2ebe25c8a50a512a831d83d023dc93203f"
+  },
+  "cases": [
+    {
+      "id": "H-SAL-01",
+      "dataset": "sales",
+      "question": "西部地区通过线上渠道销售的各产品，每件平均收入（总收入除以总销量）是多少？请按该指标降序列出。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "oracle_sql": "SELECT product, ROUND(SUM(revenue), 2) AS total_revenue, SUM(quantity) AS total_quantity, ROUND(SUM(revenue) / SUM(quantity), 2) AS revenue_per_unit FROM sales WHERE region = 'West' AND sales_channel = 'Online' GROUP BY product ORDER BY revenue_per_unit DESC, product"
+    },
+    {
+      "id": "H-SAL-02",
+      "dataset": "sales",
+      "question": "2025年每个季度中，硬件类销售的收入、销量和每件平均收入分别是多少？按季度顺序列出。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "oracle_sql": "SELECT '2025-Q' || CASE WHEN CAST(substr(order_date, 6, 2) AS INTEGER) <= 3 THEN '1' WHEN CAST(substr(order_date, 6, 2) AS INTEGER) <= 6 THEN '2' WHEN CAST(substr(order_date, 6, 2) AS INTEGER) <= 9 THEN '3' ELSE '4' END AS quarter, ROUND(SUM(revenue), 2) AS total_revenue, SUM(quantity) AS total_quantity, ROUND(SUM(revenue) / SUM(quantity), 2) AS revenue_per_unit FROM sales WHERE substr(order_date, 1, 4) = '2025' AND category = 'Hardware' GROUP BY quarter ORDER BY quarter"
+    },
+    {
+      "id": "H-SAL-03",
+      "dataset": "sales",
+      "question": "哪个地区的月度收入波动最明显？请先识别该地区，再继续调查产品组合还是销售渠道构成与这种波动同步变化。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-SAL-04",
+      "dataset": "sales",
+      "question": "Enterprise客户在2024年和2025年的销售结构发生了什么变化？请从产品类别和地区两个维度继续调查。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-SAL-05",
+      "dataset": "sales",
+      "question": "不要预设指标，检查这份销售数据中最显著的内部结构异常，并根据第一步发现继续调查；所有结论只限现有字段。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "exploratory",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-EMP-01",
+      "dataset": "employees",
+      "question": "2019年入职员工中，各工作地点的人数、平均绩效和平均薪资是多少？按人数降序列出。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "oracle_sql": "SELECT location, COUNT(*) AS employee_count, ROUND(AVG(performance_score), 2) AS avg_performance, ROUND(AVG(salary), 2) AS avg_salary FROM employees WHERE substr(hire_date, 1, 4) = '2019' GROUP BY location ORDER BY employee_count DESC, location"
+    },
+    {
+      "id": "H-EMP-02",
+      "dataset": "employees",
+      "question": "列出平均绩效低于2.0的岗位，并显示人数和平均薪资；如果没有符合条件的岗位，请明确说明空结果。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "boundary": "empty_result",
+      "oracle_sql": "SELECT role, COUNT(*) AS employee_count, ROUND(AVG(salary), 2) AS avg_salary, ROUND(AVG(performance_score), 2) AS avg_performance FROM employees GROUP BY role HAVING AVG(performance_score) < 2.0 ORDER BY avg_performance, role"
+    },
+    {
+      "id": "H-EMP-03",
+      "dataset": "employees",
+      "question": "哪些部门的高流失风险更集中在低绩效员工群体？请先比较部门，再按岗位或地点继续验证最突出的部门。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-EMP-04",
+      "dataset": "employees",
+      "question": "2016至2024不同入职年份员工的薪资与绩效结构如何变化？找出差异最大的年份后继续拆解其部门构成。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-EMP-05",
+      "dataset": "employees",
+      "question": "自主检查人力运营数据中最值得关注的聚合异常，并沿着数据支持的岗位、地点或入职年份继续调查；不要返回个人记录。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "exploratory",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-SUB-01",
+      "dataset": "subscriptions",
+      "question": "2024年注册且当前仍活跃的客户中，各国家的MRR总额和客户数是多少？按MRR总额降序列出。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "oracle_sql": "SELECT country, ROUND(SUM(mrr), 2) AS total_mrr, COUNT(*) AS customer_count FROM subscriptions WHERE substr(signup_date, 1, 4) = '2024' AND status = 'Active' GROUP BY country ORDER BY total_mrr DESC, country"
+    },
+    {
+      "id": "H-SUB-02",
+      "dataset": "subscriptions",
+      "question": "找出客户数最少的套餐；如果并列，返回全部并列套餐，并给出各自客户数和MRR总额。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "boundary": "tie_aware_ranking",
+      "oracle_sql": "WITH plan_totals AS (SELECT plan, COUNT(*) AS customer_count, ROUND(SUM(mrr), 2) AS total_mrr FROM subscriptions GROUP BY plan) SELECT plan, customer_count, total_mrr FROM plan_totals WHERE customer_count = (SELECT MIN(customer_count) FROM plan_totals) ORDER BY plan"
+    },
+    {
+      "id": "H-SUB-03",
+      "dataset": "subscriptions",
+      "question": "哪个获客渠道的流失客户MRR损失最大？识别该渠道后，继续调查其套餐和国家构成。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-SUB-04",
+      "dataset": "subscriptions",
+      "question": "比较2023年与2024年注册客户的流失表现，找出差异后继续调查套餐构成还是获客渠道构成与差异同步变化。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-SUB-05",
+      "dataset": "subscriptions",
+      "question": "自主寻找订阅数据中最值得优先关注的内部业务异常，并依据证据继续调查可用的套餐、国家、渠道或注册时间维度。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "exploratory",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-COM-01",
+      "dataset": "commerce",
+      "question": "已完成订单中，各销售渠道的订单数、订单明细行平均折扣率和每单收入分别是多少？按每单收入降序列出。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "oracle_sql": "SELECT o.sales_channel, COUNT(DISTINCT o.id) AS order_count, ROUND(AVG(oi.discount) * 100, 2) AS avg_line_discount_pct, ROUND(SUM(oi.line_revenue) / COUNT(DISTINCT o.id), 2) AS revenue_per_order FROM orders o JOIN order_items oi ON oi.order_id = o.id WHERE o.status = 'Completed' GROUP BY o.sales_channel ORDER BY revenue_per_order DESC, o.sales_channel"
+    },
+    {
+      "id": "H-COM-02",
+      "dataset": "commerce",
+      "question": "按退款原因和支付方式组合统计退款订单数与退款金额，列出退款金额最高的前5个组合。",
+      "expected_mode": "simple_query",
+      "analysis_kind": "simple",
+      "evaluation_type": "oracle",
+      "oracle_sql": "SELECT r.reason, o.payment_method, COUNT(DISTINCT r.order_id) AS refund_order_count, ROUND(SUM(r.refund_amount), 2) AS refund_amount FROM refunds r JOIN orders o ON o.id = r.order_id GROUP BY r.reason, o.payment_method ORDER BY refund_amount DESC, r.reason, o.payment_method LIMIT 5"
+    },
+    {
+      "id": "H-COM-03",
+      "dataset": "commerce",
+      "question": "取消订单在城市、销售渠道和支付方式上是否集中？请先确认总体取消比例，再根据最突出的维度继续调查。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-COM-04",
+      "dataset": "commerce",
+      "question": "折扣区间与销量、收入及包含退款的订单明细占比有什么关联？发现异常区间后继续调查产品类别。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "investigative",
+      "evaluation_type": "investigative"
+    },
+    {
+      "id": "H-COM-05",
+      "dataset": "commerce",
+      "question": "自主检查电商数据中最显著的内部运营异常，并根据第一步证据继续选择产品、客户、订单或退款维度调查。",
+      "expected_mode": "investigative_analysis",
+      "analysis_kind": "exploratory",
+      "evaluation_type": "investigative"
+    }
+  ]
+}

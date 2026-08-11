@@ -1,0 +1,14 @@
+{
+  "holdout": "business-holdout-v3.json",
+  "sha256": "337692413417439af13793d27131a2f0fc65e82eccc61be277da790f9585b028",
+  "production_diff_hash": "94ec29e6dde74c2c9c3c297ee57558857eec3e49",
+  "counts": {
+    "simple": 8,
+    "investigative": 8,
+    "exploratory": 4,
+    "total": 20
+  },
+  "provider": "deepseek",
+  "used_fallback": false,
+  "first_attempt_only": true
+}

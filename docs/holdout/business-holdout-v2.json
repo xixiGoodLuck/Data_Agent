@@ -1,0 +1,180 @@
+{
+  "version": 2,
+  "label": "Frozen Business Holdout V2",
+  "rules": {
+    "first_attempt_only": true,
+    "provider": "deepseek",
+    "used_fallback": false,
+    "production_code_frozen_after_sha": true
+  },
+  "cases": [
+    {
+      "id": "V2-SAL-01",
+      "dataset": "sales",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "北部地区在2025年各销售渠道的收入占该地区全年收入的比例是多少？按比例降序列出。",
+      "oracle_sql": "WITH channel_revenue AS (SELECT sales_channel, SUM(revenue) AS revenue FROM sales WHERE region = 'North' AND strftime('%Y', order_date) = '2025' GROUP BY sales_channel), total AS (SELECT SUM(revenue) AS total_revenue FROM sales WHERE region = 'North' AND strftime('%Y', order_date) = '2025') SELECT sales_channel, ROUND(revenue, 2) AS revenue, ROUND(revenue * 100.0 / total_revenue, 2) AS revenue_share_pct FROM channel_revenue CROSS JOIN total ORDER BY revenue_share_pct DESC"
+    },
+    {
+      "id": "V2-SAL-02",
+      "dataset": "sales",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各产品类别中，收入最高的客户分群分别是谁？给出类别、分群和收入。",
+      "oracle_sql": "WITH grouped AS (SELECT category, customer_segment, SUM(revenue) AS revenue FROM sales GROUP BY category, customer_segment), ranked AS (SELECT category, customer_segment, revenue, DENSE_RANK() OVER (PARTITION BY category ORDER BY revenue DESC) AS rank_in_category FROM grouped) SELECT category, customer_segment, ROUND(revenue, 2) AS revenue FROM ranked WHERE rank_in_category = 1 ORDER BY category, customer_segment"
+    },
+    {
+      "id": "V2-SAL-03",
+      "dataset": "sales",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个季度的地区收入集中度最高？识别该季度后，继续调查产品类别和客户分群是否共同造成这种集中。"
+    },
+    {
+      "id": "V2-SAL-04",
+      "dataset": "sales",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个销售渠道的季度每件收入波动最大？确认渠道后，进一步拆解地区与产品的构成变化。"
+    },
+    {
+      "id": "V2-SAL-05",
+      "dataset": "sales",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "自主寻找销售数据中客户分群与地区组合的不均衡现象，并沿证据最强的产品或时间维度继续分析。"
+    },
+    {
+      "id": "V2-EMP-01",
+      "dataset": "employees",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各入职年份的员工人数和高流失风险占比分别是多少？只列出人数不少于10人的年份并按风险占比降序排列。",
+      "oracle_sql": "SELECT strftime('%Y', hire_date) AS hire_year, COUNT(*) AS employee_count, ROUND(SUM(CASE WHEN attrition_risk = 'High' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS high_risk_pct FROM employees GROUP BY strftime('%Y', hire_date) HAVING COUNT(*) >= 10 ORDER BY high_risk_pct DESC, hire_year"
+    },
+    {
+      "id": "V2-EMP-02",
+      "dataset": "employees",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "每个部门中员工人数最多的岗位是什么？如果并列则全部返回，并给出人数。",
+      "oracle_sql": "WITH grouped AS (SELECT department, role, COUNT(*) AS employee_count FROM employees GROUP BY department, role), ranked AS (SELECT department, role, employee_count, DENSE_RANK() OVER (PARTITION BY department ORDER BY employee_count DESC) AS rank_in_department FROM grouped) SELECT department, role, employee_count FROM ranked WHERE rank_in_department = 1 ORDER BY department, role"
+    },
+    {
+      "id": "V2-EMP-03",
+      "dataset": "employees",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个工作地点的薪资差异最明显？确认地点后，继续调查部门构成和岗位构成。所有输出必须保持聚合。"
+    },
+    {
+      "id": "V2-EMP-04",
+      "dataset": "employees",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "薪资与绩效的匹配程度在哪个部门最弱？识别部门后，进一步按岗位验证，禁止返回个人信息。"
+    },
+    {
+      "id": "V2-EMP-05",
+      "dataset": "employees",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "自主检查团队规模、绩效与流失风险之间最显著的内部不平衡，并根据证据选择部门、岗位、地点或入职年份继续调查；仅使用聚合。"
+    },
+    {
+      "id": "V2-SUB-01",
+      "dataset": "subscriptions",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各获客渠道中，Enterprise 套餐客户的数量、活跃数量和活跃率分别是多少？按活跃率降序排列。",
+      "oracle_sql": "SELECT acquisition_channel, COUNT(*) AS customer_count, SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) AS active_count, ROUND(SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS active_rate_pct FROM subscriptions WHERE plan = 'Enterprise' GROUP BY acquisition_channel ORDER BY active_rate_pct DESC, acquisition_channel"
+    },
+    {
+      "id": "V2-SUB-02",
+      "dataset": "subscriptions",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "2024年注册客户中，各套餐的流失客户数和流失MRR是多少？按流失MRR降序列出。",
+      "oracle_sql": "SELECT plan, COUNT(*) AS churned_customers, SUM(mrr) AS churned_mrr FROM subscriptions WHERE strftime('%Y', signup_date) = '2024' AND status = 'Churned' GROUP BY plan ORDER BY churned_mrr DESC, plan"
+    },
+    {
+      "id": "V2-SUB-03",
+      "dataset": "subscriptions",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个注册季度的后续流失MRR最高？确认季度后，继续调查套餐和获客渠道构成。"
+    },
+    {
+      "id": "V2-SUB-04",
+      "dataset": "subscriptions",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "活跃率最低的国家是否由特定套餐主导？先识别国家，再进一步比较该国各套餐和获客渠道。"
+    },
+    {
+      "id": "V2-SUB-05",
+      "dataset": "subscriptions",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "自主寻找注册时间与客户价值组合中最突出的内部失衡，并根据证据继续选择国家、套餐或渠道分析。"
+    },
+    {
+      "id": "V2-COM-01",
+      "dataset": "commerce",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "各产品类别在不同销售渠道的平均折扣率是多少？列出平均折扣最高的前8个类别与渠道组合。",
+      "oracle_sql": "SELECT p.category, o.sales_channel, ROUND(AVG(oi.discount) * 100.0, 2) AS avg_discount_pct FROM order_items AS oi JOIN products AS p ON p.id = oi.product_id JOIN orders AS o ON o.id = oi.order_id GROUP BY p.category, o.sales_channel ORDER BY avg_discount_pct DESC, p.category, o.sales_channel LIMIT 8"
+    },
+    {
+      "id": "V2-COM-02",
+      "dataset": "commerce",
+      "analysis_kind": "simple",
+      "expected_mode": "simple_query",
+      "evaluation_type": "oracle",
+      "question": "比较有退款和无退款订单的订单数与平均订单收入。",
+      "oracle_sql": "WITH order_revenue AS (SELECT o.id AS order_id, SUM(oi.line_revenue) AS order_revenue FROM orders AS o JOIN order_items AS oi ON oi.order_id = o.id GROUP BY o.id), refund_flag AS (SELECT order_id, 1 AS has_refund FROM refunds GROUP BY order_id) SELECT CASE WHEN rf.has_refund = 1 THEN 'refunded' ELSE 'not_refunded' END AS refund_status, COUNT(*) AS order_count, ROUND(AVG(orv.order_revenue), 2) AS avg_order_revenue FROM order_revenue AS orv LEFT JOIN refund_flag AS rf ON rf.order_id = orv.order_id GROUP BY refund_status ORDER BY refund_status"
+    },
+    {
+      "id": "V2-COM-03",
+      "dataset": "commerce",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个月份的取消订单比例最高？确认月份后，继续调查销售渠道和支付方式构成。"
+    },
+    {
+      "id": "V2-COM-04",
+      "dataset": "commerce",
+      "analysis_kind": "investigative",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "哪个客户分群的退款订单平均退款金额最高？识别分群后，进一步调查产品类别和退款原因。"
+    },
+    {
+      "id": "V2-COM-05",
+      "dataset": "commerce",
+      "analysis_kind": "exploratory",
+      "expected_mode": "investigative_analysis",
+      "evaluation_type": "qualitative",
+      "question": "自主寻找订单状态、渠道和商品结构之间最值得关注的内部运营失衡，并沿第一步证据选择退款、产品或客户维度继续调查。"
+    }
+  ]
+}

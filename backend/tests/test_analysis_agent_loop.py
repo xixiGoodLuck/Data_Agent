@@ -156,8 +156,8 @@ def test_hard_max_steps_stops_an_insufficient_investigation(
     llm = client.app.state.llm_resolver.default_client
     original = llm.create_analysis_plan
 
-    def two_step_plan(question, intent, response_language="en"):
-        plan = original(question, intent, response_language)
+    def two_step_plan(question, intent, response_language="en", dataset_capability=None):
+        plan = original(question, intent, response_language, dataset_capability)
         return AnalysisPlan(
             objective=plan.objective,
             steps=plan.steps[:2],
@@ -229,7 +229,7 @@ def test_approval_resume_preserves_prior_evidence_and_continues_loop(
 ) -> None:
     llm = client.app.state.llm_resolver.default_client
 
-    def approval_plan(_question, intent, _response_language="en"):
+    def approval_plan(_question, intent, _response_language="en", _dataset_capability=None):
         return AnalysisPlan(
             objective=intent.objective,
             steps=[
@@ -252,7 +252,14 @@ def test_approval_resume_preserves_prior_evidence_and_continues_loop(
             max_steps=5,
         )
 
-    def approval_evaluation(_intent, plan, evidence, _response_language="en"):
+    def approval_evaluation(
+        _intent,
+        plan,
+        evidence,
+        _response_language="en",
+        _dataset_capability=None,
+        _analysis_context=None,
+    ):
         if len(evidence) == 1:
             next_step = next(step for step in plan.steps if step.id == "step_2")
         elif len(evidence) == 2:

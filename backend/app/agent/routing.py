@@ -88,3 +88,7 @@ def route_analysis_decision(state: DataAnalysisState) -> str:
     if action == "clarify":
         return "clarify"
     return "finish"
+
+
+def route_final_grounding(state: DataAnalysisState) -> str:
+    return "failed" if state.get("status") == "failed" else "valid"

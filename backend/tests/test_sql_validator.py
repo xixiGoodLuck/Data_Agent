@@ -209,6 +209,41 @@ def test_parent_measure_repeated_across_derived_child_groups_requires_allocation
     assert result.reason_code == "aggregate_fanout"
 
 
+def test_many_to_many_cte_join_on_incomplete_grain_requires_repair() -> None:
+    result = validate(
+        "WITH category_orders AS ("
+        "SELECT id AS category, order_id, SUM(line_revenue) AS revenue "
+        "FROM order_items GROUP BY id, order_id"
+        "), allocations AS ("
+        "SELECT id AS category, order_id, SUM(line_revenue) AS allocated "
+        "FROM order_items GROUP BY id, order_id"
+        ") SELECT category, SUM(revenue), SUM(allocated) FROM ("
+        "SELECT c.category, c.revenue, a.allocated FROM category_orders c "
+        "JOIN allocations a ON a.category = c.category"
+        ") joined GROUP BY category",
+        ["order_items"],
+    )
+
+    assert result.safe is False
+    assert result.repairable is True
+    assert result.reason_code == "aggregate_fanout"
+
+
+def test_sibling_aggregates_inside_cte_require_parent_grain_repair() -> None:
+    result = validate(
+        "WITH product_refunds AS ("
+        "SELECT oi.id, SUM(oi.line_revenue) AS revenue, SUM(r.refund_amount) AS refunds "
+        "FROM order_items oi LEFT JOIN refunds r ON r.order_id = oi.order_id "
+        "GROUP BY oi.id"
+        ") SELECT SUM(revenue), SUM(refunds) FROM product_refunds",
+        ["order_items", "refunds"],
+    )
+
+    assert result.safe is False
+    assert result.repairable is True
+    assert result.reason_code == "aggregate_fanout"
+
+
 def test_one_trailing_semicolon_is_normalized() -> None:
     result = validate("SELECT region FROM sales;")
     assert result.safe is True
@@ -246,6 +281,108 @@ def test_multiple_statements_are_blocked() -> None:
     result = validate("SELECT region FROM sales; DROP TABLE sales")
     assert result.safe is False
     assert result.reason_code == "multiple_statements"
+    assert result.repairable is False
+
+
+def test_multiple_read_queries_are_repairable_but_never_safe() -> None:
+    result = validate("SELECT region FROM sales; SELECT product FROM sales")
+    assert result.safe is False
+    assert result.reason_code == "multiple_statements"
+    assert result.repairable is True
+
+
+def test_cte_aliases_are_validated_in_their_own_query_scope() -> None:
+    sql = """
+    WITH per_region AS (
+        SELECT region AS label, SUM(revenue) AS total_revenue
+        FROM sales
+        GROUP BY region
+    ), overall AS (
+        SELECT SUM(revenue) AS total_revenue FROM sales AS o
+    )
+    SELECT o.total_revenue, r.label, r.total_revenue
+    FROM overall AS o
+    CROSS JOIN per_region AS r
+    """
+    result = validate(sql)
+    assert result.safe is True
+
+
+def test_outer_query_can_reference_columns_propagated_through_cte_star() -> None:
+    sql = """
+    WITH monthly AS (
+        SELECT region, SUM(revenue) AS total_revenue
+        FROM sales
+        GROUP BY region
+    ), ranked AS (
+        SELECT *, ROW_NUMBER() OVER (ORDER BY total_revenue DESC) AS rn
+        FROM monthly
+    ), current_m AS (
+        SELECT * FROM ranked WHERE rn = 1
+    )
+    SELECT current_m.region, current_m.total_revenue
+    FROM current_m
+    """
+
+    result = validate(sql)
+
+    assert result.safe is True
+
+
+def test_nested_cte_keeps_each_scope_outputs_separate() -> None:
+    sql = """
+    WITH outer_cte AS (
+        WITH inner_cte AS (
+            SELECT region AS label, SUM(revenue) AS metric FROM sales GROUP BY region
+        )
+        SELECT label, metric FROM inner_cte
+    )
+    SELECT label, metric FROM outer_cte
+    """
+
+    assert validate(sql).safe is True
+
+
+def test_invalid_column_after_cte_star_propagation_is_still_blocked() -> None:
+    result = validate(
+        "WITH totals AS (SELECT region, SUM(revenue) AS metric FROM sales GROUP BY region), "
+        "forwarded AS (SELECT * FROM totals) SELECT missing FROM forwarded"
+    )
+
+    assert result.safe is False
+    assert result.reason_code == "unknown_column"
+
+
+def test_join_to_single_row_aggregate_cte_is_not_fanout() -> None:
+    sql = """
+    WITH plan_counts AS (
+        SELECT region, COUNT(*) AS customer_count
+        FROM sales GROUP BY region
+    ), min_count AS (
+        SELECT MIN(customer_count) AS min_customers FROM plan_counts
+    )
+    SELECT pc.region, pc.customer_count
+    FROM plan_counts AS pc
+    JOIN min_count AS mc ON pc.customer_count = mc.min_customers
+    """
+
+    assert validate(sql).safe is True
+
+
+def test_join_to_limit_one_cte_is_not_fanout() -> None:
+    sql = """
+    WITH region_stats AS (
+        SELECT region, AVG(revenue) AS avg_revenue FROM sales GROUP BY region
+    ), top_region AS (
+        SELECT region FROM region_stats ORDER BY avg_revenue DESC LIMIT 1
+    )
+    SELECT s.order_date, COUNT(*) AS sale_count, AVG(s.revenue) AS avg_revenue
+    FROM sales AS s
+    JOIN top_region AS t ON s.region = t.region
+    GROUP BY s.order_date
+    """
+
+    assert validate(sql).safe is True
 
 
 @pytest.mark.parametrize(
@@ -294,6 +431,91 @@ def test_unknown_cte_output_column_is_repairable() -> None:
     assert result.safe is False
     assert result.repairable is True
     assert result.reason_code == "unknown_column"
+
+
+def test_query_too_complex_is_repairable_without_raising_limit() -> None:
+    result = validate_sql(
+        "SELECT region, SUM(revenue) AS revenue FROM sales GROUP BY region",
+        allowed_tables=["sales"],
+        schema={"sales": SCHEMA["sales"]},
+        max_ast_nodes=3,
+    )
+
+    assert result.safe is False
+    assert result.repairable is True
+    assert result.reason_code == "query_too_complex"
+
+
+def test_parent_grain_ctes_joined_on_unique_keys_are_fanout_safe() -> None:
+    schema = {
+        "orders": {
+            "columns": [{"name": "id", "type": "INTEGER", "primary_key": True}],
+            "foreign_keys": [],
+        },
+        "items": {
+            "columns": [
+                {"name": "order_id", "type": "INTEGER"},
+                {"name": "amount", "type": "REAL"},
+            ],
+            "foreign_keys": [{"from_column": "order_id", "to_table": "orders", "to_column": "id"}],
+        },
+        "refunds": {
+            "columns": [{"name": "order_id", "type": "INTEGER"}],
+            "foreign_keys": [{"from_column": "order_id", "to_table": "orders", "to_column": "id"}],
+        },
+    }
+    result = validate_sql(
+        "WITH order_totals AS (SELECT order_id, SUM(amount) AS total FROM items GROUP BY order_id), "
+        "refund_orders AS (SELECT DISTINCT order_id FROM refunds) "
+        "SELECT COUNT(DISTINCT o.id) AS orders, AVG(t.total) AS average_total "
+        "FROM orders o LEFT JOIN order_totals t ON t.order_id=o.id "
+        "LEFT JOIN refund_orders r ON r.order_id=o.id",
+        allowed_tables=list(schema),
+        schema=schema,
+    )
+
+    assert result.safe is True
+
+
+def test_expression_group_alias_is_inferred_as_derived_grain() -> None:
+    result = validate_sql(
+        "WITH monthly_detail AS ("
+        "SELECT substr(order_date, 1, 7) AS month, region, SUM(revenue) AS revenue "
+        "FROM sales GROUP BY substr(order_date, 1, 7), region), "
+        "monthly_total AS ("
+        "SELECT substr(order_date, 1, 7) AS month, SUM(revenue) AS total_revenue "
+        "FROM sales GROUP BY substr(order_date, 1, 7)) "
+        "SELECT d.month, d.region, d.revenue, t.total_revenue "
+        "FROM monthly_detail d JOIN monthly_total t ON t.month=d.month",
+        allowed_tables=["sales"],
+        schema={"sales": SCHEMA["sales"]},
+    )
+
+    assert result.safe is True
+
+
+def test_relative_period_query_cannot_invent_a_calendar_date() -> None:
+    result = validate_sql(
+        "SELECT SUM(revenue) FROM sales WHERE order_date >= '2024-01-01'",
+        allowed_tables=["sales"],
+        schema={"sales": SCHEMA["sales"]},
+        question="Why did revenue decline recently?",
+    )
+
+    assert result.safe is False
+    assert result.repairable is True
+    assert result.reason_code == "invented_date_literal"
+
+
+def test_explicit_calendar_year_allows_date_literals() -> None:
+    result = validate_sql(
+        "SELECT SUM(revenue) FROM sales WHERE order_date >= '2024-01-01'",
+        allowed_tables=["sales"],
+        schema={"sales": SCHEMA["sales"]},
+        question="Show revenue since 2024.",
+    )
+
+    assert result.safe is True
 
 
 def test_database_qualified_table_is_blocked() -> None:

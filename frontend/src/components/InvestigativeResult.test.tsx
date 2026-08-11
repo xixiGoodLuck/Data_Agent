@@ -67,8 +67,9 @@ const result: QueryResponse = {
   evidence: [{
     id: "evidence-1", step_id: "step_1", question: "Compare monthly revenue.",
     sql: "SELECT month, SUM(revenue) FROM sales GROUP BY month",
-    result_summary: "Revenue changed by -20%.", key_values: { revenue_change_pct: -20 },
-    row_count: 2, lineage: { tables: ["sales"], columns: ["revenue"], schema_hash: "hash" },
+    result_shape: "time_series", result_summary: "Revenue changed by -20%.",
+    key_values: { revenue_change_pct: -20 }, row_count: 2, returned_row_count: 2,
+    is_truncated: false, lineage: { tables: ["sales"], columns: ["revenue"], schema_hash: "hash" },
     limitations: ["Marketing data is not available."], created_at: "2026-08-10T00:00:00Z",
   }],
   critic_result: { sufficient: true, answered_objective: true, missing_evidence: [], conflicts: [], limitations: [], recommended_next_step: null },
@@ -88,6 +89,7 @@ const result: QueryResponse = {
   clarification_question: null, selected_tables: ["sales"], selected_columns: ["sales.revenue"],
   sql: "SELECT 1", safe_sql: true, safety_reason: null, risk_level: "low", approval: null,
   columns: ["employee_name"], rows: [{ employee_name: "Sensitive Person" }], row_count: 1,
+  returned_row_count: 1, is_truncated: false,
   chart: null, insight: "Revenue declined.", lineage: null, execution_time_ms: 10,
   trace, used_fallback: false, error: null,
 };

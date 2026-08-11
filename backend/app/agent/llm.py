@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 import json
+import logging
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
@@ -8,8 +10,9 @@ from contextlib import contextmanager
 from threading import RLock
 from typing import Any, Literal, TypeVar
 
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.agent.language import ResponseLanguage, is_chinese
 from app.agent.prompts import (
@@ -37,6 +40,8 @@ from app.schemas.query import (
     Finding,
     NextAnalysisDecision,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class QuestionRewrite(BaseModel):
@@ -89,6 +94,7 @@ class BaseLLMClient(ABC):
         question: str,
         intent: AnalysisIntent,
         response_language: ResponseLanguage = "en",
+        dataset_capability: dict[str, Any] | None = None,
     ) -> AnalysisPlan: ...
 
     @abstractmethod
@@ -98,6 +104,8 @@ class BaseLLMClient(ABC):
         plan: AnalysisPlan,
         evidence: list[Evidence],
         response_language: ResponseLanguage = "en",
+        dataset_capability: dict[str, Any] | None = None,
+        analysis_context: dict[str, Any] | None = None,
     ) -> AnalysisEvaluation: ...
 
     @abstractmethod
@@ -110,6 +118,7 @@ class BaseLLMClient(ABC):
         critic: CriticResult | None,
         evidence_insufficient: bool,
         response_language: ResponseLanguage = "en",
+        grounding_feedback: str | None = None,
     ) -> FinalAnalysis: ...
 
     @abstractmethod
@@ -324,8 +333,25 @@ class MockLLMClient(BaseLLMClient):
         question: str,
         intent: AnalysisIntent,
         response_language: ResponseLanguage = "en",
+        dataset_capability: dict[str, Any] | None = None,
     ) -> AnalysisPlan:
-        metric = intent.metrics[0].replace("_", " ") if intent.metrics else "the target metric"
+        capability = dataset_capability or {}
+        available_metrics = [str(item).split(".")[-1] for item in capability.get("metrics", [])]
+        available_dimensions = [
+            str(item).split(".")[-1] for item in capability.get("dimensions", [])
+        ]
+        available_time_fields = [
+            str(item).split(".")[-1] for item in capability.get("time_fields", [])
+        ]
+        metric_name = next(
+            (item for item in intent.metrics if item in available_metrics),
+            available_metrics[0]
+            if available_metrics
+            else intent.metrics[0]
+            if intent.metrics
+            else None,
+        )
+        metric = metric_name.replace("_", " ") if metric_name else "the target metric"
         if is_chinese(response_language):
             metric = {
                 "revenue": "收入",
@@ -334,15 +360,18 @@ class MockLLMClient(BaseLLMClient):
                 "average_order_value": "平均订单金额",
                 "mrr": "月度经常性收入",
                 "salary": "薪资",
-            }.get(intent.metrics[0] if intent.metrics else "", "目标指标")
+            }.get(metric_name or "", (metric_name or "目标指标").replace("_", " "))
+        primary_dimension = available_dimensions[0] if available_dimensions else None
+        component_metrics = [item for item in available_metrics if item != metric_name][:2]
+        time_field = available_time_fields[0] if available_time_fields else None
         if intent.analysis_type == "exploratory":
             steps = [
                 AnalysisStep(
                     id="step_1",
                     question=(
-                        f"汇总{metric}的整体分布。"
+                        f"按{primary_dimension or '可用维度'}汇总{metric}的整体分布。"
                         if is_chinese(response_language)
-                        else f"Summarize the overall distribution of {metric}."
+                        else f"Summarize {metric} by {primary_dimension or 'an available dimension'}."
                     ),
                     purpose=(
                         "先建立基线, 再选择深入分析方向。"
@@ -353,9 +382,12 @@ class MockLLMClient(BaseLLMClient):
                 AnalysisStep(
                     id="step_2",
                     question=(
-                        f"哪些细分维度的{metric}偏差最大?"
+                        f"{primary_dimension or '可用维度'}中哪些分组的{metric}偏差最大?"
                         if is_chinese(response_language)
-                        else f"Which segments show the largest deviations in {metric}?"
+                        else (
+                            f"Which {primary_dimension or 'available'} groups show the largest "
+                            f"deviations in {metric}?"
+                        )
                     ),
                     purpose=(
                         "从基线中识别证据支持最强的异常模式。"
@@ -382,9 +414,13 @@ class MockLLMClient(BaseLLMClient):
                 AnalysisStep(
                     id="step_1",
                     question=(
-                        f"查看{metric}的月度趋势, 确认是否确实下降。"
+                        f"按{time_field}查看{metric}趋势, 确认是否确实下降。"
+                        if time_field and is_chinese(response_language)
+                        else f"汇总{metric}, 确认所述下降是否存在。"
                         if is_chinese(response_language)
-                        else f"Show the monthly trend for {metric} to verify whether it declined."
+                        else f"Show the {metric} trend by {time_field} to verify whether it declined."
+                        if time_field
+                        else f"Summarize {metric} to verify whether the reported decline exists."
                     ),
                     purpose=(
                         "确认所述变化是否存在, 并量化其发生时间。"
@@ -395,22 +431,32 @@ class MockLLMClient(BaseLLMClient):
                 AnalysisStep(
                     id="step_2",
                     question=(
-                        f"将{metric}变化拆解为订单量与平均订单金额。"
+                        f"将{metric}变化按{', '.join(component_metrics)}及单位{metric}进行拆解。"
+                        if component_metrics and is_chinese(response_language)
+                        else f"按{primary_dimension or '可用维度'}拆解{metric}变化。"
                         if is_chinese(response_language)
-                        else f"Decompose the change in {metric} into volume and value components."
+                        else (
+                            f"Decompose the change in {metric} using {', '.join(component_metrics)} "
+                            f"and {metric} per unit."
+                        )
+                        if component_metrics
+                        else f"Break down the change in {metric} by {primary_dimension or 'an available dimension'}."
                     ),
                     purpose=(
-                        "区分造成该变化的主要量价因素。"
+                        "区分当前数据支持的主要数学或业务维度贡献。"
                         if is_chinese(response_language)
-                        else "Separate the primary mathematical contributors to the change."
+                        else "Separate the contributors supported by the current dataset."
                     ),
                 ),
                 AnalysisStep(
                     id="step_3",
                     question=(
-                        "根据已有贡献证据, 下一步应调查哪个业务维度?"
+                        f"根据已有贡献证据, 是否应继续调查{primary_dimension or '其他可用维度'}?"
                         if is_chinese(response_language)
-                        else "Which business dimension should be investigated based on those contributions?"
+                        else (
+                            "Which supported business dimension should be investigated based on "
+                            f"those contributions, starting with {primary_dimension or 'an available dimension'}?"
+                        )
                     ),
                     purpose=(
                         "让观察到的证据决定下一步诊断方向。"
@@ -432,7 +478,10 @@ class MockLLMClient(BaseLLMClient):
         plan: AnalysisPlan,
         evidence: list[Evidence],
         response_language: ResponseLanguage = "en",
+        dataset_capability: dict[str, Any] | None = None,
+        analysis_context: dict[str, Any] | None = None,
     ) -> AnalysisEvaluation:
+        del dataset_capability, analysis_context
         zh = is_chinese(response_language)
         latest = evidence[-1]
         if latest.row_count == 0:
@@ -633,7 +682,9 @@ class MockLLMClient(BaseLLMClient):
         critic: CriticResult | None,
         evidence_insufficient: bool,
         response_language: ResponseLanguage = "en",
+        grounding_feedback: str | None = None,
     ) -> FinalAnalysis:
+        del grounding_feedback
         del question, intent, plan
         zh = is_chinese(response_language)
         findings = []
@@ -1169,8 +1220,14 @@ class MockLLMClient(BaseLLMClient):
             month_column
             and orders_column
             and revenue_column
-            and "volume" in q
-            and any(term in q for term in ("value", "aov", "average order"))
+            and (
+                ("volume" in q and any(term in q for term in ("value", "aov", "average order")))
+                or (
+                    orders_column.lower().replace("_", " ") in q
+                    and revenue_column.lower().replace("_", " ") in q
+                    and any(term in q for term in ("decompose", "拆解"))
+                )
+            )
         ):
             return SqlGeneration(
                 sql=(
@@ -1332,6 +1389,130 @@ LOCAL_NON_THINKING_EXTRA_BODY = {
     "chat_template_kwargs": {"enable_thinking": False},
 }
 
+_EXPLICIT_INVESTIGATION = re.compile(
+    r"(?:继续调查|深入分析|进一步(?:分析|拆解|调查)|找出(?:主要)?驱动|自主调查|"
+    r"investigate\s+further|drill\s+down|identify\s+(?:the\s+)?drivers?|"
+    r"continue\s+(?:the\s+)?analysis)",
+    re.IGNORECASE,
+)
+
+
+def _enforce_explicit_investigative_intent(question: str, intent: AnalysisIntent) -> AnalysisIntent:
+    if not _EXPLICIT_INVESTIGATION.search(question):
+        return intent
+    if intent.needs_multi_step and intent.analysis_type in {"diagnostic", "exploratory"}:
+        return intent
+    return intent.model_copy(update={"analysis_type": "diagnostic", "needs_multi_step": True})
+
+
+def _message_text(message: Any) -> str:
+    tool_calls = getattr(message, "tool_calls", None)
+    if isinstance(tool_calls, list):
+        for tool_call in tool_calls:
+            arguments = tool_call.get("args") if isinstance(tool_call, dict) else None
+            if isinstance(arguments, str) and arguments.strip():
+                return arguments
+            if isinstance(arguments, dict):
+                return json.dumps(arguments, ensure_ascii=False, default=str)
+    additional = getattr(message, "additional_kwargs", None)
+    if isinstance(additional, dict):
+        for tool_call in additional.get("tool_calls") or []:
+            function = tool_call.get("function", {}) if isinstance(tool_call, dict) else {}
+            arguments = function.get("arguments")
+            if isinstance(arguments, str) and arguments.strip():
+                return arguments
+    content = getattr(message, "content", message)
+    if isinstance(content, str):
+        if content.strip():
+            return content
+        if hasattr(message, "model_dump"):
+            return json.dumps(message.model_dump(), ensure_ascii=False, default=str)
+        return content
+    return json.dumps(content, ensure_ascii=False, default=str)
+
+
+def _extract_json_value(text: str) -> Any:
+    cleaned = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", text.strip(), flags=re.IGNORECASE)
+    decoder = json.JSONDecoder()
+    for index, character in enumerate(cleaned):
+        if character not in "[{":
+            continue
+        try:
+            value, _ = decoder.raw_decode(cleaned[index:])
+            return value
+        except json.JSONDecodeError:
+            continue
+    raise ValueError("No valid JSON value was found in the model output")
+
+
+def _repair_json_value(text: str) -> Any:
+    """Repair JSON syntax only; semantic/schema repair remains a separate model call."""
+
+    cleaned = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", text.strip(), flags=re.IGNORECASE)
+    starts = [index for index, character in enumerate(cleaned) if character in "[{"]
+    last_error: Exception | None = None
+    for start in starts:
+        candidate = cleaned[start:]
+        end = max(candidate.rfind("}"), candidate.rfind("]"))
+        if end >= 0:
+            candidate = candidate[: end + 1]
+        candidate = re.sub(r",\s*([}\]])", r"\1", candidate)
+        try:
+            return json.loads(candidate)
+        except (json.JSONDecodeError, TypeError) as error:
+            last_error = error
+        try:
+            value = ast.literal_eval(candidate)
+        except (SyntaxError, ValueError) as error:
+            last_error = error
+            continue
+        if isinstance(value, dict | list):
+            return value
+    raise ValueError("The model output could not be normalized as JSON") from last_error
+
+
+def _normalize_structured_value(value: Any, schema: type[BaseModel]) -> Any:
+    if isinstance(value, list) and len(value) == 1 and isinstance(value[0], dict):
+        return value[0]
+    if isinstance(value, dict) and len(value) == 1:
+        key, nested = next(iter(value.items()))
+        wrapper_names = {schema.__name__.lower(), "output", "result", "data"}
+        if key.lower() in wrapper_names and isinstance(nested, dict):
+            return nested
+    return value
+
+
+def _safe_error(error: Exception | None) -> str | None:
+    if error is None:
+        return None
+    if isinstance(error, ValidationError):
+        fields = [
+            ".".join(str(part) for part in item["loc"]) + ":" + item["type"]
+            for item in error.errors(include_url=False, include_context=False, include_input=False)[
+                :8
+            ]
+        ]
+        return f"ValidationError: {', '.join(fields)}"
+    if isinstance(error, json.JSONDecodeError):
+        return f"JSONDecodeError: line={error.lineno}, column={error.colno}"
+    return type(error).__name__
+
+
+STRUCTURED_REPAIR_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Reformat the supplied output as one valid JSON value matching the supplied JSON schema. "
+            "Do not re-analyze the task, add commentary, or wrap the JSON in markdown.",
+        ),
+        (
+            "human",
+            "Current objective:\n{objective}\n\nExpected JSON schema:\n{schema}\n\n"
+            "Previous output (safely truncated):\n{output}\n\nValidation error:\n{error}",
+        ),
+    ]
+)
+
 
 class OpenAICompatibleLLMClient(BaseLLMClient):
     provider_name = "openai_compatible"
@@ -1382,6 +1563,30 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         self.last_used_fallback = False
         self.allow_mock_fallback = allow_mock_fallback
         self.structured_output_method = structured_output_method
+        self.last_structured_diagnostic: dict[str, Any] | None = None
+        self.structured_diagnostics: list[dict[str, Any]] = []
+
+    def _record_structured_diagnostic(
+        self,
+        *,
+        stage: str,
+        outcome: str,
+        first_parse_error: Exception | None = None,
+        recovery_parse_error: Exception | None = None,
+        schema_repair_error: Exception | None = None,
+    ) -> None:
+        diagnostic = {
+            "structured_stage": stage,
+            "outcome": outcome,
+            "first_parse_error": _safe_error(first_parse_error),
+            "recovery_parse_error": _safe_error(recovery_parse_error),
+            "schema_repair_error": _safe_error(schema_repair_error),
+        }
+        self.last_structured_diagnostic = diagnostic
+        if not hasattr(self, "structured_diagnostics"):
+            self.structured_diagnostics = []
+        self.structured_diagnostics.append(diagnostic)
+        logger.info("LLM structured output", extra={"structured_output": diagnostic})
 
     @staticmethod
     def _provider_status_code(error: Exception) -> int | None:
@@ -1453,45 +1658,132 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
     ) -> StructuredT:
         self.last_used_fallback = False
         bound_kwargs = dict(request_kwargs or {})
+        raw_text = ""
+        stage = schema.__name__
+        first_error: Exception | None = None
+        recovery_error: Exception | None = None
+        normalization_error: Exception | None = None
+        schema_repair_error: Exception | None = None
         try:
             chain = prompt | self.model.with_structured_output(
-                schema, method=self.structured_output_method, **bound_kwargs
+                schema,
+                method=self.structured_output_method,
+                include_raw=True,
+                **bound_kwargs,
             )
             result = chain.invoke(inputs)
-            return result if isinstance(result, schema) else schema.model_validate(result)
-        except Exception as first_error:
+            if isinstance(result, dict) and {"raw", "parsed"}.intersection(result):
+                parsed = result.get("parsed")
+                if parsed is not None:
+                    validated = (
+                        parsed if isinstance(parsed, schema) else schema.model_validate(parsed)
+                    )
+                    self._record_structured_diagnostic(stage=stage, outcome="structured")
+                    return validated
+                raw_text = _message_text(result.get("raw"))
+                parsing_error = result.get("parsing_error")
+                if isinstance(parsing_error, Exception):
+                    first_error = parsing_error
+                else:
+                    first_error = ValueError("Structured parser returned no parsed value")
+            else:
+                validated = result if isinstance(result, schema) else schema.model_validate(result)
+                self._record_structured_diagnostic(stage=stage, outcome="structured")
+                return validated
+        except Exception as caught_first_error:
+            first_error = caught_first_error
             self._raise_provider_error(first_error)
-            recovery_error: Exception | None = None
+
+        try:
+            validated = schema.model_validate(
+                _normalize_structured_value(_extract_json_value(raw_text), schema)
+            )
+            self._record_structured_diagnostic(
+                stage=stage,
+                outcome="json_recovery",
+                first_parse_error=first_error,
+            )
+            return validated
+        except Exception as caught_recovery_error:
+            recovery_error = caught_recovery_error
+
+        try:
+            validated = schema.model_validate(
+                _normalize_structured_value(_repair_json_value(raw_text), schema)
+            )
+            self._record_structured_diagnostic(
+                stage=stage,
+                outcome="json_normalization",
+                first_parse_error=first_error,
+                recovery_parse_error=recovery_error,
+            )
+            return validated
+        except Exception as caught_normalization_error:
+            normalization_error = caught_normalization_error
+
+        if raw_text:
             try:
-                message = (prompt | self.model.bind(**bound_kwargs)).invoke(inputs)
-                content = (
-                    message.content if isinstance(message.content, str) else str(message.content)
+                repair_inputs = {
+                    "objective": json.dumps(inputs, ensure_ascii=False, default=str)[:4_000],
+                    "schema": json.dumps(schema.model_json_schema(), ensure_ascii=False)[:8_000],
+                    "output": raw_text[:4_000] or "No recoverable raw output was returned.",
+                    "error": str(first_error)[:1_000],
+                }
+                message = (STRUCTURED_REPAIR_PROMPT | self.model.bind(**bound_kwargs)).invoke(
+                    repair_inputs
                 )
-                match = re.search(r"\{.*\}", content, flags=re.DOTALL)
-                if match:
-                    return schema.model_validate(json.loads(match.group(0)))
-            except Exception as caught_recovery_error:
-                recovery_error = caught_recovery_error
-                self._raise_provider_error(caught_recovery_error)
-            if not self.allow_mock_fallback:
-                is_local = self.provider_name == "local"
-                raise AppError(
-                    "local_model_error" if is_local else "llm_invalid_output",
-                    (
-                        "The local model did not return compatible structured output. "
-                        "Check the Model ID and tool-calling support."
-                        if is_local
-                        else "The model did not return compatible structured output."
-                    ),
-                    status_code=502,
-                ) from (recovery_error or first_error)
-            try:
-                self.last_used_fallback = True
-                return fallback()
-            except Exception as fallback_error:
-                raise AppError(
-                    "llm_invalid_output", "The model returned invalid structured output."
-                ) from (fallback_error or first_error)
+                validated = schema.model_validate(
+                    _normalize_structured_value(_extract_json_value(_message_text(message)), schema)
+                )
+                self._record_structured_diagnostic(
+                    stage=stage,
+                    outcome="schema_repair",
+                    first_parse_error=first_error,
+                    recovery_parse_error=recovery_error or normalization_error,
+                )
+                return validated
+            except Exception as caught_schema_repair_error:
+                schema_repair_error = caught_schema_repair_error
+                self._raise_provider_error(caught_schema_repair_error)
+
+        self._record_structured_diagnostic(
+            stage=stage,
+            outcome="failed",
+            first_parse_error=first_error,
+            recovery_parse_error=recovery_error or normalization_error,
+            schema_repair_error=schema_repair_error,
+        )
+        if not self.allow_mock_fallback:
+            is_local = self.provider_name == "local"
+            diagnostic = self.last_structured_diagnostic or {"structured_stage": stage}
+            raise AppError(
+                "local_model_error" if is_local else "llm_invalid_output",
+                (
+                    "The local model did not return compatible structured output. "
+                    "Check the Model ID and tool-calling support."
+                    if is_local
+                    else f"The model returned invalid structured output for {stage}."
+                ),
+                status_code=502,
+                details={
+                    key: diagnostic.get(key)
+                    for key in (
+                        "structured_stage",
+                        "first_parse_error",
+                        "recovery_parse_error",
+                        "schema_repair_error",
+                    )
+                },
+            ) from (schema_repair_error or normalization_error or recovery_error or first_error)
+        try:
+            self.last_used_fallback = True
+            return fallback()
+        except Exception as fallback_error:
+            raise AppError(
+                "llm_invalid_output",
+                f"The model returned invalid structured output for {stage}.",
+                details={"structured_stage": stage},
+            ) from (fallback_error or first_error)
 
     def rewrite_question(
         self,
@@ -1513,18 +1805,20 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
     def understand_analysis_intent(
         self, question: str, response_language: ResponseLanguage = "en"
     ) -> AnalysisIntent:
-        return self._invoke_structured(
+        intent = self._invoke_structured(
             ANALYSIS_INTENT_PROMPT,
             AnalysisIntent,
             {"question": question, "response_language": response_language},
             lambda: self.fallback.understand_analysis_intent(question, response_language),
         )
+        return _enforce_explicit_investigative_intent(question, intent)
 
     def create_analysis_plan(
         self,
         question: str,
         intent: AnalysisIntent,
         response_language: ResponseLanguage = "en",
+        dataset_capability: dict[str, Any] | None = None,
     ) -> AnalysisPlan:
         return self._invoke_structured(
             ANALYSIS_PLAN_PROMPT,
@@ -1535,10 +1829,13 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
                 "metrics": json.dumps(intent.metrics),
                 "dimensions": json.dumps(intent.dimensions),
                 "question": question,
+                "dataset_capability": json.dumps(dataset_capability or {}, ensure_ascii=True),
                 "max_steps": MAX_ANALYSIS_STEPS,
                 "response_language": response_language,
             },
-            lambda: self.fallback.create_analysis_plan(question, intent, response_language),
+            lambda: self.fallback.create_analysis_plan(
+                question, intent, response_language, dataset_capability
+            ),
         )
 
     def evaluate_analysis(
@@ -1547,6 +1844,8 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         plan: AnalysisPlan,
         evidence: list[Evidence],
         response_language: ResponseLanguage = "en",
+        dataset_capability: dict[str, Any] | None = None,
+        analysis_context: dict[str, Any] | None = None,
     ) -> AnalysisEvaluation:
         return self._invoke_structured(
             ANALYSIS_EVALUATION_PROMPT,
@@ -1560,9 +1859,18 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
                 ),
                 "step_count": len(evidence),
                 "max_steps": plan.max_steps,
+                "dataset_capability": json.dumps(dataset_capability or {}, ensure_ascii=True),
+                "analysis_context": json.dumps(analysis_context or {}, ensure_ascii=True),
                 "response_language": response_language,
             },
-            lambda: self.fallback.evaluate_analysis(intent, plan, evidence, response_language),
+            lambda: self.fallback.evaluate_analysis(
+                intent,
+                plan,
+                evidence,
+                response_language,
+                dataset_capability,
+                analysis_context,
+            ),
         )
 
     def synthesize_analysis(
@@ -1574,15 +1882,26 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
         critic: CriticResult | None,
         evidence_insufficient: bool,
         response_language: ResponseLanguage = "en",
+        grounding_feedback: str | None = None,
     ) -> FinalAnalysis:
         evidence_payload = [
             {
                 "id": item.id,
                 "step_id": item.step_id,
                 "question": item.question,
+                "result_shape": item.result_shape,
+                "result_shape_metadata": (
+                    item.result_shape_metadata.model_dump(mode="json")
+                    if item.result_shape_metadata
+                    else None
+                ),
                 "result_summary": item.result_summary,
-                "key_values": item.key_values,
+                "facts": [
+                    fact.model_dump(mode="json", exclude_none=True) for fact in item.facts[:40]
+                ],
                 "row_count": item.row_count,
+                "returned_row_count": item.returned_row_count,
+                "is_truncated": item.is_truncated,
                 "lineage": item.lineage,
                 "limitations": item.limitations,
             }
@@ -1598,6 +1917,7 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
                 "evidence": json.dumps(evidence_payload, ensure_ascii=True),
                 "critic": json.dumps(critic.model_dump(mode="json") if critic else None),
                 "evidence_insufficient": evidence_insufficient,
+                "grounding_feedback": grounding_feedback or "none",
                 "response_language": response_language,
             },
             lambda: self.fallback.synthesize_analysis(
@@ -1608,6 +1928,7 @@ class OpenAICompatibleLLMClient(BaseLLMClient):
                 critic,
                 evidence_insufficient,
                 response_language,
+                grounding_feedback,
             ),
         )
 

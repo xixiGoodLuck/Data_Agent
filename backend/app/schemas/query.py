@@ -11,6 +11,35 @@ MAX_ANALYSIS_STEPS = 5
 AnalysisType = Literal["lookup", "comparison", "ranking", "trend", "diagnostic", "exploratory"]
 AnalysisMode = Literal["simple_query", "investigative_analysis"]
 AnalysisStepStatus = Literal["pending", "running", "completed", "skipped"]
+ResultShape = Literal[
+    "scalar",
+    "ranking",
+    "categorical_breakdown",
+    "time_series",
+    "period_comparison",
+]
+
+
+class ResultShapeMetadata(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    shape: ResultShape
+    time_column: str | None = None
+    dimension_columns: list[str] = Field(default_factory=list, max_length=20)
+    metric_columns: list[str] = Field(default_factory=list, max_length=20)
+    series_columns: list[str] = Field(default_factory=list, max_length=20)
+
+
+class EvidenceFact(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    fact_id: str = Field(min_length=1, max_length=160)
+    metric: str = Field(min_length=1, max_length=120)
+    dimension: str | None = Field(default=None, max_length=120)
+    dimension_value: str | None = Field(default=None, max_length=240)
+    statistic: str = Field(min_length=1, max_length=120)
+    value: str | int | float | bool
+    unit: str | None = Field(default=None, max_length=40)
 
 
 class AnalysisIntent(BaseModel):
@@ -68,6 +97,19 @@ class AnalysisPlan(BaseModel):
         return self
 
 
+class AnalysisContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    objective: str = Field(min_length=1, max_length=500)
+    active_metrics: list[str] = Field(default_factory=list, max_length=20)
+    active_dimensions: list[str] = Field(default_factory=list, max_length=20)
+    required_filters: list[str] = Field(default_factory=list, max_length=20)
+    time_range: str | None = Field(default=None, max_length=200)
+    comparison_grain: str | None = Field(default=None, max_length=200)
+    grouping_grain: str | None = Field(default=None, max_length=120)
+    remaining_evidence_gap: list[str] = Field(default_factory=list, max_length=20)
+
+
 class Evidence(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -75,9 +117,15 @@ class Evidence(BaseModel):
     step_id: str = Field(min_length=1, max_length=32)
     question: str = Field(min_length=2, max_length=500)
     sql: str = Field(min_length=1, max_length=10_000)
+    result_shape: ResultShape = "scalar"
+    result_shape_metadata: ResultShapeMetadata | None = None
     result_summary: str = Field(min_length=1, max_length=2_000)
     key_values: dict[str, Any] = Field(default_factory=dict)
+    series_changes: dict[str, dict[str, float]] = Field(default_factory=dict)
+    facts: list[EvidenceFact] = Field(default_factory=list, max_length=200)
     row_count: int = Field(ge=0)
+    returned_row_count: int = Field(default=0, ge=0)
+    is_truncated: bool = False
     lineage: dict[str, Any] | None = None
     limitations: list[str] = Field(default_factory=list, max_length=20)
     created_at: datetime
@@ -101,6 +149,7 @@ class NextAnalysisDecision(BaseModel):
     next_step: AnalysisStep | None = None
     reason: str = Field(min_length=1, max_length=240)
     plan_patch: dict[str, Any] | None = None
+    context_patch: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def validate_next_step(self) -> NextAnalysisDecision:
@@ -123,6 +172,7 @@ class Finding(BaseModel):
 
     statement: str = Field(min_length=1, max_length=1_000)
     evidence_ids: list[str] = Field(min_length=1, max_length=20)
+    fact_ids: list[str] = Field(default_factory=list, max_length=50)
     facts: dict[str, float] = Field(default_factory=dict)
 
 
@@ -241,6 +291,8 @@ class QueryResponse(BaseModel):
     columns: list[str] = Field(default_factory=list)
     rows: list[dict[str, Any]] = Field(default_factory=list)
     row_count: int = 0
+    returned_row_count: int = 0
+    is_truncated: bool = False
     chart: dict[str, Any] | None = None
     insight: str | None = None
     lineage: dict[str, Any] | None = None

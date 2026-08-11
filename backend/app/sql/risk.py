@@ -28,17 +28,52 @@ def assess_query_risk(
     }
     referenced_sensitive = sensitive.intersection({column.lower() for column in referenced_columns})
     selected_sensitive: set[str] = set()
-    for column in expression.find_all(exp.Column):
-        name = column.name.lower()
-        candidates = (
-            {f"{column.table.lower()}.{name}"}
-            if column.table
-            else {item for item in sensitive if item.endswith(f".{name}")}
+    final_projections = list(expression.selects)
+    for projection in final_projections:
+        for column in projection.find_all(exp.Column):
+            name = column.name.lower()
+            candidates = (
+                {f"{column.table.lower()}.{name}"}
+                if column.table
+                else {item for item in sensitive if item.endswith(f".{name}")}
+            )
+            if not candidates.intersection(sensitive):
+                continue
+            if column.find_ancestor(exp.AggFunc) is None:
+                selected_sensitive.update(candidates.intersection(sensitive))
+
+    ctes = {cte.alias_or_name.lower(): cte.this for cte in expression.find_all(exp.CTE)}
+
+    def aggregate_relation(query: exp.Expression, seen: set[str] | None = None) -> bool:
+        if any(isinstance(node, exp.AggFunc) for node in query.walk()):
+            return True
+        seen = set(seen or ())
+        source_names = {
+            table.name.lower() for table in query.find_all(exp.Table) if table.name.lower() in ctes
+        }
+        if not source_names:
+            return False
+        for name in source_names:
+            if name in seen or not aggregate_relation(ctes[name], seen | {name}):
+                return False
+        return True
+
+    final_source_names = {
+        table.name.lower()
+        for table in expression.find_all(exp.Table)
+        if table.find_ancestor(exp.Select) is expression
+    }
+    projects_star = any(
+        isinstance(projection, exp.Star)
+        or (isinstance(projection, exp.Column) and projection.is_star)
+        for projection in final_projections
+    )
+    projects_raw_star = projects_star and (
+        not final_source_names
+        or any(
+            name not in ctes or not aggregate_relation(ctes[name]) for name in final_source_names
         )
-        if not candidates.intersection(sensitive):
-            continue
-        if column.find_ancestor(exp.AggFunc) is None:
-            selected_sensitive.update(candidates.intersection(sensitive))
+    )
 
     has_aggregate = any(isinstance(node, exp.AggFunc) for node in expression.walk())
     if referenced_sensitive and not has_aggregate:
@@ -46,13 +81,7 @@ def assess_query_risk(
 
     reasons: list[str] = []
     level: Literal["low", "medium", "high"] = "low"
-    projects_all_columns = any(
-        isinstance(projection, exp.Star)
-        or (isinstance(projection, exp.Column) and projection.is_star)
-        for select_node in expression.find_all(exp.Select)
-        for projection in select_node.expressions
-    )
-    if projects_all_columns:
+    if projects_raw_star:
         level = "medium"
         reasons.append("Query uses SELECT * and may return broad row-level data")
     if selected_sensitive:

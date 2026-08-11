@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.agent.grounding import validate_final_analysis
 from app.core.errors import AppError
 from app.evals.investigative import INVESTIGATIVE_EVAL_CASES, score_investigative_response
-from app.schemas.query import Evidence, FinalAnalysis, Finding
+from app.schemas.query import Evidence, EvidenceFact, FinalAnalysis, Finding
 
 
 def evidence() -> Evidence:
@@ -44,6 +44,54 @@ def analysis(statement: str = "Revenue changed by -20%.") -> FinalAnalysis:
 
 def test_final_analysis_accepts_structured_grounded_output() -> None:
     assert validate_final_analysis(analysis(), [evidence()], evidence_insufficient=False)
+
+
+def test_final_analysis_can_ground_exact_evidence_fact_ids() -> None:
+    item = evidence().model_copy(
+        update={
+            "facts": [
+                EvidenceFact(
+                    fact_id="evidence-1:revenue_change_pct",
+                    metric="revenue_change_pct",
+                    statistic="change_pct",
+                    value=-20.0,
+                    unit="percent",
+                )
+            ]
+        }
+    )
+    grounded = analysis()
+    grounded.key_findings[0].fact_ids = ["evidence-1:revenue_change_pct"]
+
+    assert validate_final_analysis(grounded, [item], evidence_insufficient=False)
+
+
+def test_final_analysis_rejects_unknown_evidence_fact_id() -> None:
+    grounded = analysis()
+    grounded.key_findings[0].fact_ids = ["evidence-1:missing"]
+
+    with pytest.raises(AppError, match="fact"):
+        validate_final_analysis(grounded, [evidence()], evidence_insufficient=False)
+
+
+def test_grounding_accepts_thousands_separators_and_reasonable_rounding() -> None:
+    item = evidence().model_copy(
+        update={
+            "result_summary": "Revenue was 25,866.00 after previously being 26,245.81.",
+            "key_values": {
+                "current_revenue": 25866.0,
+                "previous_revenue": 26245.81,
+                "revenue_change_pct": -1.4471,
+            },
+        }
+    )
+    grounded = FinalAnalysis(
+        executive_summary="Revenue declined by 1.45%, from 26,245.81 to 25,866.00.",
+        key_findings=[],
+        evidence_ids=[item.id],
+    )
+
+    assert validate_final_analysis(grounded, [item], evidence_insufficient=False)
 
 
 def test_invalid_evidence_id_is_rejected() -> None:
@@ -251,6 +299,85 @@ def test_investigation_is_synthesized_grounded_and_charted(client: TestClient) -
     )
     assert 1 <= len(body["supporting_charts"]) <= 3
     assert any(event["event_type"] == "final_grounding_validated" for event in body["trace"])
+
+
+def test_grounding_failure_repairs_final_synthesis_once_without_rerunning_sql(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    llm = client.app.state.llm_resolver.default_client
+    calls: list[str | None] = []
+
+    def synthesize(
+        _question,
+        _intent,
+        _plan,
+        evidence_items,
+        _critic,
+        evidence_insufficient,
+        _response_language="en",
+        grounding_feedback=None,
+    ):
+        calls.append(grounding_feedback)
+        if grounding_feedback is None:
+            return FinalAnalysis(
+                executive_summary="The unsupported result is 999999.",
+                evidence_ids=[item.id for item in evidence_items],
+                evidence_insufficient=evidence_insufficient,
+            )
+        return FinalAnalysis(
+            executive_summary="The supplied evidence supports the bounded findings.",
+            evidence_ids=[item.id for item in evidence_items],
+            evidence_insufficient=evidence_insufficient,
+        )
+
+    monkeypatch.setattr(llm, "synthesize_analysis", synthesize)
+    body = client.post(
+        "/api/query", json={"dataset_id": "sales", "question": "Why did revenue decline?"}
+    ).json()
+
+    assert body["status"] == "success"
+    assert len(calls) == 2
+    assert calls[0] is None
+    assert calls[1] and "final_analysis_grounding_error" in calls[1]
+    assert sum(event["event_type"] == "final_synthesis_started" for event in body["trace"]) == 1
+    assert sum(event["event_type"] == "query_executed" for event in body["trace"]) == len(
+        body["evidence"]
+    )
+
+
+def test_grounding_failure_stops_after_one_failed_repair(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    llm = client.app.state.llm_resolver.default_client
+    calls = 0
+
+    def invalid_synthesis(
+        _question,
+        _intent,
+        _plan,
+        evidence_items,
+        _critic,
+        evidence_insufficient,
+        _response_language="en",
+        _grounding_feedback=None,
+    ):
+        nonlocal calls
+        calls += 1
+        return FinalAnalysis(
+            executive_summary="The unsupported result is 999999.",
+            evidence_ids=[item.id for item in evidence_items],
+            evidence_insufficient=evidence_insufficient,
+        )
+
+    monkeypatch.setattr(llm, "synthesize_analysis", invalid_synthesis)
+    body = client.post(
+        "/api/query", json={"dataset_id": "sales", "question": "Why did revenue decline?"}
+    ).json()
+
+    assert body["status"] == "failed"
+    assert body["error"]["type"] == "final_analysis_grounding_error"
+    assert calls == 2
+    assert any(event["event_type"] == "final_grounding_failed" for event in body["trace"])
 
 
 def test_conversation_reopen_restores_full_analysis(client: TestClient) -> None:

@@ -1,0 +1,165 @@
+{
+  "label": "V3 post-score stability results",
+  "does_not_change_first_attempt_score": true,
+  "summary": {
+    "passed": 5,
+    "total": 9,
+    "structured_502": 1
+  },
+  "results": [
+    {
+      "id": "V3-SAL-01",
+      "run": 1,
+      "kind": "simple",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 1,
+      "evidence_count": 0,
+      "structured_502": false,
+      "passed": true,
+      "latency_ms": 9630.4,
+      "error": null
+    },
+    {
+      "id": "V3-SAL-01",
+      "run": 2,
+      "kind": "simple",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 1,
+      "evidence_count": 0,
+      "structured_502": false,
+      "passed": true,
+      "latency_ms": 9255.3,
+      "error": null
+    },
+    {
+      "id": "V3-SAL-01",
+      "run": 3,
+      "kind": "simple",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 1,
+      "evidence_count": 0,
+      "structured_502": false,
+      "passed": true,
+      "latency_ms": 8673.4,
+      "error": null
+    },
+    {
+      "id": "V3-COM-03",
+      "run": 1,
+      "kind": "investigative",
+      "status": "blocked",
+      "mode": "investigative_analysis",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 1,
+      "evidence_count": 1,
+      "structured_502": false,
+      "passed": false,
+      "latency_ms": 29545.2,
+      "error": {
+        "type": "sql_safety_block",
+        "message": "Aggregates from sibling one-to-many tables must be computed at the parent grain before joining."
+      }
+    },
+    {
+      "id": "V3-COM-03",
+      "run": 2,
+      "kind": "investigative",
+      "status": null,
+      "mode": null,
+      "provider": "deepseek",
+      "used_fallback": null,
+      "sql_calls": 0,
+      "evidence_count": 0,
+      "structured_502": true,
+      "passed": false,
+      "latency_ms": 70839.5,
+      "error": {
+        "type": "llm_invalid_output",
+        "message": "The model returned invalid structured output for FinalAnalysis.",
+        "details": {
+          "structured_stage": "FinalAnalysis",
+          "first_parse_error": "OutputParserException",
+          "recovery_parse_error": "ValidationError: :model_type",
+          "schema_repair_error": "ValidationError: :model_type"
+        }
+      }
+    },
+    {
+      "id": "V3-COM-03",
+      "run": 3,
+      "kind": "investigative",
+      "status": "failed",
+      "mode": "investigative_analysis",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 5,
+      "evidence_count": 5,
+      "structured_502": false,
+      "passed": false,
+      "latency_ms": 64601.8,
+      "error": {
+        "type": "final_analysis_grounding_error",
+        "message": "A numeric finding is not present in its cited evidence."
+      }
+    },
+    {
+      "id": "V3-SAL-05",
+      "run": 1,
+      "kind": "exploratory",
+      "status": "success",
+      "mode": "investigative_analysis",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 5,
+      "evidence_count": 5,
+      "structured_502": false,
+      "passed": true,
+      "latency_ms": 67158.2,
+      "error": null
+    },
+    {
+      "id": "V3-SAL-05",
+      "run": 2,
+      "kind": "exploratory",
+      "status": "success",
+      "mode": "investigative_analysis",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 5,
+      "evidence_count": 5,
+      "structured_502": false,
+      "passed": true,
+      "latency_ms": 64016.7,
+      "error": null
+    },
+    {
+      "id": "V3-SAL-05",
+      "run": 3,
+      "kind": "exploratory",
+      "status": "failed",
+      "mode": "investigative_analysis",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql_calls": 4,
+      "evidence_count": 4,
+      "structured_502": false,
+      "passed": false,
+      "latency_ms": 59486.5,
+      "error": {
+        "type": "derived_scope_error",
+        "message": "SQLite could not execute the validated query.",
+        "repairable": false
+      }
+    }
+  ]
+}

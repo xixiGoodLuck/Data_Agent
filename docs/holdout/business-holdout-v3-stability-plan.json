@@ -1,0 +1,19 @@
+{
+  "label": "V3 post-score stability plan",
+  "does_not_change_first_attempt_score": true,
+  "runs_per_case": 3,
+  "cases": [
+    {
+      "id": "V3-SAL-01",
+      "reason": "representative simple oracle pass"
+    },
+    {
+      "id": "V3-COM-03",
+      "reason": "representative investigative pass"
+    },
+    {
+      "id": "V3-SAL-05",
+      "reason": "representative exploratory pass"
+    }
+  ]
+}

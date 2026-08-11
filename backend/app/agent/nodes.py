@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -9,11 +10,15 @@ from typing import Any
 from langgraph.types import interrupt
 from sqlalchemy import select
 
-from app.agent.analysis import build_evidence
+from app.agent.analysis import build_dataset_capability, build_evidence
 from app.agent.events import EventRecorder
 from app.agent.grounding import select_supporting_charts, validate_final_analysis
 from app.agent.language import detect_response_language, is_chinese
-from app.agent.llm import BaseLLMClient, LLMClientResolver
+from app.agent.llm import (
+    BaseLLMClient,
+    LLMClientResolver,
+    _enforce_explicit_investigative_intent,
+)
 from app.agent.routing import prompt_guard_reason
 from app.agent.state import DataAnalysisState
 from app.charts.planner import plan_chart
@@ -36,6 +41,7 @@ from app.models import (
     QueryLog,
 )
 from app.schemas.query import (
+    AnalysisContext,
     AnalysisEvaluation,
     AnalysisIntent,
     AnalysisPlan,
@@ -48,6 +54,39 @@ from app.sql.executor import execute_read_only
 from app.sql.repair import may_repair
 from app.sql.risk import assess_query_risk
 from app.sql.validator import validate_sql
+
+_CRITIC_INCONSISTENCY = re.compile(
+    r"(?:possible|potential|may|might|可能|疑似).{0,40}(?:duplicat|fanout|重复|扇出)|"
+    r"unresolved.{0,30}(?:grain|conflict)|未解决.{0,30}(?:粒度|冲突)|"
+    r"inconsistent evidence|证据不一致|unsupported metric|不支持的指标|"
+    r"missing required evidence|缺少必要证据",
+    re.IGNORECASE,
+)
+
+
+def _enforce_critic_consistency(critic: CriticResult) -> CriticResult:
+    concerns = " ".join([*critic.limitations, *critic.conflicts, *critic.missing_evidence])
+    if critic.sufficient and _CRITIC_INCONSISTENCY.search(concerns):
+        return critic.model_copy(update={"sufficient": False, "answered_objective": False})
+    return critic
+
+
+def _preserve_evidence_insufficient(
+    analysis: FinalAnalysis, *, evidence_insufficient: bool, response_language: str
+) -> FinalAnalysis:
+    if not evidence_insufficient:
+        return analysis
+    limitation = (
+        "证据不足, 结论仅为有限或部分结论。"
+        if is_chinese(response_language)
+        else "Evidence is insufficient; conclusions are partial or limited."
+    )
+    limitations = list(analysis.limitations)
+    if limitation not in limitations:
+        limitations.append(limitation)
+    return analysis.model_copy(
+        update={"evidence_insufficient": True, "limitations": limitations[:20]}
+    )
 
 
 class AnalysisNodes:
@@ -207,11 +246,14 @@ class AnalysisNodes:
                     ),
                 }
             tables = json.loads(dataset.tables_json)
+            stored_schema = json.loads(dataset.schema_json)
+            column_mapping = json.loads(dataset.column_mapping_json)
             name = dataset.name
         return {
             "dataset_name": name,
             "dataset_db_path": str(path),
             "available_tables": tables,
+            "dataset_capability": build_dataset_capability(stored_schema, column_mapping),
             "events": self._complete(
                 state,
                 node,
@@ -288,11 +330,23 @@ class AnalysisNodes:
         llm = self._llm_client(state)
         question = state.get("rewritten_question") or state["question"]
         intent = llm.understand_analysis_intent(question, self._response_language(state))
+        intent = _enforce_explicit_investigative_intent(state["question"], intent)
         analysis_mode = "investigative_analysis" if intent.needs_multi_step else "simple_query"
+        analysis_context = AnalysisContext(
+            objective=intent.objective,
+            active_metrics=intent.metrics,
+            active_dimensions=intent.dimensions,
+            required_filters=intent.filters,
+            time_range=intent.time_range,
+            comparison_grain=intent.comparison,
+            grouping_grain=intent.desired_grain,
+            remaining_evidence_gap=[intent.objective],
+        )
         return {
             "active_analysis_question": question,
             "analysis_mode": analysis_mode,
             "analysis_intent": intent.model_dump(),
+            "analysis_context": analysis_context.model_dump(),
             "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
             "events": self._complete(
                 state,
@@ -315,7 +369,10 @@ class AnalysisNodes:
         intent = AnalysisIntent.model_validate(state["analysis_intent"])
         question = state.get("rewritten_question") or state["question"]
         plan = llm.create_analysis_plan(
-            question, intent, self._response_language(state)
+            question,
+            intent,
+            self._response_language(state),
+            state.get("dataset_capability", {}),
         ).model_copy(deep=True)
         plan.status = "running"
         return {
@@ -397,8 +454,13 @@ class AnalysisNodes:
             "columns": [],
             "rows": [],
             "row_count": 0,
+            "returned_row_count": 0,
+            "is_truncated": False,
             "lineage": None,
             "repair_attempts": 0,
+            "validation_repair_attempts": 0,
+            "execution_repair_attempts": 0,
+            "repair_source": None,
             "execution_outcome": None,
             "execution_error": None,
             "status": "processing",
@@ -557,17 +619,65 @@ class AnalysisNodes:
     def validate_sql_node(self, state: DataAnalysisState) -> dict[str, Any]:
         node = "validate_sql_node"
         started_at, started = self._start(state, node)
+        generated_sql = state.get("generated_sql") or ""
+        broad_investigative_step = state.get("analysis_mode") == "investigative_analysis" and bool(
+            re.search(r"\bselect\s+(?:[a-z_][a-z0-9_]*\.)?\*", generated_sql, re.IGNORECASE)
+        )
+        if broad_investigative_step:
+            reason = "Investigative analysis steps must project explicit aggregate results, not SELECT *."
+            if state.get("validation_repair_attempts", 0) < self.MAX_VALIDATION_REPAIR_ATTEMPTS:
+                return {
+                    "safe_sql": False,
+                    "safety_reason": reason,
+                    "normalized_sql": generated_sql,
+                    "execution_outcome": "repair",
+                    "execution_error": {
+                        "type": "analysis_step_too_broad",
+                        "message": reason,
+                        "repairable": True,
+                    },
+                    "repair_source": "validation",
+                    "status": "repair_needed",
+                    "events": self._complete(
+                        state,
+                        node,
+                        started_at,
+                        started,
+                        output_summary={
+                            "reason_code": "analysis_step_too_broad",
+                            "repairable": True,
+                        },
+                        event_type="sql_repair_required",
+                        status="repairing",
+                    ),
+                }
+            return {
+                "safe_sql": False,
+                "safety_reason": reason,
+                "status": "blocked",
+                "errors": [{"type": "sql_safety_block", "message": reason}],
+                "events": self._complete(
+                    state,
+                    node,
+                    started_at,
+                    started,
+                    output_summary={"reason_code": "analysis_step_too_broad", "reason": reason},
+                    event_type="sql_blocked",
+                    status="blocked",
+                ),
+            }
         validation = validate_sql(
             state.get("generated_sql"),
             allowed_tables=state["selected_tables"],
             schema=state["dataset_schema"],
             max_rows=self.settings.max_result_rows,
+            question=self._analysis_question(state),
         )
         if not validation.safe:
             reason = validation.reason or "The SQL did not pass validation."
             repair = (
                 validation.repairable
-                and state.get("repair_attempts", 0) < self.MAX_VALIDATION_REPAIR_ATTEMPTS
+                and state.get("validation_repair_attempts", 0) < self.MAX_VALIDATION_REPAIR_ATTEMPTS
             )
             if repair:
                 return {
@@ -580,6 +690,7 @@ class AnalysisNodes:
                         "message": reason,
                         "repairable": True,
                     },
+                    "repair_source": "validation",
                     "status": "repair_needed",
                     "events": self._complete(
                         state,
@@ -746,6 +857,8 @@ class AnalysisNodes:
                 "columns": result.columns,
                 "rows": result.rows,
                 "row_count": result.row_count,
+                "returned_row_count": result.returned_row_count,
+                "is_truncated": result.is_truncated,
                 "execution_outcome": "success",
                 "execution_error": None,
                 "status": "processing",
@@ -760,7 +873,9 @@ class AnalysisNodes:
             }
         tool_failures = state.get("tool_failures", 0) + 1
         repair = tool_failures <= self.MAX_TOOL_FAILURES and may_repair(
-            result.error_type, result.repairable, state.get("repair_attempts", 0)
+            result.error_type,
+            result.repairable,
+            state.get("execution_repair_attempts", 0),
         )
         error = {
             "type": result.error_type or "query_execution_error",
@@ -770,6 +885,7 @@ class AnalysisNodes:
         return {
             "execution_outcome": "repair" if repair else "failed",
             "execution_error": error,
+            "repair_source": "execution" if repair else None,
             "tool_failures": tool_failures,
             "status": "repair_needed" if repair else "failed",
             "errors": [error],
@@ -796,11 +912,21 @@ class AnalysisNodes:
             error.get("type", "query_execution_error"),
             state.get("schema_context") or "",
         )
+        repair_source = state.get("repair_source")
+        validation_attempts = state.get("validation_repair_attempts", 0)
+        execution_attempts = state.get("execution_repair_attempts", 0)
+        if repair_source == "validation":
+            validation_attempts += 1
+        elif repair_source == "execution":
+            execution_attempts += 1
         return {
             "generated_sql": result.sql,
             "normalized_sql": None,
             "safe_sql": False,
             "repair_attempts": state.get("repair_attempts", 0) + 1,
+            "validation_repair_attempts": validation_attempts,
+            "execution_repair_attempts": execution_attempts,
+            "repair_source": None,
             "execution_outcome": None,
             "execution_error": None,
             "status": "processing",
@@ -846,6 +972,9 @@ class AnalysisNodes:
                     "result_summary": evidence.result_summary,
                     "key_values": evidence.key_values,
                     "row_count": evidence.row_count,
+                    "result_shape": evidence.result_shape,
+                    "returned_row_count": evidence.returned_row_count,
+                    "is_truncated": evidence.is_truncated,
                     "limitations": evidence.limitations,
                 },
                 event_type="evidence_created",
@@ -902,7 +1031,12 @@ class AnalysisNodes:
             while True:
                 try:
                     evaluation = llm.evaluate_analysis(
-                        intent, plan, evidence, self._response_language(state)
+                        intent,
+                        plan,
+                        evidence,
+                        self._response_language(state),
+                        state.get("dataset_capability", {}),
+                        state.get("analysis_context", {}),
                     )
                     break
                 except AppError as exc:
@@ -914,7 +1048,25 @@ class AnalysisNodes:
                         raise
                     retries += 1
 
+        evaluation = evaluation.model_copy(
+            update={"critic": _enforce_critic_consistency(evaluation.critic)}
+        )
         decision = evaluation.decision.model_copy(deep=True)
+        analysis_context = dict(state.get("analysis_context", {}))
+        if decision.context_patch:
+            patch = dict(decision.context_patch)
+            remove_dimension = patch.pop("remove_dimension", None)
+            if remove_dimension:
+                analysis_context["active_dimensions"] = [
+                    item
+                    for item in analysis_context.get("active_dimensions", [])
+                    if item != remove_dimension
+                ]
+            for key in AnalysisContext.model_fields:
+                if key in patch:
+                    analysis_context[key] = patch[key]
+            analysis_context = AnalysisContext.model_validate(analysis_context).model_dump()
+        analysis_context["remaining_evidence_gap"] = list(evaluation.critic.missing_evidence)
         if evaluation.critic.sufficient:
             decision = NextAnalysisDecision(
                 action="finish",
@@ -999,6 +1151,7 @@ class AnalysisNodes:
             "analysis_plan": plan.model_dump(),
             "critic_result": evaluation.critic.model_dump(),
             "next_analysis_decision": decision.model_dump(),
+            "analysis_context": analysis_context,
             "decision_retries": retries if not forced_limit else state.get("decision_retries", 0),
             "evidence_insufficient": forced_limit
             or (decision.action == "finish" and not evaluation.critic.sufficient),
@@ -1065,6 +1218,11 @@ class AnalysisNodes:
             state.get("evidence_insufficient", False),
             self._response_language(state),
         )
+        analysis = _preserve_evidence_insufficient(
+            analysis,
+            evidence_insufficient=state.get("evidence_insufficient", False),
+            response_language=self._response_language(state),
+        )
         return {
             "final_analysis": analysis.model_dump(),
             "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
@@ -1087,14 +1245,85 @@ class AnalysisNodes:
         evidence = [
             Evidence.model_validate(item) for item in state.get("evidence_by_step", {}).values()
         ]
-        analysis = validate_final_analysis(
-            FinalAnalysis.model_validate(state["final_analysis"]),
-            evidence,
-            evidence_insufficient=state.get("evidence_insufficient", False),
-        )
+        analysis = FinalAnalysis.model_validate(state["final_analysis"])
+        repair_attempts = state.get("grounding_repair_attempts", 0)
+        try:
+            analysis = validate_final_analysis(
+                analysis,
+                evidence,
+                evidence_insufficient=state.get("evidence_insufficient", False),
+            )
+        except AppError as exc:
+            if exc.error_type != "final_analysis_grounding_error" or repair_attempts >= 1:
+                return {
+                    "status": "failed",
+                    "errors": [{"type": exc.error_type, "message": exc.message}],
+                    "events": self._complete(
+                        state,
+                        node,
+                        started_at,
+                        started,
+                        output_summary={"grounded": False, "repair_attempts": repair_attempts},
+                        event_type="final_grounding_failed",
+                        status="failed",
+                    ),
+                }
+            plan = AnalysisPlan.model_validate(state["analysis_plan"])
+            intent = AnalysisIntent.model_validate(state["analysis_intent"])
+            critic = (
+                CriticResult.model_validate(state["critic_result"])
+                if state.get("critic_result")
+                else None
+            )
+            llm = self._llm_client(state)
+            repaired = llm.synthesize_analysis(
+                state["question"],
+                intent,
+                plan,
+                evidence,
+                critic,
+                state.get("evidence_insufficient", False),
+                self._response_language(state),
+                f"{exc.error_type}: {exc.message}",
+            )
+            repaired = _preserve_evidence_insufficient(
+                repaired,
+                evidence_insufficient=state.get("evidence_insufficient", False),
+                response_language=self._response_language(state),
+            )
+            repair_attempts += 1
+            try:
+                analysis = validate_final_analysis(
+                    repaired,
+                    evidence,
+                    evidence_insufficient=state.get("evidence_insufficient", False),
+                )
+            except AppError as retry_exc:
+                return {
+                    "final_analysis": repaired.model_dump(),
+                    "grounding_repair_attempts": repair_attempts,
+                    "status": "failed",
+                    "used_fallback": state.get("used_fallback", False) or llm.last_used_fallback,
+                    "errors": [{"type": retry_exc.error_type, "message": retry_exc.message}],
+                    "events": self._complete(
+                        state,
+                        node,
+                        started_at,
+                        started,
+                        output_summary={
+                            "grounded": False,
+                            "repair_attempts": repair_attempts,
+                        },
+                        event_type="final_grounding_failed",
+                        status="failed",
+                    ),
+                }
         return {
             "final_analysis": analysis.model_dump(),
+            "grounding_repair_attempts": repair_attempts,
             "insight": analysis.executive_summary,
+            "used_fallback": state.get("used_fallback", False)
+            or self._llm_client(state).last_used_fallback,
             "events": self._complete(
                 state,
                 node,
@@ -1267,6 +1496,8 @@ class AnalysisNodes:
             "columns": state.get("columns", []),
             "rows": state.get("rows", []),
             "row_count": state.get("row_count", 0),
+            "returned_row_count": state.get("returned_row_count", len(state.get("rows", []))),
+            "is_truncated": state.get("is_truncated", False),
             "chart": state.get("chart"),
             "insight": state.get("insight"),
             "lineage": state.get("lineage"),

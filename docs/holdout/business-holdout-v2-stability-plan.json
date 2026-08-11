@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "selection_method": "Python random.Random seeded from the first 16 hex characters of the frozen V2 SHA-256",
+  "seed_hex": "48f1c8684c2d9ee1",
+  "runs_per_case": 3,
+  "selected_ids": [
+    "V2-SUB-01",
+    "V2-SAL-01",
+    "V2-SUB-04",
+    "V2-EMP-04",
+    "V2-COM-05"
+  ]
+}

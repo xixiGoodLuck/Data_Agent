@@ -173,7 +173,7 @@ def test_all_local_model_calls_inherit_non_thinking_client_options(
     for _name, request_options, call_kwargs in calls:
         assert request_options["extra_body"] == LOCAL_NON_THINKING_EXTRA_BODY
         assert request_options["reasoning_effort"] == "none"
-        assert call_kwargs == {"method": "json_schema"}
+        assert call_kwargs == {"method": "json_schema", "include_raw": True}
 
 
 def test_local_model_invalid_structured_output_never_uses_mock_fallback() -> None:

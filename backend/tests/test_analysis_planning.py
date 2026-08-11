@@ -7,8 +7,16 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.agent.analysis import build_evidence
-from app.agent.llm import MockLLMClient
-from app.agent.nodes import AnalysisNodes
+from app.agent.llm import (
+    MockLLMClient,
+    OpenAICompatibleLLMClient,
+    _enforce_explicit_investigative_intent,
+)
+from app.agent.nodes import (
+    AnalysisNodes,
+    _enforce_critic_consistency,
+    _preserve_evidence_insufficient,
+)
 from app.agent.prompts import (
     ANALYSIS_INTENT_PROMPT,
     ANALYSIS_PLAN_PROMPT,
@@ -24,8 +32,33 @@ from app.schemas.query import (
     AnalysisStep,
     CriticResult,
     Evidence,
+    FinalAnalysis,
     NextAnalysisDecision,
 )
+
+
+def test_critic_cannot_be_sufficient_with_unresolved_grain_concern() -> None:
+    critic = CriticResult(
+        sufficient=True,
+        answered_objective=True,
+        limitations=["There is a possible duplicated aggregation after the join."],
+    )
+
+    corrected = _enforce_critic_consistency(critic)
+
+    assert corrected.sufficient is False
+    assert corrected.answered_objective is False
+
+
+def test_final_analysis_cannot_clear_evidence_insufficient() -> None:
+    analysis = FinalAnalysis(executive_summary="A complete conclusion.")
+
+    corrected = _preserve_evidence_insufficient(
+        analysis, evidence_insufficient=True, response_language="en"
+    )
+
+    assert corrected.evidence_insufficient is True
+    assert "partial or limited" in corrected.limitations[0]
 
 
 def ask(client: TestClient, dataset_id: str, question: str) -> dict:
@@ -81,6 +114,82 @@ def test_direct_questions_use_simple_query_path(
     assert body["analysis_intent"]["needs_multi_step"] is False
     assert body["analysis_plan"] is None
     assert not any(event["node_name"] == "create_analysis_plan_node" for event in body["trace"])
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "比较两个年度后继续调查产品结构。",
+        "Please investigate further after the comparison.",
+        "Drill down and identify the drivers.",
+    ],
+)
+def test_explicit_investigation_instructions_force_multi_step(question: str) -> None:
+    direct = AnalysisIntent(
+        objective="Compare two periods.",
+        analysis_type="comparison",
+        needs_multi_step=False,
+        reason="One grouped query can compare them.",
+    )
+
+    result = _enforce_explicit_investigative_intent(question, direct)
+
+    assert result.analysis_type == "diagnostic"
+    assert result.needs_multi_step is True
+
+
+def test_plain_named_comparison_remains_simple() -> None:
+    direct = AnalysisIntent(
+        objective="Compare A and B.",
+        analysis_type="comparison",
+        needs_multi_step=False,
+        reason="One query is sufficient.",
+    )
+
+    result = _enforce_explicit_investigative_intent("Compare A and B; which is higher?", direct)
+
+    assert result == direct
+
+
+def test_dynamic_decision_receives_explicit_analysis_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict = {}
+    client = object.__new__(OpenAICompatibleLLMClient)
+    client.fallback = MockLLMClient()
+
+    def invoke(_prompt, _schema, inputs, _fallback, **_kwargs):
+        captured.update(inputs)
+        return AnalysisEvaluation(
+            critic=CriticResult(sufficient=True, answered_objective=True),
+            decision=NextAnalysisDecision(action="finish", reason="Complete."),
+        )
+
+    monkeypatch.setattr(client, "_invoke_structured", invoke)
+    intent = AnalysisIntent(
+        objective="Compare churn by signup year.",
+        analysis_type="diagnostic",
+        dimensions=["signup_year"],
+        needs_multi_step=True,
+        reason="Investigate composition.",
+    )
+    plan = AnalysisPlan(
+        objective=intent.objective,
+        steps=[AnalysisStep(id="step1", question="Compare years.", purpose="Baseline.")],
+    )
+
+    client.evaluate_analysis(
+        intent,
+        plan,
+        [],
+        analysis_context={
+            "objective": intent.objective,
+            "active_dimensions": ["signup_year"],
+            "comparison_grain": "signup_year",
+        },
+    )
+
+    assert "signup_year" in captured["analysis_context"]
 
 
 @pytest.mark.parametrize(
@@ -176,6 +285,8 @@ def test_sql_generation_preserves_metric_grain_and_prevents_join_fanout() -> Non
     assert "first sum the child values by parent key" in repair_text
     assert "distinct child group still duplicates it" in repair_text
     assert "the repair is valid only when" in repair_text
+    assert "For invented_date_literal" in repair_text
+    assert "replacing one invented date with another is not a repair" in repair_text
 
 
 def test_analysis_intent_keeps_single_query_factor_and_group_comparisons_simple() -> None:

@@ -128,6 +128,8 @@ export interface QueryResponse {
   columns: string[];
   rows: Record<string, unknown>[];
   row_count: number;
+  returned_row_count: number;
+  is_truncated: boolean;
   chart: ChartConfig | null;
   insight: string | null;
   lineage: { tables: string[]; columns: string[]; schema_hash: string | null } | null;
@@ -177,9 +179,29 @@ export interface Evidence {
   step_id: string;
   question: string;
   sql: string;
+  result_shape: "scalar" | "ranking" | "categorical_breakdown" | "time_series" | "period_comparison";
+  result_shape_metadata?: {
+    shape: Evidence["result_shape"];
+    time_column: string | null;
+    dimension_columns: string[];
+    metric_columns: string[];
+    series_columns: string[];
+  } | null;
   result_summary: string;
   key_values: Record<string, unknown>;
+  series_changes?: Record<string, Record<string, number>>;
+  facts?: Array<{
+    fact_id: string;
+    metric: string;
+    dimension: string | null;
+    dimension_value: string | null;
+    statistic: string;
+    value: string | number | boolean;
+    unit: string | null;
+  }>;
   row_count: number;
+  returned_row_count: number;
+  is_truncated: boolean;
   lineage: QueryResponse["lineage"];
   limitations: string[];
   created_at: string;
@@ -197,6 +219,7 @@ export interface CriticResult {
 export interface Finding {
   statement: string;
   evidence_ids: string[];
+  fact_ids?: string[];
   facts: Record<string, number>;
 }
 

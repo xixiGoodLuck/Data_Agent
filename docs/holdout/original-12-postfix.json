@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "completed": 12,
+  "results": [
+    {
+      "id": "R-01",
+      "dataset": "sales",
+      "question": "Enterprise 客户中，哪个产品贡献的总收入最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT product, SUM(revenue) AS total_revenue FROM sales WHERE customer_segment = 'Enterprise' GROUP BY product ORDER BY total_revenue DESC LIMIT 1",
+      "rows": [
+        {
+          "product": "Team Training",
+          "total_revenue": 62016.29
+        }
+      ],
+      "insight": "**观察**：在 Enterprise 客户群体中，收入最高的产品是 **Team Training**，其总收入为 **62,016.29**。\n\n**谨慎解读**：这表明 Team Training 产品在 Enterprise 客户中贡献了最大的收入份额，可能反映了企业客户对该培训类产品的较高需求或定价优势。\n\n**因果限制**：此结果仅基于收入汇总，未考虑产品销量、单价、成本或客户数量等因素；无法推断 Enterprise 客户偏好 Team Training 的原因，也不能据此判断该产品在其他客户群体中的表现。收入高低可能受价格、折扣、销售渠道等多种因素影响，需进一步分析才能得出因果结论。",
+      "error": null
+    },
+    {
+      "id": "R-02",
+      "dataset": "sales",
+      "question": "哪个客户分群的平均单笔收入最高？请按从高到低列出所有分群。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT customer_segment, AVG(revenue) AS avg_revenue_per_order FROM sales GROUP BY customer_segment ORDER BY avg_revenue_per_order DESC LIMIT 100",
+      "rows": [
+        {
+          "customer_segment": "Enterprise",
+          "avg_revenue_per_order": 1362.467591240876
+        },
+        {
+          "customer_segment": "Mid-Market",
+          "avg_revenue_per_order": 1242.7316666666666
+        },
+        {
+          "customer_segment": "SMB",
+          "avg_revenue_per_order": 1213.6786792452829
+        }
+      ],
+      "insight": "观察：按平均单笔收入从高到低排序，Enterprise 分群最高（约 1362.47），其次是 Mid-Market（约 1242.73），最低的是 SMB（约 1213.68）。三个分群的平均单笔收入差距相对较小，Enterprise 比 SMB 高出约 12%。\n\n谨慎解读：Enterprise 分群的平均单笔收入最高，这可能与其客户规模较大、采购量或客单价较高有关。但需注意，此分析仅基于平均单笔收入这一指标，未考虑订单数量、客户数量或收入分布（如是否存在极端值拉高均值）等因素。\n\n因果限制：该结果仅反映数据中的统计关联，不能据此推断客户分群本身导致了收入差异；其他未纳入分析的变量（如产品类型、地区、促销活动等）可能同时影响分群归属和单笔收入。",
+      "error": null
+    },
+    {
+      "id": "R-03",
+      "dataset": "sales",
+      "question": "最近两个月的收入变化主要来自销售数量变化，还是平均单价变化？分别给出变化幅度。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "WITH monthly AS (SELECT STRFTIME('%Y-%m', order_date) AS month, SUM(quantity) AS total_quantity, SUM(revenue) AS total_revenue, SUM(revenue) / SUM(quantity) AS avg_unit_price FROM sales GROUP BY STRFTIME('%Y-%m', order_date)), ranked AS (SELECT month, total_quantity, total_revenue, avg_unit_price, ROW_NUMBER() OVER (ORDER BY month DESC) AS rn FROM monthly), current_m AS (SELECT * FROM ranked WHERE rn = 1), previous_m AS (SELECT * FROM ranked WHERE rn = 2) SELECT current_m.month AS current_month, previous_m.month AS previous_month, current_m.total_revenue - previous_m.total_revenue AS revenue_change, (current_m.total_quantity - previous_m.total_quantity) * previous_m.avg_unit_price AS quantity_effect, (current_m.avg_unit_price - previous_m.avg_unit_price) * current_m.total_quantity AS price_effect, ROUND(100.0 * ((current_m.total_quantity - previous_m.total_quantity) * previous_m.avg_unit_price) / NULLIF(current_m.total_revenue - previous_m.total_revenue, 0), 2) AS quantity_effect_pct, ROUND(100.0 * ((current_m.avg_unit_price - previous_m.avg_unit_price) * current_m.total_quantity) / NULLIF(current_m.total_revenue - previous_m.total_revenue, 0), 2) AS price_effect_pct FROM current_m CROSS JOIN previous_m LIMIT 100",
+      "rows": [
+        {
+          "current_month": "2025-12",
+          "previous_month": "2025-11",
+          "revenue_change": -379.8100000000013,
+          "quantity_effect": -855.8416304347827,
+          "price_effect": 476.03163043478344,
+          "quantity_effect_pct": 225.33,
+          "price_effect_pct": -125.33
+        }
+      ],
+      "insight": "**观察：** 从2025年11月到2025年12月，总收入下降了约379.81。其中，销售数量变化（数量效应）贡献了约-855.84的下降，而平均单价变化（价格效应）贡献了约+476.03的上升。按百分比计，数量效应占总收入变化的225.33%，价格效应占-125.33%。\n\n**谨慎解读：** 收入下降主要由销售数量减少驱动，而平均单价的上升部分抵消了数量下降带来的负面影响。数量效应和价格效应方向相反，说明本月销量下滑但单价有所提升。\n\n**因果限制：** 此分析仅基于两个月的数据，无法确定数量下降或单价上升的具体原因（如季节性、促销、产品结构变化等），也不能推断这些趋势是否会持续。分解效应基于固定基期单价和当期数量的近似方法，存在一定的分解误差。",
+      "error": null
+    },
+    {
+      "id": "R-04",
+      "dataset": "employees",
+      "question": "哪个岗位的平均绩效分数最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT role, AVG(performance_score) AS avg_performance_score FROM employees GROUP BY role ORDER BY avg_performance_score DESC LIMIT 1",
+      "rows": [
+        {
+          "role": "Accountant",
+          "avg_performance_score": 4.3100000000000005
+        }
+      ],
+      "insight": "观察：在员工数据中，按岗位分组计算平均绩效分数后，得分最高的岗位是 Accountant（会计师），其平均绩效分数约为 4.31。\n\n谨慎解读：这表明在现有数据集中，会计师岗位的员工整体绩效评分高于其他岗位。然而，这仅基于平均值的比较，未考虑各岗位的员工人数、绩效评分的分布情况（如方差）或评分标准是否一致。\n\n因果限制：此结果仅反映数据中的统计关联，不能推断会计师岗位本身导致更高的绩效。绩效分数可能受个体能力、团队环境、评分者主观性、样本量差异等多种因素影响，无法从该查询中确定因果关系。",
+      "error": null
+    },
+    {
+      "id": "R-05",
+      "dataset": "employees",
+      "question": "各工作地点的平均薪资和平均绩效分别是多少？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT location, AVG(salary) AS avg_salary, AVG(performance_score) AS avg_performance_score FROM employees GROUP BY location ORDER BY avg_salary DESC LIMIT 100",
+      "rows": [
+        {
+          "location": "Remote",
+          "avg_salary": 136584.07894736843,
+          "avg_performance_score": 3.7342105263157896
+        },
+        {
+          "location": "Beijing",
+          "avg_salary": 130853.09677419355,
+          "avg_performance_score": 3.664516129032258
+        },
+        {
+          "location": "Shanghai",
+          "avg_salary": 126728.12121212122,
+          "avg_performance_score": 3.8484848484848486
+        },
+        {
+          "location": "Shenzhen",
+          "avg_salary": 125908.52173913043,
+          "avg_performance_score": 3.8304347826086955
+        },
+        {
+          "location": "Singapore",
+          "avg_salary": 124425.25,
+          "avg_performance_score": 3.746875
+        }
+      ],
+      "insight": "**观察：** 按平均薪资从高到低排序，各工作地点的平均薪资和平均绩效如下：Remote（平均薪资 136,584，平均绩效 3.73）、Beijing（130,853，3.66）、Shanghai（126,728，3.85）、Shenzhen（125,909，3.83）、Singapore（124,425，3.75）。Remote 的平均薪资最高，比最低的 Singapore 高出约 12,159；而平均绩效最高的是 Shanghai（3.85），最低的是 Beijing（3.66）。\n\n**谨慎解读：** 数据显示薪资与绩效之间没有明显的单调关系——例如 Shanghai 绩效最高但薪资排名第三，Remote 薪资最高但绩效排名第四。这可能暗示不同地点的薪资水平受当地市场、生活成本或公司薪酬政策等因素影响，而非单纯由绩效驱动。\n\n**因果限制：** 本分析仅基于描述性统计，无法推断地点与薪资或绩效之间的因果关系。样本量、员工职级、部门构成、工作年限等混杂因素未纳入控制，因此观察到的差异可能由其他未观测变量解释。",
+      "error": null
+    },
+    {
+      "id": "R-06",
+      "dataset": "employees",
+      "question": "各部门中，高流失风险员工占比最高的是哪个部门？请给出完整排名。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT department, COUNT(*) AS total_employees, SUM(CASE WHEN attrition_risk = 'High' THEN 1 ELSE 0 END) AS high_risk_employees, ROUND(100.0 * SUM(CASE WHEN attrition_risk = 'High' THEN 1 ELSE 0 END) / COUNT(*), 2) AS high_risk_pct FROM employees GROUP BY department ORDER BY high_risk_pct DESC, total_employees DESC LIMIT 100",
+      "rows": [
+        {
+          "department": "Finance",
+          "total_employees": 33,
+          "high_risk_employees": 6,
+          "high_risk_pct": 18.18
+        },
+        {
+          "department": "Sales",
+          "total_employees": 39,
+          "high_risk_employees": 6,
+          "high_risk_pct": 15.38
+        },
+        {
+          "department": "Marketing",
+          "total_employees": 32,
+          "high_risk_employees": 3,
+          "high_risk_pct": 9.38
+        },
+        {
+          "department": "Engineering",
+          "total_employees": 45,
+          "high_risk_employees": 4,
+          "high_risk_pct": 8.89
+        },
+        {
+          "department": "Operations",
+          "total_employees": 31,
+          "high_risk_employees": 1,
+          "high_risk_pct": 3.23
+        }
+      ],
+      "insight": "**观察：** 按高流失风险员工占比从高到低排名，各部门依次为：Finance（18.18%，6/33）、Sales（15.38%，6/39）、Marketing（9.38%，3/32）、Engineering（8.89%，4/45）、Operations（3.23%，1/31）。Finance部门的高流失风险占比最高，为18.18%。\n\n**谨慎解读：** Finance和Sales部门的高风险员工绝对数量相同（均为6人），但Finance因总人数较少（33人）而占比更高。这可能反映Finance部门在人员保留方面面临更大压力，或该部门岗位特性（如高压、高流动性）导致风险集中。\n\n**因果限制：** 本数据仅反映当前快照，无法推断高流失风险的原因（如薪酬、管理、工作负荷等），也无法判断这些风险是否会实际转化为离职。各部门样本量较小（31–45人），占比差异可能受随机波动影响，需更大样本或纵向数据验证。",
+      "error": null
+    },
+    {
+      "id": "R-07",
+      "dataset": "subscriptions",
+      "question": "哪个国家的客户流失率最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT country, COUNT(*) AS total_customers, SUM(churned) AS churned_customers, ROUND(SUM(churned) * 100.0 / COUNT(*), 2) AS churn_rate_pct FROM subscriptions GROUP BY country ORDER BY churn_rate_pct DESC LIMIT 100",
+      "rows": [
+        {
+          "country": "Australia",
+          "total_customers": 56,
+          "churned_customers": 15,
+          "churn_rate_pct": 26.79
+        },
+        {
+          "country": "Singapore",
+          "total_customers": 61,
+          "churned_customers": 16,
+          "churn_rate_pct": 26.23
+        },
+        {
+          "country": "Germany",
+          "total_customers": 59,
+          "churned_customers": 15,
+          "churn_rate_pct": 25.42
+        },
+        {
+          "country": "Japan",
+          "total_customers": 68,
+          "churned_customers": 17,
+          "churn_rate_pct": 25.0
+        },
+        {
+          "country": "United States",
+          "total_customers": 58,
+          "churned_customers": 13,
+          "churn_rate_pct": 22.41
+        },
+        {
+          "country": "China",
+          "total_customers": 58,
+          "churned_customers": 11,
+          "churn_rate_pct": 18.97
+        }
+      ],
+      "insight": "**观察：** 在数据覆盖的6个国家中，澳大利亚的客户流失率最高，为26.79%（56名客户中15人流失），紧随其后的是新加坡（26.23%）和德国（25.42%）。日本、美国和中国的流失率依次递减，中国最低（18.97%）。\n\n**谨慎解读：** 各国流失率差异相对较小（最高与最低相差约7.8个百分点），且各国客户样本量相近（56–68人），因此差异可能反映真实的市场差异，但也可能受样本量较小的影响。澳大利亚和新加坡流失率较高，可能与其市场竞争环境或客户结构有关，但本数据无法证实这一点。\n\n**因果限制：** 本分析仅基于国家维度的汇总数据，未控制客户年龄、订阅时长、套餐类型、价格敏感度等潜在混杂因素，因此不能推断任何国家特征（如经济状况、文化因素）与流失率之间的因果关系。",
+      "error": null
+    },
+    {
+      "id": "R-08",
+      "dataset": "subscriptions",
+      "question": "各套餐的平均 MRR 分别是多少？哪个最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT plan, AVG(mrr) AS avg_mrr FROM subscriptions GROUP BY plan ORDER BY avg_mrr DESC LIMIT 100",
+      "rows": [
+        {
+          "plan": "Enterprise",
+          "avg_mrr": 899.0
+        },
+        {
+          "plan": "Scale",
+          "avg_mrr": 399.0
+        },
+        {
+          "plan": "Growth",
+          "avg_mrr": 149.0
+        },
+        {
+          "plan": "Starter",
+          "avg_mrr": 49.0
+        }
+      ],
+      "insight": "观察：各套餐的平均 MRR 从高到低依次为：Enterprise（899.0）、Scale（399.0）、Growth（149.0）、Starter（49.0）。Enterprise 套餐的平均 MRR 最高，为 899.0。\n\n谨慎解读：各套餐的平均 MRR 呈现明显的阶梯式分布，Enterprise 约为 Scale 的 2.3 倍、Growth 的 6 倍、Starter 的 18 倍，说明套餐定价层级清晰。但需注意，平均 MRR 仅反映各套餐内用户的平均月度收入贡献，不反映各套餐的用户数量或总 MRR 占比，因此 Enterprise 平均 MRR 最高并不代表其总营收贡献最大。\n\n因果限制：本分析仅基于描述性统计，无法推断套餐定价策略与用户付费意愿之间的因果关系，也无法判断平均 MRR 差异是由定价本身还是用户构成（如企业规模、使用量等）所驱动。",
+      "error": null
+    },
+    {
+      "id": "R-09",
+      "dataset": "subscriptions",
+      "question": "不同获客渠道中，当前活跃客户的平均 MRR 哪个最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT acquisition_channel, AVG(mrr) AS avg_mrr FROM subscriptions WHERE status = 'Active' GROUP BY acquisition_channel ORDER BY avg_mrr DESC LIMIT 100",
+      "rows": [
+        {
+          "acquisition_channel": "Outbound",
+          "avg_mrr": 326.96610169491527
+        },
+        {
+          "acquisition_channel": "Organic",
+          "avg_mrr": 289.1515151515151
+        },
+        {
+          "acquisition_channel": "Referral",
+          "avg_mrr": 265.0377358490566
+        },
+        {
+          "acquisition_channel": "Partner",
+          "avg_mrr": 263.5833333333333
+        },
+        {
+          "acquisition_channel": "Paid Search",
+          "avg_mrr": 231.9787234042553
+        }
+      ],
+      "insight": "**观察：** 在活跃客户中，各获客渠道的平均 MRR 从高到低依次为：Outbound（约 $326.97）、Organic（约 $289.15）、Referral（约 $265.04）、Partner（约 $263.58）、Paid Search（约 $231.98）。Outbound 渠道的平均 MRR 最高，比最低的 Paid Search 高出约 $95（约 41%）。\n\n**谨慎解读：** 这可能表明 Outbound 渠道带来的活跃客户具有更高的付费水平，但需注意这仅反映平均值的差异，未考虑各渠道客户数量、客户生命周期、行业分布等因素的影响。\n\n**因果限制：** 本分析仅基于当前活跃客户的平均 MRR 进行排序，无法推断渠道本身对 MRR 的因果影响。客户质量、产品定价、销售策略等混杂因素可能同时影响渠道选择和 MRR 水平，因此不能据此断言某一渠道\"更能带来高价值客户\"。",
+      "error": null
+    },
+    {
+      "id": "R-10",
+      "dataset": "commerce",
+      "question": "哪种支付方式的平均订单金额最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "SELECT o.payment_method, AVG(oi_agg.order_total) AS avg_order_value FROM (SELECT oi.order_id, SUM(oi.line_revenue) AS order_total FROM order_items AS oi GROUP BY oi.order_id) AS oi_agg JOIN orders AS o ON o.id = oi_agg.order_id GROUP BY o.payment_method ORDER BY avg_order_value DESC LIMIT 100",
+      "rows": [
+        {
+          "payment_method": "Bank Transfer",
+          "avg_order_value": 3258.8260112359553
+        },
+        {
+          "payment_method": "Wallet",
+          "avg_order_value": 3230.7121839080464
+        },
+        {
+          "payment_method": "Card",
+          "avg_order_value": 3196.298988095238
+        }
+      ],
+      "insight": "**观察：** 在三种支付方式中，Bank Transfer（银行转账）的平均订单金额最高，为 3,258.83；其次是 Wallet（钱包），平均订单金额为 3,230.71；Card（银行卡）的平均订单金额最低，为 3,196.30。三者之间的差距较小，最高与最低之间相差约 62.53。\n\n**谨慎解读：** 银行转账的平均订单金额略高于其他支付方式，可能反映出使用银行转账的客户倾向于进行更大额度的消费。然而，三种支付方式的平均订单金额差异并不显著（差距不足 2%），因此这种差异可能不具有实际业务意义。\n\n**因果限制：** 本分析仅基于平均订单金额的对比，无法推断支付方式与订单金额之间的因果关系。平均订单金额的差异可能受到订单数量分布、客户群体特征、商品品类构成等多种混杂因素的影响，不能据此断定选择某种支付方式会导致更高的订单金额。",
+      "error": null
+    },
+    {
+      "id": "R-11",
+      "dataset": "commerce",
+      "question": "各城市的订单数量和平均订单金额分别是多少？找出订单量高但平均订单金额最低的城市。",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "WITH order_totals AS (SELECT oi.order_id, SUM(oi.line_revenue) AS order_total FROM order_items AS oi GROUP BY oi.order_id), city_orders AS (SELECT c.city, COUNT(DISTINCT o.id) AS order_count, AVG(ot.order_total) AS avg_order_value FROM customers AS c JOIN orders AS o ON o.customer_id = c.id JOIN order_totals AS ot ON ot.order_id = o.id GROUP BY c.city) SELECT city, order_count, ROUND(avg_order_value, 2) AS avg_order_value FROM city_orders ORDER BY order_count DESC, avg_order_value ASC LIMIT 100",
+      "rows": [
+        {
+          "city": "Shenzhen",
+          "order_count": 114,
+          "avg_order_value": 3290.07
+        },
+        {
+          "city": "Chengdu",
+          "order_count": 92,
+          "avg_order_value": 3345.19
+        },
+        {
+          "city": "Beijing",
+          "order_count": 89,
+          "avg_order_value": 2946.23
+        },
+        {
+          "city": "Shanghai",
+          "order_count": 89,
+          "avg_order_value": 3525.35
+        },
+        {
+          "city": "Tokyo",
+          "order_count": 73,
+          "avg_order_value": 2965.93
+        },
+        {
+          "city": "Singapore",
+          "order_count": 63,
+          "avg_order_value": 3236.27
+        }
+      ],
+      "insight": "**观察：** 在订单量最高的城市中，深圳以114单位居第一，平均订单金额为3290.07；成都（92单，3345.19）、北京（89单，2946.23）、上海（89单，3525.35）紧随其后。在订单量排名前六的城市中，北京的平均订单金额最低（2946.23），其次是东京（2965.93，73单）。若以\"订单量高但平均订单金额最低\"为标准，北京在订单量前四的城市中平均订单金额最低，且其订单量（89单）与上海持平、高于东京和新加坡。\n\n**谨慎解读：** 北京在订单量较高的城市中呈现出相对较低的平均客单价，可能反映其客户群体更偏向高频次、低客单价的消费模式，或产品结构/促销策略与其他高订单量城市存在差异。然而，本分析仅基于聚合后的城市级数据，未控制订单品类、客户类型、时间周期等因素，因此无法推断北京客单价偏低的具体原因。\n\n**因果限制：** 本结果仅为描述性统计，不能据此断言城市特征（如消费习惯、经济水平）与客单价之间存在因果关系；平均订单金额的差异可能受订单构成、折扣力度、客户分层等多重因素影响，需进一步细分数据验证。",
+      "error": null
+    },
+    {
+      "id": "R-12",
+      "dataset": "commerce",
+      "question": "各产品类别的总收入、退款金额和退款金额占收入比例分别是多少？哪个类别退款比例最高？",
+      "status": "success",
+      "mode": "simple_query",
+      "provider": "deepseek",
+      "used_fallback": false,
+      "sql": "WITH order_item_revenue AS (SELECT oi.order_id, p.category, SUM(oi.line_revenue) AS category_revenue FROM order_items AS oi JOIN products AS p ON p.id = oi.product_id GROUP BY oi.order_id, p.category), order_refunds AS (SELECT order_id, SUM(refund_amount) AS order_refund_amount FROM refunds GROUP BY order_id), allocated AS (SELECT oir.category, oir.category_revenue, COALESCE(orr.order_refund_amount, 0) AS order_refund_amount, SUM(oir.category_revenue) OVER (PARTITION BY oir.order_id) AS order_total_revenue FROM order_item_revenue AS oir LEFT JOIN order_refunds AS orr ON orr.order_id = oir.order_id) SELECT category, SUM(category_revenue) AS total_revenue, COALESCE(SUM(order_refund_amount * category_revenue / NULLIF(order_total_revenue, 0)), 0) AS total_refund_amount, ROUND(COALESCE(SUM(order_refund_amount * category_revenue / NULLIF(order_total_revenue, 0)), 0) / NULLIF(SUM(category_revenue), 0) * 100, 2) AS refund_ratio_pct FROM allocated GROUP BY category ORDER BY refund_ratio_pct DESC LIMIT 100",
+      "rows": [
+        {
+          "category": "Networking",
+          "total_revenue": 133366.19,
+          "total_refund_amount": 15341.69069750295,
+          "refund_ratio_pct": 11.5
+        },
+        {
+          "category": "Audio",
+          "total_revenue": 124868.29,
+          "total_refund_amount": 13861.337843226294,
+          "refund_ratio_pct": 11.1
+        },
+        {
+          "category": "Accessories",
+          "total_revenue": 112258.16,
+          "total_refund_amount": 9847.760336735018,
+          "refund_ratio_pct": 8.77
+        },
+        {
+          "category": "Video",
+          "total_revenue": 350132.22000000003,
+          "total_refund_amount": 29087.683067347865,
+          "refund_ratio_pct": 8.31
+        },
+        {
+          "category": "Displays",
+          "total_revenue": 215882.2,
+          "total_refund_amount": 13539.331039673845,
+          "refund_ratio_pct": 6.27
+        },
+        {
+          "category": "Computing",
+          "total_revenue": 742686.12,
+          "total_refund_amount": 45314.66701551403,
+          "refund_ratio_pct": 6.1
+        }
+      ],
+      "insight": "**观察：** 按产品类别统计，总收入从高到低依次为：Computing（$742,686.12）、Video（$350,132.22）、Displays（$215,882.20）、Networking（$133,366.19）、Audio（$124,868.29）、Accessories（$112,258.16）。退款金额方面，Computing 的退款金额最高（$45,314.67），其次为 Video（$29,087.68）。退款比例最高的类别是 **Networking（11.5%）**，紧随其后的是 Audio（11.1%），而收入规模最大的 Computing 类别退款比例最低（6.1%）。\n\n**谨慎解读：** 退款比例与收入规模呈反向关系——收入最高的 Computing 类别退款比例最低，而收入相对较小的 Networking 和 Audio 类别退款比例最高。这可能表明小规模类别（如网络设备和音频产品）存在更高的退货率，可能与产品兼容性、用户预期或质量感知有关。但需注意，退款金额是按订单总收入比例分摊到各类别计算的（假设同一订单内退款按收入占比分配），这一分摊假设可能不完全反映实际退款发生在哪个具体产品上。\n\n**因果限制：** 本分析仅展示相关性，无法推断退款比例高低的原因（如产品质量、定价、用户预期等）。退款分摊方法基于收入比例而非实际退款明细，可能引入估算偏差。此外，未控制订单数量、客单价、时间趋势等因素，无法得出因果结论。",
+      "error": null
+    }
+  ]
+}
